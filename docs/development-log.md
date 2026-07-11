@@ -2,6 +2,15 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - b1c8f0f - Add development push log
+
+- Replaced the repository agent guide with a stable ASCII/English version to avoid terminal encoding issues.
+- Added `docs/development-log.md` as the canonical record of successful GitHub pushes.
+- Added the rule that every successful push must record commit hash, changes, validation, and push result.
+- Backfilled previous successful push entries from local Git history and prior validation results.
+- Validation: ran Godot 4.6.1 headless for 3 seconds with no script errors.
+- Push result: first push attempt failed due to connection reset; second attempt pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - a7afb46 - Add combat feedback pass
 
 - Added player hit invulnerability and flicker feedback.

@@ -16,9 +16,11 @@ var target: Node2D
 var attack_cooldown: float = 0.0
 var knockback_velocity: Vector2 = Vector2.ZERO
 @onready var visual: Polygon2D = $Visual
+@onready var health_bar: ProgressBar = $HealthBar
 
 func _ready() -> void:
 	health = max_health
+	_update_health_bar(false)
 	add_to_group("enemies")
 
 func _physics_process(delta: float) -> void:
@@ -39,6 +41,7 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 		return
 	health -= amount
 	knockback_velocity += knockback
+	_update_health_bar(true)
 	_flash_on_hit()
 	CombatFeedback.show_damage(get_tree().current_scene, global_position, amount, Color(1, 0.95, 0.45, 1))
 	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1, 0.8, 0.15, 0.85), 0.8)
@@ -68,3 +71,8 @@ func _flash_on_hit() -> void:
 	visual.modulate = Color(1.6, 1.6, 1.6, 1)
 	var tween := create_tween()
 	tween.tween_property(visual, "modulate", Color.WHITE, 0.08)
+
+func _update_health_bar(show_when_damaged: bool) -> void:
+	health_bar.max_value = max_health
+	health_bar.value = clampi(health, 0, max_health)
+	health_bar.visible = show_when_damaged and health > 0 and health < max_health

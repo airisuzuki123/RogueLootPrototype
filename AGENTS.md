@@ -45,14 +45,15 @@ docs/development-log.md
 
 Record gameplay, system, content, validation, tooling, or documentation changes that materially affect the project. Do not create recursive log-only entries.
 
-Each recorded entry must include:
+Each recorded entry should include:
 
 - Date
-- Commit hash
 - Commit message
 - Main changes
 - Validation performed
 - Push result
+
+When the log update is included in the same commit as the substantive change, do not try to record that commit's own hash inside the same commit. This changes the commit content and therefore changes the hash. In that case, record the commit message in the log and report the final hash in the assistant's final response after the push succeeds.
 
 Preferred workflow:
 

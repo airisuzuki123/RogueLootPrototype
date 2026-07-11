@@ -2,6 +2,15 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Add enemy health bars
+
+- Added enemy health bars that appear after enemies take damage.
+- Updated enemy scene with a lightweight ProgressBar and health fill style.
+- Updated enemy script to sync health bar max/value/visibility after damage.
+- Updated README and design notes to reflect enemy health bar feedback.
+- Validation: ran Godot 4.6.1 headless for 5 seconds with no script errors.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - 41d4209 - Tune combat feel and pacing
 
 - Added projectile knockback against enemies.

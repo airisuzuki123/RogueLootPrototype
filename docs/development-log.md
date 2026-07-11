@@ -2,12 +2,6 @@
 
 This file records successful GitHub pushes for the project.
 
-## 2026-07-12 - c110f38 - Record combat tuning push
-
-- Added the successful push entry for `41d4209`.
-- Validation: documentation-only change; prior Godot validation for `41d4209` remained valid.
-- Push result: pushed `main` to `origin/main` successfully.
-
 ## 2026-07-12 - 41d4209 - Tune combat feel and pacing
 
 - Added projectile knockback against enemies.
@@ -17,13 +11,6 @@ This file records successful GitHub pushes for the project.
 - Added basic HUD control hint for playtesting.
 - Updated README and design notes with current combat feedback and playtest focus points.
 - Validation: ran Godot 4.6.1 headless for 5 seconds with no script errors.
-- Push result: pushed `main` to `origin/main` successfully.
-
-## 2026-07-12 - 01c737b - Record development log push
-
-- Added the successful push entry for `b1c8f0f`.
-- Documented the initial failed push attempt and successful retry.
-- Validation: documentation-only change; prior Godot validation for `b1c8f0f` remained valid.
 - Push result: pushed `main` to `origin/main` successfully.
 
 ## 2026-07-12 - b1c8f0f - Add development push log

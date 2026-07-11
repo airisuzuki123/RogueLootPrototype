@@ -37,13 +37,15 @@ Use this validation after gameplay script changes when possible.
 
 ## Git and Push Log Rule
 
-Every successful GitHub push must be recorded in:
+Record successful GitHub pushes for substantive work in:
 
 ```text
 docs/development-log.md
 ```
 
-Each entry must include:
+Record gameplay, system, content, validation, tooling, or documentation changes that materially affect the project. Do not create recursive log-only entries.
+
+Each recorded entry must include:
 
 - Date
 - Commit hash
@@ -52,7 +54,16 @@ Each entry must include:
 - Validation performed
 - Push result
 
-Do this after the push succeeds. If a push fails, do not record it as successful.
+Preferred workflow:
+
+1. Implement the change.
+2. Validate it.
+3. Update `docs/development-log.md` in the same commit, before pushing.
+4. Push once.
+
+If a push fails, do not record it as successful. If a retry succeeds, note the failed attempt inside the same substantive entry.
+
+Do not add development-log entries for commits whose only purpose is updating `docs/development-log.md` or generated `.uid` bookkeeping.
 
 ## Commit Guidelines
 
@@ -65,4 +76,4 @@ Do this after the push succeeds. If a push fails, do not record it as successful
 
 Before modifying files, check `git status --short --branch`.
 After implementation, validate with Godot when the change touches scenes, scripts, preload paths, or Autoload behavior.
-After a successful push, update `docs/development-log.md` and commit that log update separately only if it was not included in the same change.
+For future work, include the development-log update in the same commit as the substantive change whenever practical. Avoid separate log-only commits unless correcting a mistake in the log.

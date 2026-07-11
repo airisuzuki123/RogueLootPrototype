@@ -10,9 +10,14 @@ const PROJECTILE_SCENE := preload("res://scenes/projectile.tscn")
 
 var health: int
 var fire_cooldown: float = 0.0
+var base_fire_interval: float
+var equipment_damage_bonus: int = 0
+var equipment_attack_speed_bonus: int = 0
+var equipment_health_bonus: int = 0
 
 func _ready() -> void:
 	health = max_health
+	base_fire_interval = fire_interval
 	sync_health_state()
 
 func _physics_process(delta: float) -> void:
@@ -40,7 +45,8 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"damage":
 			projectile_damage += 5
 		"attack_speed":
-			fire_interval = max(0.18, fire_interval * 0.82)
+			base_fire_interval = max(0.18, base_fire_interval * 0.82)
+			fire_interval = _calculate_fire_interval()
 		"move_speed":
 			move_speed += 35.0
 		"max_health":
@@ -52,6 +58,11 @@ func apply_upgrade(upgrade_id: String) -> void:
 			GameManager.update_player_health(health, max_health)
 		"multishot":
 			projectile_count += 1
+
+func equip_weapon(new_weapon: Dictionary, old_weapon: Dictionary = {}) -> void:
+	_remove_equipment_stats(old_weapon)
+	_apply_equipment_stats(new_weapon)
+	GameManager.update_player_health(health, max_health)
 
 func _update_auto_attack(delta: float) -> void:
 	fire_cooldown -= delta
@@ -67,7 +78,7 @@ func _update_auto_attack(delta: float) -> void:
 		var spread := deg_to_rad(8.0 * (index - (projectile_count - 1) / 2.0))
 		projectile.global_position = global_position
 		projectile.direction = base_direction.rotated(spread)
-		projectile.damage = projectile_damage
+		projectile.damage = projectile_damage + equipment_damage_bonus
 		get_tree().current_scene.add_child(projectile)
 
 func _find_nearest_enemy() -> Node2D:
@@ -82,3 +93,33 @@ func _find_nearest_enemy() -> Node2D:
 			nearest_distance = distance
 			nearest = enemy
 	return nearest
+
+func _apply_equipment_stats(equipment: Dictionary) -> void:
+	for affix in equipment.get("affixes", []):
+		match affix["id"]:
+			"damage":
+				equipment_damage_bonus += affix["value"]
+			"attack_speed":
+				equipment_attack_speed_bonus += affix["value"]
+			"max_health":
+				equipment_health_bonus += affix["value"]
+				max_health += affix["value"]
+				health += affix["value"]
+	fire_interval = _calculate_fire_interval()
+
+func _remove_equipment_stats(equipment: Dictionary) -> void:
+	for affix in equipment.get("affixes", []):
+		match affix["id"]:
+			"damage":
+				equipment_damage_bonus -= affix["value"]
+			"attack_speed":
+				equipment_attack_speed_bonus -= affix["value"]
+			"max_health":
+				equipment_health_bonus -= affix["value"]
+				max_health -= affix["value"]
+				health = min(health, max_health)
+	fire_interval = _calculate_fire_interval()
+
+func _calculate_fire_interval() -> float:
+	var speed_multiplier := 1.0 + float(equipment_attack_speed_bonus) / 100.0
+	return max(0.14, base_fire_interval / max(speed_multiplier, 0.1))

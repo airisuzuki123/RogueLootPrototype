@@ -1,9 +1,13 @@
 extends CanvasLayer
 
+const EquipmentFactory := preload("res://scripts/items/equipment_factory.gd")
+
 var gold_label: Label
 var kills_label: Label
 var health_label: Label
 var experience_label: Label
+var equipment_label: Label
+var loot_message_label: Label
 var upgrade_panel: PanelContainer
 var upgrade_list: VBoxContainer
 var game_over_label: Label
@@ -36,6 +40,13 @@ func _build_ui() -> void:
 	kills_label = Label.new()
 	stats.add_child(kills_label)
 
+	equipment_label = Label.new()
+	equipment_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	stats.add_child(equipment_label)
+
+	loot_message_label = Label.new()
+	stats.add_child(loot_message_label)
+
 	upgrade_panel = PanelContainer.new()
 	upgrade_panel.visible = false
 	upgrade_panel.position = Vector2(390, 150)
@@ -60,6 +71,8 @@ func _connect_signals() -> void:
 	GameManager.enemy_killed.connect(_on_enemy_killed)
 	GameManager.health_changed.connect(_on_health_changed)
 	GameManager.experience_changed.connect(_on_experience_changed)
+	GameManager.equipment_changed.connect(_on_equipment_changed)
+	GameManager.loot_message_changed.connect(_on_loot_message_changed)
 	GameManager.upgrade_choices_requested.connect(_on_upgrade_choices_requested)
 	GameManager.run_ended.connect(_on_run_ended)
 
@@ -68,6 +81,8 @@ func _refresh_all() -> void:
 	_on_enemy_killed(GameManager.kills)
 	_on_experience_changed(GameManager.experience, GameManager.experience_to_next_level, GameManager.level)
 	_on_health_changed(GameManager.player_health, GameManager.player_max_health)
+	_on_equipment_changed(GameManager.equipped_weapon)
+	_on_loot_message_changed(GameManager.latest_loot_message)
 
 func _on_gold_changed(total: int) -> void:
 	gold_label.text = "Gold: %d" % total
@@ -80,6 +95,12 @@ func _on_health_changed(current: int, maximum: int) -> void:
 
 func _on_experience_changed(current: int, required: int, level: int) -> void:
 	experience_label.text = "Level %d  XP: %d / %d" % [level, current, required]
+
+func _on_equipment_changed(equipment: Dictionary) -> void:
+	equipment_label.text = EquipmentFactory.describe(equipment)
+
+func _on_loot_message_changed(message: String) -> void:
+	loot_message_label.text = message
 
 func _on_upgrade_choices_requested(choices: Array) -> void:
 	for child in upgrade_list.get_children():

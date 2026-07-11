@@ -42,6 +42,7 @@ func _die() -> void:
 	if randf() <= loot_chance:
 		var loot := LOOT_DROP_SCENE.instantiate()
 		loot.global_position = global_position
+		loot.source_level = GameManager.level
 		get_tree().current_scene.add_child(loot)
 	queue_free()
 

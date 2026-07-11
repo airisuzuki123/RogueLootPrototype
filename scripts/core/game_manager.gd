@@ -4,6 +4,8 @@ signal gold_changed(total: int)
 signal enemy_killed(total: int)
 signal health_changed(current: int, maximum: int)
 signal experience_changed(current: int, required: int, level: int)
+signal equipment_changed(equipment: Dictionary)
+signal loot_message_changed(message: String)
 signal upgrade_choices_requested(choices: Array)
 signal run_ended(kills: int, gold: int)
 
@@ -18,6 +20,8 @@ var player: Node = null
 var is_run_over: bool = false
 var is_upgrade_pending: bool = false
 var pending_upgrade_choices: Array = []
+var equipped_weapon: Dictionary = {}
+var latest_loot_message: String = ""
 
 const UPGRADE_POOL := [
 	{
@@ -64,9 +68,13 @@ func reset_run() -> void:
 	is_run_over = false
 	is_upgrade_pending = false
 	pending_upgrade_choices.clear()
+	equipped_weapon.clear()
+	latest_loot_message = ""
 	gold_changed.emit(gold)
 	enemy_killed.emit(kills)
 	experience_changed.emit(experience, experience_to_next_level, level)
+	equipment_changed.emit(equipped_weapon)
+	loot_message_changed.emit(latest_loot_message)
 
 func register_player(player_node: Node) -> void:
 	player = player_node
@@ -83,6 +91,17 @@ func add_gold(amount: int) -> void:
 		return
 	gold += amount
 	gold_changed.emit(gold)
+	_set_loot_message("+%d Gold" % amount)
+
+func pickup_equipment(equipment: Dictionary) -> void:
+	if is_run_over or equipment.is_empty():
+		return
+	var old_weapon := equipped_weapon.duplicate(true)
+	equipped_weapon = equipment.duplicate(true)
+	if player != null and player.has_method("equip_weapon"):
+		player.equip_weapon(equipped_weapon, old_weapon)
+	equipment_changed.emit(equipped_weapon)
+	_set_loot_message("Equipped %s" % equipment["name"])
 
 func register_kill() -> void:
 	if is_run_over:
@@ -124,3 +143,7 @@ func _request_upgrade_choices() -> void:
 	for index in range(min(3, pool.size())):
 		pending_upgrade_choices.append(pool[index])
 	upgrade_choices_requested.emit(pending_upgrade_choices)
+
+func _set_loot_message(message: String) -> void:
+	latest_loot_message = message
+	loot_message_changed.emit(latest_loot_message)

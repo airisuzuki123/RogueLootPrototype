@@ -8,6 +8,7 @@ var health_label: Label
 var experience_label: Label
 var equipment_label: Label
 var loot_message_label: Label
+var hint_label: Label
 var upgrade_panel: PanelContainer
 var upgrade_list: VBoxContainer
 var game_over_label: Label
@@ -46,6 +47,11 @@ func _build_ui() -> void:
 
 	loot_message_label = Label.new()
 	stats.add_child(loot_message_label)
+
+	hint_label = Label.new()
+	hint_label.text = "WASD move | Auto attack | Pick up loot | Choose upgrades"
+	hint_label.position = Vector2(16, 690)
+	root.add_child(hint_label)
 
 	upgrade_panel = PanelContainer.new()
 	upgrade_panel.visible = false

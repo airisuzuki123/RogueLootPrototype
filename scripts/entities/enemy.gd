@@ -9,10 +9,12 @@ const CombatFeedback := preload("res://scripts/effects/combat_feedback.gd")
 @export var loot_chance: float = 0.45
 @export var experience_reward: int = 1
 @export var attack_interval: float = 0.8
+@export var knockback_recovery: float = 9.0
 
 var health: int
 var target: Node2D
 var attack_cooldown: float = 0.0
+var knockback_velocity: Vector2 = Vector2.ZERO
 @onready var visual: Polygon2D = $Visual
 
 func _ready() -> void:
@@ -26,15 +28,17 @@ func _physics_process(delta: float) -> void:
 	if target == null or not is_instance_valid(target):
 		return
 	var direction := global_position.direction_to(target.global_position)
-	velocity = direction * move_speed
+	velocity = direction * move_speed + knockback_velocity
 	move_and_slide()
+	knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, knockback_recovery * knockback_velocity.length() * delta)
 	if global_position.distance_to(target.global_position) <= 24.0:
 		_try_touch_damage()
 
-func take_damage(amount: int) -> void:
+func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 	if GameManager.is_run_over:
 		return
 	health -= amount
+	knockback_velocity += knockback
 	_flash_on_hit()
 	CombatFeedback.show_damage(get_tree().current_scene, global_position, amount, Color(1, 0.95, 0.45, 1))
 	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1, 0.8, 0.15, 0.85), 0.8)
@@ -57,7 +61,8 @@ func _try_touch_damage() -> void:
 		return
 	attack_cooldown = attack_interval
 	if target.has_method("take_damage"):
-		target.take_damage(touch_damage)
+		var knockback := global_position.direction_to(target.global_position) * 220.0
+		target.take_damage(touch_damage, knockback)
 
 func _flash_on_hit() -> void:
 	visual.modulate = Color(1.6, 1.6, 1.6, 1)

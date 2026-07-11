@@ -6,10 +6,16 @@ const HUD_SCENE := preload("res://scenes/hud.tscn")
 
 @onready var enemy_spawn_timer: Timer = $EnemySpawnTimer
 
+@export var spawn_radius: float = 460.0
+@export var minimum_spawn_radius: float = 360.0
+@export var spawn_interval_reduction_per_level: float = 0.04
+@export var minimum_spawn_interval: float = 0.55
+
 var player: CharacterBody2D
 
 func _ready() -> void:
 	GameManager.reset_run()
+	enemy_spawn_timer.wait_time = 1.25
 	_spawn_player()
 	_spawn_hud()
 	enemy_spawn_timer.timeout.connect(_spawn_enemy)
@@ -30,12 +36,22 @@ func _spawn_enemy() -> void:
 		return
 	var enemy := ENEMY_SCENE.instantiate()
 	enemy.target = player
-	enemy.global_position = _random_spawn_position_around(player.global_position, 420.0)
+	enemy.global_position = _random_spawn_position_around(player.global_position, spawn_radius)
 	add_child(enemy)
+	_update_spawn_interval()
 
 func _random_spawn_position_around(center: Vector2, radius: float) -> Vector2:
 	var angle := randf() * TAU
-	return center + Vector2(cos(angle), sin(angle)) * radius
+	var spawn_distance := randf_range(minimum_spawn_radius, radius)
+	var viewport_size := get_viewport_rect().size
+	var position := center + Vector2(cos(angle), sin(angle)) * spawn_distance
+	position.x = clampf(position.x, 24.0, viewport_size.x - 24.0)
+	position.y = clampf(position.y, 24.0, viewport_size.y - 24.0)
+	return position
 
 func _on_run_ended(_kills: int, _gold: int) -> void:
 	enemy_spawn_timer.stop()
+
+func _update_spawn_interval() -> void:
+	var target_interval := maxf(minimum_spawn_interval, 1.25 - (GameManager.level - 1) * spawn_interval_reduction_per_level)
+	enemy_spawn_timer.wait_time = target_interval

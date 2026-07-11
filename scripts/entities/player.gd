@@ -10,10 +10,12 @@ const CombatFeedback := preload("res://scripts/effects/combat_feedback.gd")
 @export var projectile_count: int = 1
 @export var screen_margin: float = 16.0
 @export var invulnerability_duration: float = 0.55
+@export var knockback_recovery: float = 11.0
 
 var health: int
 var fire_cooldown: float = 0.0
 var invulnerability_timer: float = 0.0
+var knockback_velocity: Vector2 = Vector2.ZERO
 var base_fire_interval: float
 var equipment_damage_bonus: int = 0
 var equipment_attack_speed_bonus: int = 0
@@ -30,15 +32,17 @@ func _physics_process(delta: float) -> void:
 		return
 	_update_invulnerability(delta)
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	velocity = direction * move_speed
+	velocity = direction * move_speed + knockback_velocity
 	move_and_slide()
+	knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, knockback_recovery * knockback_velocity.length() * delta)
 	_clamp_to_screen()
 	_update_auto_attack(delta)
 
-func take_damage(amount: int) -> void:
+func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 	if GameManager.is_run_over or GameManager.is_upgrade_pending or invulnerability_timer > 0.0:
 		return
 	invulnerability_timer = invulnerability_duration
+	knockback_velocity += knockback
 	health -= amount
 	GameManager.update_player_health(max(health, 0), max_health)
 	CombatFeedback.show_damage(get_tree().current_scene, global_position, amount, Color(1, 0.25, 0.25, 1))

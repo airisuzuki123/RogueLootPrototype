@@ -2,6 +2,16 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Add weapon forms
+
+- Added weapon forms for focused, scatter, piercing, and burst staffs.
+- Added form descriptions to weapon comparison text and included form value in equipment score.
+- Added player shooting support for form-based projectile count, spread, damage multiplier, pierce, and explosion damage.
+- Added projectile piercing and small-area burst damage behavior.
+- Updated README and design notes with the current weapon forms.
+- Validation: ran Godot 4.6.1 headless for 5 seconds outside the sandbox with no script errors after fixing one type inference warning.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Add mobility and critical affixes
 
 - Added weapon affixes for movement speed and critical chance.

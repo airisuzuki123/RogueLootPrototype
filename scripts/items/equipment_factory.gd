@@ -15,13 +15,54 @@ const AFFIXES := [
 	{"id": "critical_chance", "label": "暴击率", "min": 4, "max": 9}
 ]
 
+const WEAPON_FORMS := [
+	{
+		"id": "focused",
+		"name": "聚能法杖",
+		"description": "单发伤害更高",
+		"weight": 34,
+		"score": 12,
+		"damage_multiplier": 1.15
+	},
+	{
+		"id": "scatter",
+		"name": "散射法杖",
+		"description": "额外发射 2 枚投射物",
+		"weight": 28,
+		"score": 16,
+		"projectile_bonus": 2,
+		"damage_multiplier": 0.75,
+		"spread_degrees": 16.0
+	},
+	{
+		"id": "piercing",
+		"name": "穿透法杖",
+		"description": "投射物可额外穿透 1 名敌人",
+		"weight": 22,
+		"score": 18,
+		"pierce": 1,
+		"damage_multiplier": 0.9
+	},
+	{
+		"id": "burst",
+		"name": "爆裂法杖",
+		"description": "命中时造成小范围爆裂伤害",
+		"weight": 16,
+		"score": 20,
+		"damage_multiplier": 0.85,
+		"explosion_radius": 72.0,
+		"explosion_damage_ratio": 0.45
+	}
+]
+
 static func roll_weapon(enemy_level: int = 1) -> Dictionary:
 	var rarity := _roll_rarity()
+	var form := _roll_weapon_form()
 	var affix_count: int = rarity["affixes"]
 	var affix_pool := AFFIXES.duplicate(true)
 	affix_pool.shuffle()
 	var affixes: Array = []
-	var score := 0
+	var score := int(form.get("score", 0))
 	for index in range(min(affix_count, affix_pool.size())):
 		var template: Dictionary = affix_pool[index]
 		var value := randi_range(template["min"], template["max"]) + enemy_level
@@ -33,8 +74,9 @@ static func roll_weapon(enemy_level: int = 1) -> Dictionary:
 		})
 		score += _score_affix(template["id"], value)
 	return {
-		"name": "%s法杖" % rarity["name"],
+		"name": "%s%s" % [rarity["name"], form["name"]],
 		"slot": "weapon",
+		"form": form,
 		"rarity": rarity["name"],
 		"color": rarity["color"],
 		"affixes": affixes,
@@ -45,6 +87,9 @@ static func describe(equipment: Dictionary) -> String:
 	if equipment.is_empty():
 		return "武器：无"
 	var lines := ["%s (%s)" % [equipment["name"], equipment["rarity"]]]
+	var form: Dictionary = equipment.get("form", {})
+	if not form.is_empty():
+		lines.append(str(form["description"]))
 	for affix in equipment["affixes"]:
 		var prefix := "+"
 		if affix["id"] in ["attack_speed", "critical_chance"]:
@@ -80,6 +125,18 @@ static func _roll_rarity() -> Dictionary:
 		if roll <= cursor:
 			return rarity
 	return RARITIES[0]
+
+static func _roll_weapon_form() -> Dictionary:
+	var total_weight := 0
+	for form in WEAPON_FORMS:
+		total_weight += int(form["weight"])
+	var roll := randi_range(1, total_weight)
+	var cursor := 0
+	for form in WEAPON_FORMS:
+		cursor += int(form["weight"])
+		if roll <= cursor:
+			return form.duplicate(true)
+	return WEAPON_FORMS[0].duplicate(true)
 
 static func _score_affix(affix_id: String, value: int) -> int:
 	match affix_id:

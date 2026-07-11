@@ -22,6 +22,12 @@ var equipment_attack_speed_bonus: int = 0
 var equipment_health_bonus: int = 0
 var equipment_move_speed_bonus: int = 0
 var equipment_critical_chance_bonus: int = 0
+var equipment_projectile_count_bonus: int = 0
+var equipment_pierce_bonus: int = 0
+var equipment_damage_multiplier: float = 1.0
+var equipment_spread_degrees: float = 8.0
+var equipment_explosion_radius: float = 0.0
+var equipment_explosion_damage_ratio: float = 0.0
 @onready var visual: Polygon2D = $Visual
 
 func _ready() -> void:
@@ -84,18 +90,22 @@ func _update_auto_attack(delta: float) -> void:
 	fire_cooldown -= delta
 	if fire_cooldown > 0.0:
 		return
-	var target := _find_nearest_enemy()
+	var target: Node2D = _find_nearest_enemy()
 	if target == null:
 		return
 	fire_cooldown = fire_interval
-	var base_direction := global_position.direction_to(target.global_position)
-	for index in range(projectile_count):
+	var base_direction: Vector2 = global_position.direction_to(target.global_position)
+	var total_projectiles: int = maxi(1, projectile_count + equipment_projectile_count_bonus)
+	for index in range(total_projectiles):
 		var projectile := PROJECTILE_SCENE.instantiate()
-		var spread := deg_to_rad(8.0 * (index - (projectile_count - 1) / 2.0))
+		var spread: float = deg_to_rad(equipment_spread_degrees * (index - (total_projectiles - 1) / 2.0))
 		projectile.global_position = global_position
 		projectile.direction = base_direction.rotated(spread)
 		projectile.damage = _roll_projectile_damage()
-		projectile.is_critical = projectile.damage > projectile_damage + equipment_damage_bonus
+		projectile.is_critical = projectile.damage > _get_base_projectile_damage()
+		projectile.pierce_remaining = equipment_pierce_bonus
+		projectile.explosion_radius = equipment_explosion_radius
+		projectile.explosion_damage = int(round(float(projectile.damage) * equipment_explosion_damage_ratio))
 		get_tree().current_scene.add_child(projectile)
 
 func _find_nearest_enemy() -> Node2D:
@@ -117,6 +127,7 @@ func _clamp_to_screen() -> void:
 	global_position.y = clampf(global_position.y, screen_margin, viewport_rect.size.y - screen_margin)
 
 func _apply_equipment_stats(equipment: Dictionary) -> void:
+	_apply_weapon_form(equipment.get("form", {}))
 	for affix in equipment.get("affixes", []):
 		match affix["id"]:
 			"damage":
@@ -135,6 +146,7 @@ func _apply_equipment_stats(equipment: Dictionary) -> void:
 	fire_interval = _calculate_fire_interval()
 
 func _remove_equipment_stats(equipment: Dictionary) -> void:
+	_reset_weapon_form()
 	for affix in equipment.get("affixes", []):
 		match affix["id"]:
 			"damage":
@@ -156,12 +168,34 @@ func _calculate_fire_interval() -> float:
 	var speed_multiplier := 1.0 + float(equipment_attack_speed_bonus) / 100.0
 	return max(0.14, base_fire_interval / max(speed_multiplier, 0.1))
 
+func _get_base_projectile_damage() -> int:
+	return max(1, int(round(float(projectile_damage + equipment_damage_bonus) * equipment_damage_multiplier)))
+
 func _roll_projectile_damage() -> int:
-	var damage := projectile_damage + equipment_damage_bonus
+	var damage := _get_base_projectile_damage()
 	var critical_chance := clampf(float(equipment_critical_chance_bonus) / 100.0, 0.0, 0.75)
 	if randf() < critical_chance:
 		return damage * 2
 	return damage
+
+func _apply_weapon_form(form: Dictionary) -> void:
+	if form.is_empty():
+		_reset_weapon_form()
+		return
+	equipment_projectile_count_bonus = int(form.get("projectile_bonus", 0))
+	equipment_pierce_bonus = int(form.get("pierce", 0))
+	equipment_damage_multiplier = float(form.get("damage_multiplier", 1.0))
+	equipment_spread_degrees = float(form.get("spread_degrees", 8.0))
+	equipment_explosion_radius = float(form.get("explosion_radius", 0.0))
+	equipment_explosion_damage_ratio = float(form.get("explosion_damage_ratio", 0.0))
+
+func _reset_weapon_form() -> void:
+	equipment_projectile_count_bonus = 0
+	equipment_pierce_bonus = 0
+	equipment_damage_multiplier = 1.0
+	equipment_spread_degrees = 8.0
+	equipment_explosion_radius = 0.0
+	equipment_explosion_damage_ratio = 0.0
 
 func _update_invulnerability(delta: float) -> void:
 	if invulnerability_timer <= 0.0:

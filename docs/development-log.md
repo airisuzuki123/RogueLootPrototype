@@ -2,6 +2,12 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - c110f38 - Record combat tuning push
+
+- Added the successful push entry for `41d4209`.
+- Validation: documentation-only change; prior Godot validation for `41d4209` remained valid.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - 41d4209 - Tune combat feel and pacing
 
 - Added projectile knockback against enemies.

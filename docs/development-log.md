@@ -2,6 +2,15 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Add mobility and critical affixes
+
+- Added weapon affixes for movement speed and critical chance.
+- Added player equipment stat application and removal for the new affixes.
+- Added critical projectile damage rolls with stronger hit burst and damage color feedback.
+- Updated README and design notes with the expanded affix set.
+- Validation: ran Godot 4.6.1 headless for 5 seconds outside the sandbox with no script errors.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Add equipment comparison choice
 
 - Added a weapon pickup comparison flow that pauses combat before replacing equipment.

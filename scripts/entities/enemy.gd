@@ -45,15 +45,17 @@ func _physics_process(delta: float) -> void:
 	elif distance <= 24.0:
 		_try_touch_damage()
 
-func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
+func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO, is_critical: bool = false) -> void:
 	if GameManager.is_run_over:
 		return
 	health -= amount
 	knockback_velocity += knockback
 	_update_health_bar(true)
 	_flash_on_hit()
-	CombatFeedback.show_damage(get_tree().current_scene, global_position, amount, Color(1, 0.95, 0.45, 1))
-	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1, 0.8, 0.15, 0.85), 0.8)
+	var damage_color := Color(1, 0.45, 0.15, 1) if is_critical else Color(1, 0.95, 0.45, 1)
+	var burst_size := 1.2 if is_critical else 0.8
+	CombatFeedback.show_damage(get_tree().current_scene, global_position, amount, damage_color)
+	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1, 0.8, 0.15, 0.85), burst_size)
 	if health <= 0:
 		_die()
 

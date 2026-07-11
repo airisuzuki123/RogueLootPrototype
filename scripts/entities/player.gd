@@ -20,6 +20,8 @@ var base_fire_interval: float
 var equipment_damage_bonus: int = 0
 var equipment_attack_speed_bonus: int = 0
 var equipment_health_bonus: int = 0
+var equipment_move_speed_bonus: int = 0
+var equipment_critical_chance_bonus: int = 0
 @onready var visual: Polygon2D = $Visual
 
 func _ready() -> void:
@@ -92,7 +94,8 @@ func _update_auto_attack(delta: float) -> void:
 		var spread := deg_to_rad(8.0 * (index - (projectile_count - 1) / 2.0))
 		projectile.global_position = global_position
 		projectile.direction = base_direction.rotated(spread)
-		projectile.damage = projectile_damage + equipment_damage_bonus
+		projectile.damage = _roll_projectile_damage()
+		projectile.is_critical = projectile.damage > projectile_damage + equipment_damage_bonus
 		get_tree().current_scene.add_child(projectile)
 
 func _find_nearest_enemy() -> Node2D:
@@ -124,6 +127,11 @@ func _apply_equipment_stats(equipment: Dictionary) -> void:
 				equipment_health_bonus += affix["value"]
 				max_health += affix["value"]
 				health += affix["value"]
+			"move_speed":
+				equipment_move_speed_bonus += affix["value"]
+				move_speed += affix["value"]
+			"critical_chance":
+				equipment_critical_chance_bonus += affix["value"]
 	fire_interval = _calculate_fire_interval()
 
 func _remove_equipment_stats(equipment: Dictionary) -> void:
@@ -137,11 +145,23 @@ func _remove_equipment_stats(equipment: Dictionary) -> void:
 				equipment_health_bonus -= affix["value"]
 				max_health -= affix["value"]
 				health = min(health, max_health)
+			"move_speed":
+				equipment_move_speed_bonus -= affix["value"]
+				move_speed -= affix["value"]
+			"critical_chance":
+				equipment_critical_chance_bonus -= affix["value"]
 	fire_interval = _calculate_fire_interval()
 
 func _calculate_fire_interval() -> float:
 	var speed_multiplier := 1.0 + float(equipment_attack_speed_bonus) / 100.0
 	return max(0.14, base_fire_interval / max(speed_multiplier, 0.1))
+
+func _roll_projectile_damage() -> int:
+	var damage := projectile_damage + equipment_damage_bonus
+	var critical_chance := clampf(float(equipment_critical_chance_bonus) / 100.0, 0.0, 0.75)
+	if randf() < critical_chance:
+		return damage * 2
+	return damage
 
 func _update_invulnerability(delta: float) -> void:
 	if invulnerability_timer <= 0.0:

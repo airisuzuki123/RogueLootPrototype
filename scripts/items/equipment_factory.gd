@@ -10,7 +10,9 @@ const RARITIES := [
 const AFFIXES := [
 	{"id": "damage", "label": "伤害", "min": 3, "max": 8},
 	{"id": "max_health", "label": "最大生命", "min": 10, "max": 25},
-	{"id": "attack_speed", "label": "攻击速度", "min": 6, "max": 14}
+	{"id": "attack_speed", "label": "攻击速度", "min": 6, "max": 14},
+	{"id": "move_speed", "label": "移动速度", "min": 12, "max": 24},
+	{"id": "critical_chance", "label": "暴击率", "min": 4, "max": 9}
 ]
 
 static func roll_weapon(enemy_level: int = 1) -> Dictionary:
@@ -45,7 +47,7 @@ static func describe(equipment: Dictionary) -> String:
 	var lines := ["%s (%s)" % [equipment["name"], equipment["rarity"]]]
 	for affix in equipment["affixes"]:
 		var prefix := "+"
-		if affix["id"] == "attack_speed":
+		if affix["id"] in ["attack_speed", "critical_chance"]:
 			lines.append("%s%d%% %s" % [prefix, affix["value"], affix["label"]])
 		else:
 			lines.append("%s%d %s" % [prefix, affix["value"], affix["label"]])
@@ -87,4 +89,8 @@ static func _score_affix(affix_id: String, value: int) -> int:
 			return value
 		"attack_speed":
 			return value * 3
+		"move_speed":
+			return value * 2
+		"critical_chance":
+			return value * 5
 	return value

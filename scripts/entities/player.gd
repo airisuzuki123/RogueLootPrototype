@@ -7,6 +7,7 @@ const PROJECTILE_SCENE := preload("res://scenes/projectile.tscn")
 @export var fire_interval: float = 0.45
 @export var projectile_damage: int = 10
 @export var projectile_count: int = 1
+@export var screen_margin: float = 16.0
 
 var health: int
 var fire_cooldown: float = 0.0
@@ -26,6 +27,7 @@ func _physics_process(delta: float) -> void:
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	velocity = direction * move_speed
 	move_and_slide()
+	_clamp_to_screen()
 	_update_auto_attack(delta)
 
 func take_damage(amount: int) -> void:
@@ -93,6 +95,11 @@ func _find_nearest_enemy() -> Node2D:
 			nearest_distance = distance
 			nearest = enemy
 	return nearest
+
+func _clamp_to_screen() -> void:
+	var viewport_rect := get_viewport_rect()
+	global_position.x = clampf(global_position.x, screen_margin, viewport_rect.size.x - screen_margin)
+	global_position.y = clampf(global_position.y, screen_margin, viewport_rect.size.y - screen_margin)
 
 func _apply_equipment_stats(equipment: Dictionary) -> void:
 	for affix in equipment.get("affixes", []):

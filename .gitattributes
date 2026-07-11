@@ -2,6 +2,7 @@
 
 # Godot text resources should stay LF for stable diffs across platforms.
 *.gd text eol=lf
+*.gd.uid text eol=lf
 *.tscn text eol=lf
 *.tres text eol=lf
 *.godot text eol=lf

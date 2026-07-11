@@ -10,6 +10,8 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 
 func _physics_process(delta: float) -> void:
+	if GameManager.is_upgrade_pending:
+		return
 	global_position += direction.normalized() * speed * delta
 	lifetime -= delta
 	if lifetime <= 0.0:

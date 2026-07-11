@@ -2,6 +2,16 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Add equipment comparison choice
+
+- Added a weapon pickup comparison flow that pauses combat before replacing equipment.
+- Added current/new weapon comparison text with score and score delta.
+- Added choices to equip the new weapon or keep the current weapon and salvage the new one for gold.
+- Updated gameplay pause checks so enemies and projectiles stop during equipment choices.
+- Updated README and design notes with the current equipment pickup flow.
+- Validation: ran Godot 4.6.1 headless for 5 seconds outside the sandbox with no script errors; sandboxed Godot runs crashed at engine startup before validation.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Add enemy archetypes
 
 - Added enemy archetypes: normal, fast runner, tank, and ranged attacker.

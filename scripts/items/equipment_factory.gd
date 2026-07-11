@@ -51,6 +51,22 @@ static func describe(equipment: Dictionary) -> String:
 			lines.append("%s%d %s" % [prefix, affix["value"], affix["label"]])
 	return "\n".join(lines)
 
+static func describe_with_score(equipment: Dictionary) -> String:
+	if equipment.is_empty():
+		return "武器：无\n评分：0"
+	return "%s\n评分：%d" % [describe(equipment), get_score(equipment)]
+
+static func get_score(equipment: Dictionary) -> int:
+	return int(equipment.get("score", 0))
+
+static func get_score_delta_text(candidate: Dictionary, current: Dictionary) -> String:
+	var delta := get_score(candidate) - get_score(current)
+	if current.is_empty():
+		return "评分变化：+%d" % get_score(candidate)
+	if delta >= 0:
+		return "评分变化：+%d" % delta
+	return "评分变化：%d" % delta
+
 static func _roll_rarity() -> Dictionary:
 	var total_weight := 0
 	for rarity in RARITIES:

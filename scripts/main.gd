@@ -38,7 +38,7 @@ func _spawn_hud() -> void:
 	add_child(hud)
 
 func _spawn_enemy() -> void:
-	if player == null or not is_instance_valid(player) or GameManager.is_run_over or GameManager.is_upgrade_pending:
+	if player == null or not is_instance_valid(player) or GameManager.is_run_over or GameManager.is_gameplay_paused():
 		return
 	var enemy := ENEMY_SCENE.instantiate()
 	enemy.configure(_roll_enemy_type())

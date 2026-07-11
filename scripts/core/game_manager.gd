@@ -6,6 +6,7 @@ signal health_changed(current: int, maximum: int)
 signal experience_changed(current: int, required: int, level: int)
 signal equipment_changed(equipment: Dictionary)
 signal loot_message_changed(message: String)
+signal equipment_choice_requested(candidate: Dictionary, current: Dictionary, salvage_value: int)
 signal upgrade_choices_requested(choices: Array)
 signal run_ended(kills: int, gold: int)
 
@@ -19,7 +20,10 @@ var player_max_health: int = 0
 var player: Node = null
 var is_run_over: bool = false
 var is_upgrade_pending: bool = false
+var is_equipment_choice_pending: bool = false
 var pending_upgrade_choices: Array = []
+var pending_equipment_choice: Dictionary = {}
+var pending_equipment_salvage_value: int = 0
 var equipped_weapon: Dictionary = {}
 var latest_loot_message: String = ""
 
@@ -67,7 +71,10 @@ func reset_run() -> void:
 	player = null
 	is_run_over = false
 	is_upgrade_pending = false
+	is_equipment_choice_pending = false
 	pending_upgrade_choices.clear()
+	pending_equipment_choice.clear()
+	pending_equipment_salvage_value = 0
 	equipped_weapon.clear()
 	latest_loot_message = ""
 	gold_changed.emit(gold)
@@ -96,12 +103,32 @@ func add_gold(amount: int) -> void:
 func pickup_equipment(equipment: Dictionary) -> void:
 	if is_run_over or equipment.is_empty():
 		return
+	is_equipment_choice_pending = true
+	pending_equipment_choice = equipment.duplicate(true)
+	pending_equipment_salvage_value = _calculate_salvage_value(pending_equipment_choice)
+	_set_loot_message("发现武器：%s" % pending_equipment_choice["name"])
+	equipment_choice_requested.emit(pending_equipment_choice, equipped_weapon, pending_equipment_salvage_value)
+
+func equip_pending_equipment() -> void:
+	if is_run_over or pending_equipment_choice.is_empty():
+		return
 	var old_weapon := equipped_weapon.duplicate(true)
-	equipped_weapon = equipment.duplicate(true)
+	equipped_weapon = pending_equipment_choice.duplicate(true)
 	if player != null and player.has_method("equip_weapon"):
 		player.equip_weapon(equipped_weapon, old_weapon)
 	equipment_changed.emit(equipped_weapon)
-	_set_loot_message("已装备：%s" % equipment["name"])
+	_set_loot_message("已装备：%s" % equipped_weapon["name"])
+	_clear_pending_equipment_choice()
+
+func salvage_pending_equipment() -> void:
+	if is_run_over or pending_equipment_choice.is_empty():
+		return
+	var salvaged_name := str(pending_equipment_choice["name"])
+	var value := pending_equipment_salvage_value
+	_clear_pending_equipment_choice()
+	gold += value
+	gold_changed.emit(gold)
+	_set_loot_message("已分解：%s，金币 +%d" % [salvaged_name, value])
 
 func register_kill() -> void:
 	if is_run_over:
@@ -129,6 +156,9 @@ func apply_upgrade(choice_index: int) -> void:
 	if player != null and player.has_method("apply_upgrade"):
 		player.apply_upgrade(upgrade["id"])
 
+func is_gameplay_paused() -> bool:
+	return is_upgrade_pending or is_equipment_choice_pending
+
 func end_run() -> void:
 	if is_run_over:
 		return
@@ -147,3 +177,11 @@ func _request_upgrade_choices() -> void:
 func _set_loot_message(message: String) -> void:
 	latest_loot_message = message
 	loot_message_changed.emit(latest_loot_message)
+
+func _clear_pending_equipment_choice() -> void:
+	pending_equipment_choice.clear()
+	pending_equipment_salvage_value = 0
+	is_equipment_choice_pending = false
+
+func _calculate_salvage_value(equipment: Dictionary) -> int:
+	return max(1, int(ceil(float(equipment.get("score", 1)) / 8.0)))

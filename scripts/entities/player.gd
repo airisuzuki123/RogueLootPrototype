@@ -28,7 +28,7 @@ func _ready() -> void:
 	sync_health_state()
 
 func _physics_process(delta: float) -> void:
-	if GameManager.is_run_over or GameManager.is_upgrade_pending:
+	if GameManager.is_run_over or GameManager.is_gameplay_paused():
 		return
 	_update_invulnerability(delta)
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -39,7 +39,7 @@ func _physics_process(delta: float) -> void:
 	_update_auto_attack(delta)
 
 func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
-	if GameManager.is_run_over or GameManager.is_upgrade_pending or invulnerability_timer > 0.0:
+	if GameManager.is_run_over or GameManager.is_gameplay_paused() or invulnerability_timer > 0.0:
 		return
 	invulnerability_timer = invulnerability_duration
 	knockback_velocity += knockback

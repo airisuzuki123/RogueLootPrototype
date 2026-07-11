@@ -29,7 +29,7 @@ func _ready() -> void:
 	add_to_group("enemies")
 
 func _physics_process(delta: float) -> void:
-	if GameManager.is_run_over or GameManager.is_upgrade_pending:
+	if GameManager.is_run_over or GameManager.is_gameplay_paused():
 		return
 	attack_cooldown -= delta
 	if target == null or not is_instance_valid(target):

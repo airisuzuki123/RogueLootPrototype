@@ -2,15 +2,15 @@ class_name EquipmentFactory
 extends RefCounted
 
 const RARITIES := [
-	{"name": "Common", "color": Color(0.8, 0.8, 0.8), "weight": 70, "affixes": 1, "power": 1.0},
-	{"name": "Magic", "color": Color(0.35, 0.55, 1.0), "weight": 24, "affixes": 2, "power": 1.25},
-	{"name": "Rare", "color": Color(1.0, 0.85, 0.2), "weight": 6, "affixes": 3, "power": 1.6}
+	{"name": "普通", "color": Color(0.8, 0.8, 0.8), "weight": 70, "affixes": 1, "power": 1.0},
+	{"name": "魔法", "color": Color(0.35, 0.55, 1.0), "weight": 24, "affixes": 2, "power": 1.25},
+	{"name": "稀有", "color": Color(1.0, 0.85, 0.2), "weight": 6, "affixes": 3, "power": 1.6}
 ]
 
 const AFFIXES := [
-	{"id": "damage", "label": "Damage", "min": 3, "max": 8},
-	{"id": "max_health", "label": "Max HP", "min": 10, "max": 25},
-	{"id": "attack_speed", "label": "Attack Speed", "min": 6, "max": 14}
+	{"id": "damage", "label": "伤害", "min": 3, "max": 8},
+	{"id": "max_health", "label": "最大生命", "min": 10, "max": 25},
+	{"id": "attack_speed", "label": "攻击速度", "min": 6, "max": 14}
 ]
 
 static func roll_weapon(enemy_level: int = 1) -> Dictionary:
@@ -31,7 +31,7 @@ static func roll_weapon(enemy_level: int = 1) -> Dictionary:
 		})
 		score += _score_affix(template["id"], value)
 	return {
-		"name": "%s Wand" % rarity["name"],
+		"name": "%s法杖" % rarity["name"],
 		"slot": "weapon",
 		"rarity": rarity["name"],
 		"color": rarity["color"],
@@ -41,7 +41,7 @@ static func roll_weapon(enemy_level: int = 1) -> Dictionary:
 
 static func describe(equipment: Dictionary) -> String:
 	if equipment.is_empty():
-		return "Weapon: None"
+		return "武器：无"
 	var lines := ["%s (%s)" % [equipment["name"], equipment["rarity"]]]
 	for affix in equipment["affixes"]:
 		var prefix := "+"

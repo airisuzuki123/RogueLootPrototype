@@ -49,7 +49,7 @@ func _build_ui() -> void:
 	stats.add_child(loot_message_label)
 
 	hint_label = Label.new()
-	hint_label.text = "WASD move | Auto attack | Pick up loot | Choose upgrades"
+	hint_label.text = "WASD 移动 | 自动攻击 | 拾取掉落 | 升级时选择强化"
 	hint_label.position = Vector2(16, 690)
 	root.add_child(hint_label)
 
@@ -64,7 +64,7 @@ func _build_ui() -> void:
 	upgrade_panel.add_child(upgrade_list)
 
 	var title := Label.new()
-	title.text = "Level Up - Choose One"
+	title.text = "升级：选择一个强化"
 	upgrade_list.add_child(title)
 
 	game_over_label = Label.new()
@@ -91,16 +91,16 @@ func _refresh_all() -> void:
 	_on_loot_message_changed(GameManager.latest_loot_message)
 
 func _on_gold_changed(total: int) -> void:
-	gold_label.text = "Gold: %d" % total
+	gold_label.text = "金币：%d" % total
 
 func _on_enemy_killed(total: int) -> void:
-	kills_label.text = "Kills: %d" % total
+	kills_label.text = "击杀：%d" % total
 
 func _on_health_changed(current: int, maximum: int) -> void:
-	health_label.text = "HP: %d / %d" % [current, maximum]
+	health_label.text = "生命：%d / %d" % [current, maximum]
 
 func _on_experience_changed(current: int, required: int, level: int) -> void:
-	experience_label.text = "Level %d  XP: %d / %d" % [level, current, required]
+	experience_label.text = "等级 %d  经验：%d / %d" % [level, current, required]
 
 func _on_equipment_changed(equipment: Dictionary) -> void:
 	equipment_label.text = EquipmentFactory.describe(equipment)
@@ -127,4 +127,4 @@ func _on_upgrade_button_pressed(index: int) -> void:
 
 func _on_run_ended(kills: int, gold: int) -> void:
 	game_over_label.visible = true
-	game_over_label.text = "Run Over\nKills: %d\nGold: %d" % [kills, gold]
+	game_over_label.text = "本局结束\n击杀：%d\n金币：%d" % [kills, gold]

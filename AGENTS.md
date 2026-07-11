@@ -35,6 +35,12 @@ Use this validation after gameplay script changes when possible.
 - Use PascalCase for node names and class names where Godot convention expects it.
 - Prefer data dictionaries only for prototype-stage content; promote them to Resources or typed scripts when the structure stabilizes.
 
+## In-Game Text Language
+
+All player-facing in-game text must be Simplified Chinese by default. This includes HUD labels, upgrade names/descriptions, equipment names, rarity names, affix labels, pickup messages, game-over text, button labels, tutorial text, and combat prompts.
+
+Internal ids, file names, signal names, variable names, and commit messages may remain English.
+
 ## Git and Push Log Rule
 
 Record successful GitHub pushes for substantive work in:

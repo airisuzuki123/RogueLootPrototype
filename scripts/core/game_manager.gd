@@ -26,33 +26,33 @@ var latest_loot_message: String = ""
 const UPGRADE_POOL := [
 	{
 		"id": "damage",
-		"title": "Stronger Shots",
-		"description": "+5 projectile damage"
+		"title": "强化弹体",
+		"description": "投射物伤害 +5"
 	},
 	{
 		"id": "attack_speed",
-		"title": "Faster Casting",
-		"description": "Shoot 18% faster"
+		"title": "快速施放",
+		"description": "射击间隔缩短 18%"
 	},
 	{
 		"id": "move_speed",
-		"title": "Swift Boots",
-		"description": "+35 movement speed"
+		"title": "迅捷步伐",
+		"description": "移动速度 +35"
 	},
 	{
 		"id": "max_health",
-		"title": "Vitality",
-		"description": "+25 max health and heal 25"
+		"title": "生命强化",
+		"description": "最大生命 +25，并回复 25 生命"
 	},
 	{
 		"id": "heal",
-		"title": "Second Wind",
-		"description": "Restore 40 health"
+		"title": "喘息之机",
+		"description": "回复 40 生命"
 	},
 	{
 		"id": "multishot",
-		"title": "Split Shot",
-		"description": "+1 projectile per attack"
+		"title": "分裂射击",
+		"description": "每次攻击投射物 +1"
 	}
 ]
 
@@ -91,7 +91,7 @@ func add_gold(amount: int) -> void:
 		return
 	gold += amount
 	gold_changed.emit(gold)
-	_set_loot_message("+%d Gold" % amount)
+	_set_loot_message("金币 +%d" % amount)
 
 func pickup_equipment(equipment: Dictionary) -> void:
 	if is_run_over or equipment.is_empty():
@@ -101,7 +101,7 @@ func pickup_equipment(equipment: Dictionary) -> void:
 	if player != null and player.has_method("equip_weapon"):
 		player.equip_weapon(equipped_weapon, old_weapon)
 	equipment_changed.emit(equipped_weapon)
-	_set_loot_message("Equipped %s" % equipment["name"])
+	_set_loot_message("已装备：%s" % equipment["name"])
 
 func register_kill() -> void:
 	if is_run_over:

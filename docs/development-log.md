@@ -2,6 +2,14 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Localize in-game text to Chinese
+
+- Added a repository rule that all player-facing in-game text must use Simplified Chinese by default.
+- Localized HUD labels, operation hints, upgrade titles/descriptions, pickup messages, equipment names, rarity names, affix labels, and game-over text.
+- Kept internal ids, file names, signal names, and variable names in English.
+- Validation: ran Godot 4.6.1 headless for 5 seconds with no script errors.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Add enemy health bars
 
 - Added enemy health bars that appear after enemies take damage.

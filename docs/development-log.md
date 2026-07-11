@@ -2,6 +2,15 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Add enemy archetypes
+
+- Added enemy archetypes: normal, fast runner, tank, and ranged attacker.
+- Added enemy projectile scene and script for ranged enemies.
+- Added weighted enemy spawning with level-based unlocks.
+- Updated README and design notes with the current enemy ecology.
+- Validation: ran Godot 4.6.1 headless for 6 seconds with no script errors.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Localize in-game text to Chinese
 
 - Added a repository rule that all player-facing in-game text must use Simplified Chinese by default.

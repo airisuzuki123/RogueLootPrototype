@@ -12,6 +12,12 @@ const HUD_SCENE := preload("res://scenes/hud.tscn")
 @export var minimum_spawn_interval: float = 0.55
 
 var player: CharacterBody2D
+var enemy_spawn_table: Array[Dictionary] = [
+	{"type": "grunt", "weight": 60, "min_level": 1},
+	{"type": "runner", "weight": 25, "min_level": 1},
+	{"type": "tank", "weight": 12, "min_level": 2},
+	{"type": "ranged", "weight": 18, "min_level": 3}
+]
 
 func _ready() -> void:
 	GameManager.reset_run()
@@ -35,6 +41,7 @@ func _spawn_enemy() -> void:
 	if player == null or not is_instance_valid(player) or GameManager.is_run_over or GameManager.is_upgrade_pending:
 		return
 	var enemy := ENEMY_SCENE.instantiate()
+	enemy.configure(_roll_enemy_type())
 	enemy.target = player
 	enemy.global_position = _random_spawn_position_around(player.global_position, spawn_radius)
 	add_child(enemy)
@@ -55,3 +62,19 @@ func _on_run_ended(_kills: int, _gold: int) -> void:
 func _update_spawn_interval() -> void:
 	var target_interval := maxf(minimum_spawn_interval, 1.25 - (GameManager.level - 1) * spawn_interval_reduction_per_level)
 	enemy_spawn_timer.wait_time = target_interval
+
+func _roll_enemy_type() -> String:
+	var available: Array[Dictionary] = []
+	var total_weight := 0
+	for entry in enemy_spawn_table:
+		if GameManager.level < int(entry["min_level"]):
+			continue
+		available.append(entry)
+		total_weight += int(entry["weight"])
+	var roll := randi_range(1, max(1, total_weight))
+	var cursor := 0
+	for entry in available:
+		cursor += int(entry["weight"])
+		if roll <= cursor:
+			return str(entry["type"])
+	return "grunt"

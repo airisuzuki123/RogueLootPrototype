@@ -1,6 +1,7 @@
 extends CharacterBody2D
 
 const PROJECTILE_SCENE := preload("res://scenes/projectile.tscn")
+const CombatFeedback := preload("res://scripts/effects/combat_feedback.gd")
 
 @export var move_speed: float = 260.0
 @export var max_health: int = 100
@@ -8,13 +9,16 @@ const PROJECTILE_SCENE := preload("res://scenes/projectile.tscn")
 @export var projectile_damage: int = 10
 @export var projectile_count: int = 1
 @export var screen_margin: float = 16.0
+@export var invulnerability_duration: float = 0.55
 
 var health: int
 var fire_cooldown: float = 0.0
+var invulnerability_timer: float = 0.0
 var base_fire_interval: float
 var equipment_damage_bonus: int = 0
 var equipment_attack_speed_bonus: int = 0
 var equipment_health_bonus: int = 0
+@onready var visual: Polygon2D = $Visual
 
 func _ready() -> void:
 	health = max_health
@@ -24,6 +28,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if GameManager.is_run_over or GameManager.is_upgrade_pending:
 		return
+	_update_invulnerability(delta)
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	velocity = direction * move_speed
 	move_and_slide()
@@ -31,10 +36,13 @@ func _physics_process(delta: float) -> void:
 	_update_auto_attack(delta)
 
 func take_damage(amount: int) -> void:
-	if GameManager.is_run_over or GameManager.is_upgrade_pending:
+	if GameManager.is_run_over or GameManager.is_upgrade_pending or invulnerability_timer > 0.0:
 		return
+	invulnerability_timer = invulnerability_duration
 	health -= amount
 	GameManager.update_player_health(max(health, 0), max_health)
+	CombatFeedback.show_damage(get_tree().current_scene, global_position, amount, Color(1, 0.25, 0.25, 1))
+	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1, 0.2, 0.2, 0.9), 1.3)
 	if health <= 0:
 		GameManager.end_run()
 		queue_free()
@@ -130,3 +138,10 @@ func _remove_equipment_stats(equipment: Dictionary) -> void:
 func _calculate_fire_interval() -> float:
 	var speed_multiplier := 1.0 + float(equipment_attack_speed_bonus) / 100.0
 	return max(0.14, base_fire_interval / max(speed_multiplier, 0.1))
+
+func _update_invulnerability(delta: float) -> void:
+	if invulnerability_timer <= 0.0:
+		visual.modulate.a = 1.0
+		return
+	invulnerability_timer -= delta
+	visual.modulate.a = 0.35 if int(invulnerability_timer * 20.0) % 2 == 0 else 1.0

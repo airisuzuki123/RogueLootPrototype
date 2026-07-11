@@ -1,55 +1,68 @@
 # Repository Guidelines
 
-## 项目结构与模块组织
+## Project Structure
 
-本项目是 Godot 4 + GDScript 的 2D 肉鸽刷宝原型。
+This is a Godot 4.6 roguelite loot prototype.
 
-- `scenes/` 存放 Godot 场景。
-- `scripts/core/` 存放全局流程和管理器。
-- `scripts/entities/` 存放玩家、敌人、投射物等实体。
-- `scripts/items/` 存放掉落物、装备、道具。
-- `docs/` 存放设计文档和学习记录。
+- `scenes/` stores Godot scenes.
+- `scripts/core/` stores global managers and shared gameplay systems.
+- `scripts/entities/` stores player, enemy, projectile, and combat entity logic.
+- `scripts/items/` stores loot, equipment, and item generation logic.
+- `scripts/effects/` stores lightweight combat feedback scripts.
+- `docs/` stores design notes, reference analysis, and development logs.
 
-新增功能优先按玩法模块组织，避免把战斗、UI、掉落逻辑混在一个脚本中。
+Keep gameplay systems small and explicit. Avoid mixing combat, UI, loot, and save/progression logic in the same script unless the feature is still a temporary prototype.
 
-## 构建、测试与开发命令
+## Development and Validation
 
-当前项目使用 Godot 编辑器运行。
+Open the project with Godot 4.6.x:
 
-- 打开项目：用 Godot 4.x 打开 `project.godot`。
-- 运行游戏：在 Godot 中运行主场景 `scenes/main.tscn`。
-- 导出构建：配置 Godot Export Presets 后再导出到 `builds/`。
+- Project file: `project.godot`
+- Main scene: `scenes/main.tscn`
 
-项目暂未配置自动化测试。后续可引入 GUT 等 Godot 测试框架。
+Command-line validation on this machine:
 
-## 编码风格与命名规范
+```powershell
+& "C:\Godot_v4.6.1-stable_mono_win64\Godot_v4.6.1-stable_mono_win64_console.exe" --headless --path "D:\CODEX\RogueLootPrototype" --quit-after 5
+```
 
-- GDScript 使用 1 个 Tab 缩进，遵循 Godot 默认格式。
-- 文件名使用小写蛇形命名，例如 `game_manager.gd`。
-- 场景名使用小写蛇形命名，例如 `loot_drop.tscn`。
-- 类和节点名称使用清晰的 PascalCase，例如 `GameManager`、`Player`。
-- 单个脚本只负责一个主要职责。
+Use this validation after gameplay script changes when possible.
 
-## 测试规范
+## Coding Style
 
-新增玩法时至少手动验证：
+- Use GDScript with Godot default indentation.
+- Use snake_case for file names, functions, variables, and scene paths.
+- Use PascalCase for node names and class names where Godot convention expects it.
+- Prefer data dictionaries only for prototype-stage content; promote them to Resources or typed scripts when the structure stabilizes.
 
-- 主场景可以正常启动。
-- 玩家移动、敌人生成、击杀和掉落没有报错。
-- 新增数值不会导致明显失衡或死循环。
+## Git and Push Log Rule
 
-后续如果加入自动化测试，测试文件放在 `tests/`，并与脚本模块对应。
+Every successful GitHub push must be recorded in:
 
-## 提交与 Pull Request 规范
+```text
+docs/development-log.md
+```
 
-当前是个人原型项目，提交应保持小而清晰。
+Each entry must include:
 
-- 提交信息使用动词开头，例如 `Add enemy spawner`。
-- 每次提交只包含一个明确改动。
-- 涉及玩法数值时，在说明中记录改动前后的差异。
-- 涉及视觉效果时，附截图或短视频更便于回看。
+- Date
+- Commit hash
+- Commit message
+- Main changes
+- Validation performed
+- Push result
 
-## Agent 使用说明
+Do this after the push succeeds. If a push fails, do not record it as successful.
 
-自动化代理修改项目时，应优先保持 Godot 项目可打开、主场景可运行。新增资源路径时同步检查 `preload()`、场景引用和 Autoload 配置。
+## Commit Guidelines
 
+- Use focused commits.
+- Commit messages should start with a verb, for example `Add combat feedback pass`.
+- Keep Godot-generated `.uid` files when Godot creates them for scripts.
+- Keep `.gitattributes` updated when new Godot text file types are introduced.
+
+## Agent Notes
+
+Before modifying files, check `git status --short --branch`.
+After implementation, validate with Godot when the change touches scenes, scripts, preload paths, or Autoload behavior.
+After a successful push, update `docs/development-log.md` and commit that log update separately only if it was not included in the same change.

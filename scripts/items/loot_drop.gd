@@ -11,7 +11,7 @@ var equipment: Dictionary = {}
 
 func _ready() -> void:
 	if randf() <= _get_scaled_equipment_chance():
-		equipment = EquipmentFactory.roll_weapon(source_level)
+		equipment = EquipmentFactory.roll_equipment(source_level)
 		$Visual.color = equipment["color"]
 	body_entered.connect(_on_body_entered)
 

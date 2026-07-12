@@ -25,6 +25,7 @@ var inventory_equip_button: Button
 var inventory_salvage_button: Button
 var inventory_items: Array = []
 var selected_inventory_index: int = -1
+var equipped_items: Dictionary = {}
 var upgrade_panel: PanelContainer
 var upgrade_list: VBoxContainer
 var game_over_label: Label
@@ -82,7 +83,7 @@ func _build_ui() -> void:
 	equipment_choice_panel.add_child(equipment_choice_list)
 
 	var equipment_title := Label.new()
-	equipment_title.text = "发现武器"
+	equipment_title.text = "发现装备"
 	equipment_choice_list.add_child(equipment_title)
 
 	var comparison_row := HBoxContainer.new()
@@ -108,7 +109,7 @@ func _build_ui() -> void:
 	equipment_choice_list.add_child(equipment_button_row)
 
 	equip_button = Button.new()
-	equip_button.text = "装备新武器"
+	equip_button.text = "装备新品"
 	equip_button.custom_minimum_size = Vector2(180, 44)
 	equip_button.pressed.connect(_on_equip_button_pressed)
 	equipment_button_row.add_child(equip_button)
@@ -155,7 +156,7 @@ func _refresh_all() -> void:
 	_on_enemy_killed(GameManager.kills)
 	_on_experience_changed(GameManager.experience, GameManager.experience_to_next_level, GameManager.level)
 	_on_health_changed(GameManager.player_health, GameManager.player_max_health)
-	_on_equipment_changed(GameManager.equipped_weapon)
+	_on_equipment_changed(GameManager.equipped_items)
 	_on_loot_message_changed(GameManager.latest_loot_message)
 	_on_inventory_changed(GameManager.get_inventory_items())
 
@@ -180,8 +181,10 @@ func _on_health_changed(current: int, maximum: int) -> void:
 func _on_experience_changed(current: int, required: int, level: int) -> void:
 	experience_label.text = "等级 %d  经验：%d / %d" % [level, current, required]
 
-func _on_equipment_changed(equipment: Dictionary) -> void:
-	equipment_label.text = EquipmentFactory.describe(equipment)
+func _on_equipment_changed(new_equipped_items: Dictionary) -> void:
+	equipped_items = new_equipped_items.duplicate(true)
+	equipment_label.text = EquipmentFactory.describe_loadout(equipped_items)
+	_refresh_inventory_panel()
 
 func _on_loot_message_changed(message: String) -> void:
 	loot_message_label.text = message
@@ -202,7 +205,7 @@ func _on_inventory_open_changed(is_open: bool) -> void:
 
 func _on_equipment_choice_requested(candidate: Dictionary, current: Dictionary, salvage_value: int) -> void:
 	current_weapon_label.text = "当前\n%s" % EquipmentFactory.describe_with_score(current)
-	candidate_weapon_label.text = "新武器\n%s" % EquipmentFactory.describe_with_score(candidate)
+	candidate_weapon_label.text = "新装备\n%s" % EquipmentFactory.describe_with_score(candidate)
 	equipment_delta_label.text = EquipmentFactory.get_comparison_summary(candidate, current)
 	salvage_button.text = "保留当前，分解 +%d 金币" % salvage_value
 	equipment_choice_panel.visible = true
@@ -344,25 +347,29 @@ func _refresh_inventory_detail() -> void:
 	inventory_salvage_button.disabled = not has_selection
 	if not has_selection:
 		inventory_recommendation_label.text = "背包为空"
-		current_inventory_label.text = "当前\n%s" % EquipmentFactory.describe_with_score(GameManager.equipped_weapon)
+		current_inventory_label.text = "当前装备\n%s" % EquipmentFactory.describe_loadout(equipped_items)
 		selected_inventory_label.text = "选中\n无"
-		inventory_summary_label.text = "拾取到的武器会自动放入背包。"
+		inventory_summary_label.text = "拾取到的装备会自动放入背包。"
 		inventory_salvage_button.text = "分解"
 		return
 	var equipment: Dictionary = inventory_items[selected_inventory_index]
-	inventory_recommendation_label.text = EquipmentFactory.get_recommendation_text(equipment, GameManager.equipped_weapon)
-	current_inventory_label.text = "当前\n%s" % EquipmentFactory.describe_with_score(GameManager.equipped_weapon)
+	var current_equipment := _get_current_equipment_for(equipment)
+	var slot_label := EquipmentFactory.get_slot_label(str(equipment.get("slot", "weapon")))
+	inventory_recommendation_label.text = EquipmentFactory.get_recommendation_text(equipment, current_equipment)
+	current_inventory_label.text = "当前%s\n%s" % [slot_label, EquipmentFactory.describe_with_score(current_equipment)]
 	selected_inventory_label.text = "选中\n%s" % EquipmentFactory.describe_with_score(equipment)
-	inventory_summary_label.text = "变化\n%s" % EquipmentFactory.get_comparison_summary(equipment, GameManager.equipped_weapon)
+	inventory_summary_label.text = "变化\n%s" % EquipmentFactory.get_comparison_summary(equipment, current_equipment)
 	inventory_salvage_button.text = "分解 +%d 金币" % EquipmentFactory.get_salvage_value(equipment)
 
 func _get_inventory_item_button_text(equipment: Dictionary, is_selected: bool) -> String:
 	var prefix := ">" if is_selected else " "
+	var slot_label := EquipmentFactory.get_slot_label(str(equipment.get("slot", "weapon")))
 	var form_name := EquipmentFactory.get_form_name(equipment).replace("法杖", "")
-	var score_delta := EquipmentFactory.get_score_delta_label(equipment, GameManager.equipped_weapon)
-	return "%s %s  [%s]\n%s | 等级 %d | 评分 %d (%s)" % [
+	var score_delta := EquipmentFactory.get_score_delta_label(equipment, _get_current_equipment_for(equipment))
+	return "%s %s  [%s/%s]\n%s | 等级 %d | 评分 %d (%s)" % [
 		prefix,
-		str(equipment.get("name", "未知武器")),
+		str(equipment.get("name", "未知装备")),
+		slot_label,
 		form_name,
 		str(equipment.get("rarity", "普通")),
 		int(equipment.get("level", 1)),
@@ -382,3 +389,7 @@ func _on_inventory_salvage_pressed() -> void:
 
 func _on_inventory_close_pressed() -> void:
 	GameManager.set_inventory_open(false)
+
+func _get_current_equipment_for(equipment: Dictionary) -> Dictionary:
+	var slot_id := str(equipment.get("slot", "weapon"))
+	return equipped_items.get(slot_id, {})

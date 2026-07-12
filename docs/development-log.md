@@ -2,6 +2,17 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Add multi-slot equipment
+
+- Added weapon, armor, and accessory equipment slots with slot-specific affix pools.
+- Changed equipment drops to roll across the supported slot types instead of only weapons.
+- Updated equipped state to track one item per slot and return replaced items to the backpack.
+- Updated player equipment application so only weapon replacements change weapon form while all slots can apply affix stats.
+- Updated the backpack and HUD to show the full loadout and compare selected equipment against the currently equipped item in the same slot.
+- Updated README and design notes with the current multi-slot equipment flow.
+- Validation: ran `git diff --check` and Godot 4.6.1 headless for 5 seconds outside the sandbox with no script errors before committing.
+- Push result: first push attempt failed due to connection reset; second attempt pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Improve inventory readability
 
 - Added recommendation text for selected backpack equipment.

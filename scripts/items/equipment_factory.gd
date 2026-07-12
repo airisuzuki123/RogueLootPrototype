@@ -7,6 +7,12 @@ const RARITIES := [
 	{"name": "稀有", "color": Color(1.0, 0.85, 0.2), "weight": 7, "affixes": 3, "power": 1.6, "salvage_base": 6}
 ]
 
+const EQUIPMENT_SLOTS := [
+	{"id": "weapon", "label": "武器", "base_name": "法杖", "weight": 58},
+	{"id": "armor", "label": "护甲", "base_name": "战甲", "weight": 25},
+	{"id": "accessory", "label": "饰品", "base_name": "护符", "weight": 17}
+]
+
 const AFFIXES := [
 	{"id": "damage", "label": "伤害", "min": 3, "max": 8},
 	{"id": "max_health", "label": "最大生命", "min": 10, "max": 25},
@@ -17,6 +23,12 @@ const AFFIXES := [
 	{"id": "pierce", "label": "穿透", "min": 1, "max": 1, "level_scale": false},
 	{"id": "explosion_radius", "label": "爆裂范围", "min": 18, "max": 32}
 ]
+
+const SLOT_AFFIXES := {
+	"weapon": ["damage", "attack_speed", "critical_chance", "projectile_count", "pierce", "explosion_radius"],
+	"armor": ["max_health", "move_speed", "attack_speed"],
+	"accessory": ["critical_chance", "attack_speed", "move_speed", "projectile_count", "pierce", "explosion_radius"]
+}
 
 const WEAPON_FORMS := [
 	{
@@ -58,14 +70,23 @@ const WEAPON_FORMS := [
 	}
 ]
 
+static func roll_equipment(enemy_level: int = 1) -> Dictionary:
+	var slot := _roll_equipment_slot()
+	return _roll_equipment_for_slot(str(slot["id"]), enemy_level)
+
 static func roll_weapon(enemy_level: int = 1) -> Dictionary:
+	return _roll_equipment_for_slot("weapon", enemy_level)
+
+static func _roll_equipment_for_slot(slot_id: String, enemy_level: int = 1) -> Dictionary:
 	var rarity := _roll_rarity()
-	var form := _roll_weapon_form()
+	var slot := _get_slot_template(slot_id)
+	var is_weapon := slot_id == "weapon"
+	var form := _roll_weapon_form() if is_weapon else {}
 	var affix_count: int = rarity["affixes"]
-	var affix_pool := AFFIXES.duplicate(true)
+	var affix_pool := _get_affix_pool_for_slot(slot_id)
 	affix_pool.shuffle()
 	var affixes: Array = []
-	var score := int(form.get("score", 0))
+	var score := int(form.get("score", 0)) if is_weapon else 8
 	for index in range(min(affix_count, affix_pool.size())):
 		var template: Dictionary = affix_pool[index]
 		var value := randi_range(template["min"], template["max"])
@@ -78,9 +99,13 @@ static func roll_weapon(enemy_level: int = 1) -> Dictionary:
 			"value": value
 		})
 		score += _score_affix(template["id"], value)
+	var equipment_name := "%s%s" % [rarity["name"], slot["base_name"]]
+	if is_weapon:
+		equipment_name = "%s%s" % [rarity["name"], form["name"]]
 	var equipment := {
-		"name": "%s%s" % [rarity["name"], form["name"]],
-		"slot": "weapon",
+		"name": equipment_name,
+		"slot": slot_id,
+		"slot_label": slot["label"],
 		"level": enemy_level,
 		"form": form,
 		"rarity": rarity["name"],
@@ -93,8 +118,9 @@ static func roll_weapon(enemy_level: int = 1) -> Dictionary:
 
 static func describe(equipment: Dictionary) -> String:
 	if equipment.is_empty():
-		return "武器：无"
+		return "装备：无"
 	var lines := ["%s (%s)" % [equipment["name"], equipment["rarity"]]]
+	lines.append("类型：%s" % get_slot_label(str(equipment.get("slot", "weapon"))))
 	lines.append("等级：%d" % int(equipment.get("level", 1)))
 	var form: Dictionary = equipment.get("form", {})
 	if not form.is_empty():
@@ -111,8 +137,19 @@ static func describe(equipment: Dictionary) -> String:
 
 static func describe_with_score(equipment: Dictionary) -> String:
 	if equipment.is_empty():
-		return "武器：无\n评分：0"
+		return "装备：无\n评分：0"
 	return "%s\n评分：%d" % [describe(equipment), get_score(equipment)]
+
+static func describe_loadout(equipped_items: Dictionary) -> String:
+	var lines := []
+	for slot in EQUIPMENT_SLOTS:
+		var slot_id := str(slot["id"])
+		var equipment: Dictionary = equipped_items.get(slot_id, {})
+		if equipment.is_empty():
+			lines.append("%s：无" % slot["label"])
+		else:
+			lines.append("%s：%s 评分 %d" % [slot["label"], equipment["name"], get_score(equipment)])
+	return "\n".join(lines)
 
 static func get_score(equipment: Dictionary) -> int:
 	return int(equipment.get("score", 0))
@@ -145,6 +182,12 @@ static func get_rarity_rank(equipment: Dictionary) -> int:
 			return index
 	return 0
 
+static func get_slot_label(slot_id: String) -> String:
+	for slot in EQUIPMENT_SLOTS:
+		if str(slot["id"]) == slot_id:
+			return str(slot["label"])
+	return "装备"
+
 static func should_sort_before(left: Dictionary, right: Dictionary) -> bool:
 	var left_rarity := get_rarity_rank(left)
 	var right_rarity := get_rarity_rank(right)
@@ -169,6 +212,8 @@ static func get_score_delta_text(candidate: Dictionary, current: Dictionary) -> 
 	return "评分变化：%d" % delta
 
 static func get_form_name(equipment: Dictionary) -> String:
+	if str(equipment.get("slot", "weapon")) != "weapon":
+		return get_slot_label(str(equipment.get("slot", "")))
 	var form: Dictionary = equipment.get("form", {})
 	if form.is_empty():
 		return "无形态"
@@ -185,7 +230,7 @@ static func get_recommendation_text(candidate: Dictionary, current: Dictionary) 
 	if not primary_change.is_empty():
 		change_suffix = "，%s" % primary_change
 	if current.is_empty():
-		return "推荐装备：当前没有武器%s" % change_suffix
+		return "推荐装备：当前槽位为空%s" % change_suffix
 	if score_delta >= 15:
 		return "推荐装备：评分 %s%s" % [get_score_delta_label(candidate, current), change_suffix]
 	if score_delta >= 0:
@@ -235,6 +280,32 @@ static func _roll_weapon_form() -> Dictionary:
 		if roll <= cursor:
 			return form.duplicate(true)
 	return WEAPON_FORMS[0].duplicate(true)
+
+static func _roll_equipment_slot() -> Dictionary:
+	var total_weight := 0
+	for slot in EQUIPMENT_SLOTS:
+		total_weight += int(slot["weight"])
+	var roll := randi_range(1, total_weight)
+	var cursor := 0
+	for slot in EQUIPMENT_SLOTS:
+		cursor += int(slot["weight"])
+		if roll <= cursor:
+			return slot
+	return EQUIPMENT_SLOTS[0]
+
+static func _get_slot_template(slot_id: String) -> Dictionary:
+	for slot in EQUIPMENT_SLOTS:
+		if str(slot["id"]) == slot_id:
+			return slot
+	return EQUIPMENT_SLOTS[0]
+
+static func _get_affix_pool_for_slot(slot_id: String) -> Array:
+	var allowed_ids: Array = SLOT_AFFIXES.get(slot_id, SLOT_AFFIXES["weapon"])
+	var pool: Array = []
+	for affix in AFFIXES:
+		if allowed_ids.has(str(affix["id"])):
+			pool.append(affix.duplicate(true))
+	return pool
 
 static func _get_rarity_salvage_base(rarity_name: String) -> int:
 	for rarity in RARITIES:

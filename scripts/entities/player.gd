@@ -85,8 +85,13 @@ func apply_upgrade(upgrade_id: String) -> void:
 			projectile_count += 1
 
 func equip_weapon(new_weapon: Dictionary, old_weapon: Dictionary = {}) -> void:
-	_remove_equipment_stats(old_weapon)
-	_apply_equipment_stats(new_weapon)
+	equip_item(new_weapon, old_weapon)
+
+func equip_item(new_item: Dictionary, old_item: Dictionary = {}) -> void:
+	if not old_item.is_empty():
+		_remove_equipment_stats(old_item)
+	if not new_item.is_empty():
+		_apply_equipment_stats(new_item)
 	GameManager.update_player_health(health, max_health)
 
 func _update_auto_attack(delta: float) -> void:
@@ -130,7 +135,8 @@ func _clamp_to_screen() -> void:
 	global_position.y = clampf(global_position.y, screen_margin, viewport_rect.size.y - screen_margin)
 
 func _apply_equipment_stats(equipment: Dictionary) -> void:
-	_apply_weapon_form(equipment.get("form", {}))
+	if str(equipment.get("slot", "weapon")) == "weapon":
+		_apply_weapon_form(equipment.get("form", {}))
 	for affix in equipment.get("affixes", []):
 		match affix["id"]:
 			"damage":
@@ -155,7 +161,8 @@ func _apply_equipment_stats(equipment: Dictionary) -> void:
 	fire_interval = _calculate_fire_interval()
 
 func _remove_equipment_stats(equipment: Dictionary) -> void:
-	_reset_weapon_form()
+	if str(equipment.get("slot", "weapon")) == "weapon":
+		_reset_weapon_form()
 	for affix in equipment.get("affixes", []):
 		match affix["id"]:
 			"damage":

@@ -6,7 +6,7 @@ signal gold_changed(total: int)
 signal enemy_killed(total: int)
 signal health_changed(current: int, maximum: int)
 signal experience_changed(current: int, required: int, level: int)
-signal equipment_changed(equipment: Dictionary)
+signal equipment_changed(equipped_items: Dictionary)
 signal loot_message_changed(message: String)
 signal equipment_choice_requested(candidate: Dictionary, current: Dictionary, salvage_value: int)
 signal inventory_changed(items: Array)
@@ -30,7 +30,11 @@ var pending_upgrade_choices: Array = []
 var pending_equipment_choice: Dictionary = {}
 var pending_equipment_salvage_value: int = 0
 var inventory: Array[Dictionary] = []
-var equipped_weapon: Dictionary = {}
+var equipped_items := {
+	"weapon": {},
+	"armor": {},
+	"accessory": {}
+}
 var latest_loot_message: String = ""
 
 const UPGRADE_POOL := [
@@ -83,14 +87,14 @@ func reset_run() -> void:
 	pending_equipment_choice.clear()
 	pending_equipment_salvage_value = 0
 	inventory.clear()
-	equipped_weapon.clear()
+	_reset_equipped_items()
 	latest_loot_message = ""
 	gold_changed.emit(gold)
 	enemy_killed.emit(kills)
 	experience_changed.emit(experience, experience_to_next_level, level)
 	inventory_changed.emit(inventory)
 	inventory_open_changed.emit(is_inventory_open)
-	equipment_changed.emit(equipped_weapon)
+	equipment_changed.emit(equipped_items)
 	loot_message_changed.emit(latest_loot_message)
 
 func register_player(player_node: Node) -> void:
@@ -136,21 +140,24 @@ func set_inventory_open(open: bool) -> void:
 func equip_inventory_equipment(index: int) -> void:
 	if index < 0 or index >= inventory.size():
 		return
-	var new_weapon := inventory[index].duplicate(true)
+	var new_equipment := inventory[index].duplicate(true)
+	var slot_id := str(new_equipment.get("slot", "weapon"))
 	inventory.remove_at(index)
-	var old_weapon := equipped_weapon.duplicate(true)
-	if not old_weapon.is_empty():
-		inventory.append(old_weapon)
-	equipped_weapon = new_weapon
-	if player != null and player.has_method("equip_weapon"):
-		player.equip_weapon(equipped_weapon, old_weapon)
+	var old_equipment: Dictionary = equipped_items.get(slot_id, {}).duplicate(true)
+	if not old_equipment.is_empty():
+		inventory.append(old_equipment)
+	equipped_items[slot_id] = new_equipment
+	if player != null and player.has_method("equip_item"):
+		player.equip_item(new_equipment, old_equipment)
+	elif player != null and player.has_method("equip_weapon"):
+		player.equip_weapon(new_equipment, old_equipment)
 	_sort_inventory()
 	inventory_changed.emit(inventory)
-	equipment_changed.emit(equipped_weapon)
-	if old_weapon.is_empty():
-		_set_loot_message("已装备：%s" % equipped_weapon["name"])
+	equipment_changed.emit(equipped_items)
+	if old_equipment.is_empty():
+		_set_loot_message("已装备：%s" % new_equipment["name"])
 	else:
-		_set_loot_message("已装备：%s，旧武器放入背包" % equipped_weapon["name"])
+		_set_loot_message("已装备：%s，原%s放入背包" % [new_equipment["name"], EquipmentFactory.get_slot_label(slot_id)])
 
 func salvage_inventory_equipment(index: int) -> void:
 	if index < 0 or index >= inventory.size():
@@ -170,22 +177,30 @@ func get_inventory_items() -> Array:
 func get_inventory_count() -> int:
 	return inventory.size()
 
+func get_equipped_item(slot_id: String) -> Dictionary:
+	return equipped_items.get(slot_id, {}).duplicate(true)
+
 func _legacy_pickup_equipment_choice(equipment: Dictionary) -> void:
 	is_equipment_choice_pending = true
 	pending_equipment_choice = equipment.duplicate(true)
 	pending_equipment_salvage_value = _calculate_salvage_value(pending_equipment_choice)
-	_set_loot_message("发现武器：%s" % pending_equipment_choice["name"])
-	equipment_choice_requested.emit(pending_equipment_choice, equipped_weapon, pending_equipment_salvage_value)
+	var slot_id := str(pending_equipment_choice.get("slot", "weapon"))
+	_set_loot_message("发现装备：%s" % pending_equipment_choice["name"])
+	equipment_choice_requested.emit(pending_equipment_choice, get_equipped_item(slot_id), pending_equipment_salvage_value)
 
 func equip_pending_equipment() -> void:
 	if is_run_over or pending_equipment_choice.is_empty():
 		return
-	var old_weapon := equipped_weapon.duplicate(true)
-	equipped_weapon = pending_equipment_choice.duplicate(true)
-	if player != null and player.has_method("equip_weapon"):
-		player.equip_weapon(equipped_weapon, old_weapon)
-	equipment_changed.emit(equipped_weapon)
-	_set_loot_message("已装备：%s" % equipped_weapon["name"])
+	var new_equipment := pending_equipment_choice.duplicate(true)
+	var slot_id := str(new_equipment.get("slot", "weapon"))
+	var old_equipment: Dictionary = equipped_items.get(slot_id, {}).duplicate(true)
+	equipped_items[slot_id] = new_equipment
+	if player != null and player.has_method("equip_item"):
+		player.equip_item(new_equipment, old_equipment)
+	elif player != null and player.has_method("equip_weapon"):
+		player.equip_weapon(new_equipment, old_equipment)
+	equipment_changed.emit(equipped_items)
+	_set_loot_message("已装备：%s" % new_equipment["name"])
 	_clear_pending_equipment_choice()
 
 func salvage_pending_equipment() -> void:
@@ -254,6 +269,13 @@ func _clear_pending_equipment_choice() -> void:
 
 func _calculate_salvage_value(equipment: Dictionary) -> int:
 	return EquipmentFactory.get_salvage_value(equipment)
+
+func _reset_equipped_items() -> void:
+	equipped_items = {
+		"weapon": {},
+		"armor": {},
+		"accessory": {}
+	}
 
 func _sort_inventory() -> void:
 	inventory.sort_custom(_is_inventory_item_before)

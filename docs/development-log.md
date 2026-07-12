@@ -2,6 +2,15 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Document stage 2 closeout plan
+
+- Added a fixed staged development plan covering stages 1 through 5.
+- Marked stage 2 as closeout and acceptance preparation without changing the existing development order.
+- Added a stage 2 acceptance checklist for backpack pause, equipment sorting, six-slot equipment flow, salvage, affixes, and weapon-form specializations.
+- Updated README with the current stage 2 closeout status and the next-step rule to finish acceptance before stage 3.
+- Validation: ran `git diff --check` and Godot 4.6.1 headless outside the sandbox with no script errors before committing.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Polish inventory equipment icons
 
 - Added framed equipment icon styling for worn slots and backpack items.

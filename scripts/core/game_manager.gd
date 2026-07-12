@@ -1,5 +1,7 @@
 extends Node
 
+const EquipmentFactory := preload("res://scripts/items/equipment_factory.gd")
+
 signal gold_changed(total: int)
 signal enemy_killed(total: int)
 signal health_changed(current: int, maximum: int)
@@ -184,4 +186,4 @@ func _clear_pending_equipment_choice() -> void:
 	is_equipment_choice_pending = false
 
 func _calculate_salvage_value(equipment: Dictionary) -> int:
-	return max(1, int(ceil(float(equipment.get("score", 1)) / 8.0)))
+	return EquipmentFactory.get_salvage_value(equipment)

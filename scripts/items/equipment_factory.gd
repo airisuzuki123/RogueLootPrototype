@@ -2,9 +2,9 @@ class_name EquipmentFactory
 extends RefCounted
 
 const RARITIES := [
-	{"name": "普通", "color": Color(0.8, 0.8, 0.8), "weight": 70, "affixes": 1, "power": 1.0},
-	{"name": "魔法", "color": Color(0.35, 0.55, 1.0), "weight": 24, "affixes": 2, "power": 1.25},
-	{"name": "稀有", "color": Color(1.0, 0.85, 0.2), "weight": 6, "affixes": 3, "power": 1.6}
+	{"name": "普通", "color": Color(0.8, 0.8, 0.8), "weight": 68, "affixes": 1, "power": 1.0, "salvage_base": 1},
+	{"name": "魔法", "color": Color(0.35, 0.55, 1.0), "weight": 25, "affixes": 2, "power": 1.25, "salvage_base": 3},
+	{"name": "稀有", "color": Color(1.0, 0.85, 0.2), "weight": 7, "affixes": 3, "power": 1.6, "salvage_base": 6}
 ]
 
 const AFFIXES := [
@@ -78,7 +78,7 @@ static func roll_weapon(enemy_level: int = 1) -> Dictionary:
 			"value": value
 		})
 		score += _score_affix(template["id"], value)
-	return {
+	var equipment := {
 		"name": "%s%s" % [rarity["name"], form["name"]],
 		"slot": "weapon",
 		"form": form,
@@ -87,6 +87,8 @@ static func roll_weapon(enemy_level: int = 1) -> Dictionary:
 		"affixes": affixes,
 		"score": score
 	}
+	equipment["salvage_value"] = get_salvage_value(equipment)
+	return equipment
 
 static func describe(equipment: Dictionary) -> String:
 	if equipment.is_empty():
@@ -112,6 +114,16 @@ static func describe_with_score(equipment: Dictionary) -> String:
 
 static func get_score(equipment: Dictionary) -> int:
 	return int(equipment.get("score", 0))
+
+static func get_salvage_value(equipment: Dictionary) -> int:
+	if equipment.is_empty():
+		return 0
+	var stored_value := int(equipment.get("salvage_value", 0))
+	if stored_value > 0:
+		return stored_value
+	var rarity_base := _get_rarity_salvage_base(str(equipment.get("rarity", "")))
+	var score_value := int(ceil(float(get_score(equipment)) / 12.0))
+	return clampi(rarity_base + score_value, 1, 30)
 
 static func get_score_delta_text(candidate: Dictionary, current: Dictionary) -> String:
 	var delta := get_score(candidate) - get_score(current)
@@ -162,6 +174,12 @@ static func _roll_weapon_form() -> Dictionary:
 		if roll <= cursor:
 			return form.duplicate(true)
 	return WEAPON_FORMS[0].duplicate(true)
+
+static func _get_rarity_salvage_base(rarity_name: String) -> int:
+	for rarity in RARITIES:
+		if str(rarity["name"]) == rarity_name:
+			return int(rarity.get("salvage_base", 1))
+	return 1
 
 static func _score_affix(affix_id: String, value: int) -> int:
 	match affix_id:

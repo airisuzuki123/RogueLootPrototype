@@ -2,6 +2,15 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Tune equipment economy
+
+- Added rarity-based salvage values that also scale with equipment score.
+- Centralized salvage value calculation in `EquipmentFactory`.
+- Added level-scaled weapon drop chance and gold drop amount tuning.
+- Updated README and design notes with the current drop and economy rules.
+- Validation: ran Godot 4.6.1 headless for 5 seconds outside the sandbox with no script errors before committing.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Add equipment comparison summary
 
 - Added a core-change summary to weapon comparison, including form, score, damage, projectile count, pierce, burst radius, attack speed, critical chance, movement speed, and max health deltas.

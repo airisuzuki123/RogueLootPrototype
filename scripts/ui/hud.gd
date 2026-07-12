@@ -17,7 +17,9 @@ var equip_button: Button
 var salvage_button: Button
 var inventory_panel: PanelContainer
 var inventory_list: VBoxContainer
-var inventory_detail_label: Label
+var inventory_recommendation_label: Label
+var current_inventory_label: Label
+var selected_inventory_label: Label
 var inventory_summary_label: Label
 var inventory_equip_button: Button
 var inventory_salvage_button: Button
@@ -158,8 +160,13 @@ func _refresh_all() -> void:
 	_on_inventory_changed(GameManager.get_inventory_items())
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_B:
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	var key_event: InputEventKey = event as InputEventKey
+	if key_event.keycode == KEY_B:
 		GameManager.toggle_inventory_open()
+	elif key_event.keycode == KEY_ESCAPE and GameManager.is_inventory_open:
+		GameManager.set_inventory_open(false)
 
 func _on_gold_changed(total: int) -> void:
 	gold_label.text = "金币：%d" % total
@@ -233,8 +240,8 @@ func _on_run_ended(kills: int, gold: int) -> void:
 func _build_inventory_panel(root: Control) -> void:
 	inventory_panel = PanelContainer.new()
 	inventory_panel.visible = false
-	inventory_panel.position = Vector2(260, 80)
-	inventory_panel.custom_minimum_size = Vector2(760, 540)
+	inventory_panel.position = Vector2(200, 70)
+	inventory_panel.custom_minimum_size = Vector2(880, 560)
 	root.add_child(inventory_panel)
 
 	var panel_root := VBoxContainer.new()
@@ -247,7 +254,7 @@ func _build_inventory_panel(root: Control) -> void:
 
 	var title := Label.new()
 	title.text = "背包"
-	title.custom_minimum_size = Vector2(620, 28)
+	title.custom_minimum_size = Vector2(740, 28)
 	title_row.add_child(title)
 
 	var close_button := Button.new()
@@ -261,7 +268,7 @@ func _build_inventory_panel(root: Control) -> void:
 	panel_root.add_child(content_row)
 
 	var list_scroll := ScrollContainer.new()
-	list_scroll.custom_minimum_size = Vector2(320, 390)
+	list_scroll.custom_minimum_size = Vector2(320, 430)
 	content_row.add_child(list_scroll)
 
 	inventory_list = VBoxContainer.new()
@@ -269,17 +276,32 @@ func _build_inventory_panel(root: Control) -> void:
 	list_scroll.add_child(inventory_list)
 
 	var detail_column := VBoxContainer.new()
-	detail_column.custom_minimum_size = Vector2(390, 390)
+	detail_column.custom_minimum_size = Vector2(500, 430)
 	detail_column.add_theme_constant_override("separation", 10)
 	content_row.add_child(detail_column)
 
-	inventory_detail_label = Label.new()
-	inventory_detail_label.custom_minimum_size = Vector2(380, 190)
-	inventory_detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detail_column.add_child(inventory_detail_label)
+	inventory_recommendation_label = Label.new()
+	inventory_recommendation_label.custom_minimum_size = Vector2(500, 34)
+	inventory_recommendation_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	inventory_recommendation_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.45, 1.0))
+	detail_column.add_child(inventory_recommendation_label)
+
+	var comparison_row := HBoxContainer.new()
+	comparison_row.add_theme_constant_override("separation", 12)
+	detail_column.add_child(comparison_row)
+
+	current_inventory_label = Label.new()
+	current_inventory_label.custom_minimum_size = Vector2(240, 205)
+	current_inventory_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	comparison_row.add_child(current_inventory_label)
+
+	selected_inventory_label = Label.new()
+	selected_inventory_label.custom_minimum_size = Vector2(240, 205)
+	selected_inventory_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	comparison_row.add_child(selected_inventory_label)
 
 	inventory_summary_label = Label.new()
-	inventory_summary_label.custom_minimum_size = Vector2(380, 120)
+	inventory_summary_label.custom_minimum_size = Vector2(500, 110)
 	inventory_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detail_column.add_child(inventory_summary_label)
 
@@ -307,7 +329,11 @@ func _refresh_inventory_panel() -> void:
 		var equipment: Dictionary = inventory_items[index]
 		var button := Button.new()
 		button.text = _get_inventory_item_button_text(equipment, index == selected_inventory_index)
-		button.custom_minimum_size = Vector2(300, 58)
+		button.custom_minimum_size = Vector2(300, 64)
+		var rarity_color: Color = equipment.get("color", Color.WHITE)
+		button.add_theme_color_override("font_color", rarity_color)
+		button.add_theme_color_override("font_hover_color", rarity_color.lightened(0.16))
+		button.add_theme_color_override("font_pressed_color", rarity_color.lightened(0.24))
 		button.pressed.connect(_on_inventory_item_pressed.bind(index))
 		inventory_list.add_child(button)
 	_refresh_inventory_detail()
@@ -317,23 +343,31 @@ func _refresh_inventory_detail() -> void:
 	inventory_equip_button.disabled = not has_selection
 	inventory_salvage_button.disabled = not has_selection
 	if not has_selection:
-		inventory_detail_label.text = "背包为空"
+		inventory_recommendation_label.text = "背包为空"
+		current_inventory_label.text = "当前\n%s" % EquipmentFactory.describe_with_score(GameManager.equipped_weapon)
+		selected_inventory_label.text = "选中\n无"
 		inventory_summary_label.text = "拾取到的武器会自动放入背包。"
 		inventory_salvage_button.text = "分解"
 		return
 	var equipment: Dictionary = inventory_items[selected_inventory_index]
-	inventory_detail_label.text = EquipmentFactory.describe_with_score(equipment)
-	inventory_summary_label.text = EquipmentFactory.get_comparison_summary(equipment, GameManager.equipped_weapon)
+	inventory_recommendation_label.text = EquipmentFactory.get_recommendation_text(equipment, GameManager.equipped_weapon)
+	current_inventory_label.text = "当前\n%s" % EquipmentFactory.describe_with_score(GameManager.equipped_weapon)
+	selected_inventory_label.text = "选中\n%s" % EquipmentFactory.describe_with_score(equipment)
+	inventory_summary_label.text = "变化\n%s" % EquipmentFactory.get_comparison_summary(equipment, GameManager.equipped_weapon)
 	inventory_salvage_button.text = "分解 +%d 金币" % EquipmentFactory.get_salvage_value(equipment)
 
 func _get_inventory_item_button_text(equipment: Dictionary, is_selected: bool) -> String:
 	var prefix := ">" if is_selected else " "
-	return "%s %s\n%s | 等级 %d | 评分 %d" % [
+	var form_name := EquipmentFactory.get_form_name(equipment).replace("法杖", "")
+	var score_delta := EquipmentFactory.get_score_delta_label(equipment, GameManager.equipped_weapon)
+	return "%s %s  [%s]\n%s | 等级 %d | 评分 %d (%s)" % [
 		prefix,
 		str(equipment.get("name", "未知武器")),
+		form_name,
 		str(equipment.get("rarity", "普通")),
 		int(equipment.get("level", 1)),
-		EquipmentFactory.get_score(equipment)
+		EquipmentFactory.get_score(equipment),
+		score_delta
 	]
 
 func _on_inventory_item_pressed(index: int) -> void:

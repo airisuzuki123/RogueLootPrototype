@@ -2,6 +2,16 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Improve inventory readability
+
+- Added recommendation text for selected backpack equipment.
+- Improved backpack list entries with rarity color, form, level, score, and score delta.
+- Reworked backpack details to show current and selected weapons side by side with a focused change summary.
+- Added `Esc` as a backpack close shortcut.
+- Updated README and design notes with the improved backpack interaction flow.
+- Validation: ran Godot 4.6.1 headless for 5 seconds outside the sandbox with no script errors before committing.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Add inventory equipment flow
 
 - Changed weapon pickup so equipment goes into a backpack instead of pausing immediately.

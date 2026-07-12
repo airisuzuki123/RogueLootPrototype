@@ -117,6 +117,17 @@ static func describe_with_score(equipment: Dictionary) -> String:
 static func get_score(equipment: Dictionary) -> int:
 	return int(equipment.get("score", 0))
 
+static func get_score_delta_value(candidate: Dictionary, current: Dictionary) -> int:
+	return get_score(candidate) - get_score(current)
+
+static func get_score_delta_label(candidate: Dictionary, current: Dictionary) -> String:
+	var delta: int = get_score_delta_value(candidate, current)
+	if current.is_empty():
+		return "+%d" % get_score(candidate)
+	if delta > 0:
+		return "+%d" % delta
+	return "%d" % delta
+
 static func get_salvage_value(equipment: Dictionary) -> int:
 	if equipment.is_empty():
 		return 0
@@ -150,12 +161,38 @@ static func should_sort_before(left: Dictionary, right: Dictionary) -> bool:
 	return str(left.get("name", "")) < str(right.get("name", ""))
 
 static func get_score_delta_text(candidate: Dictionary, current: Dictionary) -> String:
-	var delta := get_score(candidate) - get_score(current)
+	var delta: int = get_score_delta_value(candidate, current)
 	if current.is_empty():
 		return "评分变化：+%d" % get_score(candidate)
 	if delta >= 0:
 		return "评分变化：+%d" % delta
 	return "评分变化：%d" % delta
+
+static func get_form_name(equipment: Dictionary) -> String:
+	var form: Dictionary = equipment.get("form", {})
+	if form.is_empty():
+		return "无形态"
+	return str(form.get("name", "未知形态"))
+
+static func get_recommendation_text(candidate: Dictionary, current: Dictionary) -> String:
+	if candidate.is_empty():
+		return "未选择装备"
+	var score_delta: int = get_score_delta_value(candidate, current)
+	var candidate_profile: Dictionary = _build_combat_profile(candidate)
+	var current_profile: Dictionary = _build_combat_profile(current)
+	var primary_change: String = _get_primary_change(candidate_profile, current_profile)
+	var change_suffix := ""
+	if not primary_change.is_empty():
+		change_suffix = "，%s" % primary_change
+	if current.is_empty():
+		return "推荐装备：当前没有武器%s" % change_suffix
+	if score_delta >= 15:
+		return "推荐装备：评分 %s%s" % [get_score_delta_label(candidate, current), change_suffix]
+	if score_delta >= 0:
+		return "可考虑：评分 %s%s" % [get_score_delta_label(candidate, current), change_suffix]
+	if not primary_change.is_empty():
+		return "构筑取向：评分 %s，但%s" % [get_score_delta_label(candidate, current), primary_change]
+	return "整体较弱：评分 %s" % get_score_delta_label(candidate, current)
 
 static func get_comparison_summary(candidate: Dictionary, current: Dictionary) -> String:
 	var lines := [get_score_delta_text(candidate, current)]
@@ -289,3 +326,38 @@ static func _add_percent_delta(lines: Array, label: String, candidate_value: flo
 		return
 	var sign := "+" if delta > 0 else ""
 	lines.append("%s：%s%d%%" % [label, sign, delta])
+
+static func _get_primary_change(candidate_profile: Dictionary, current_profile: Dictionary) -> String:
+	var projectile_delta := int(candidate_profile["projectile_count"]) - int(current_profile["projectile_count"])
+	if projectile_delta > 0:
+		return "投射物 +%d" % projectile_delta
+	var pierce_delta := int(candidate_profile["pierce"]) - int(current_profile["pierce"])
+	if pierce_delta > 0:
+		return "穿透 +%d" % pierce_delta
+	var explosion_delta := int(candidate_profile["explosion_radius"]) - int(current_profile["explosion_radius"])
+	if explosion_delta > 0:
+		return "爆裂范围 +%d" % explosion_delta
+	var damage_delta := int(candidate_profile["damage"]) - int(current_profile["damage"])
+	if damage_delta > 0:
+		return "伤害 +%d" % damage_delta
+	var critical_delta := int(candidate_profile["critical_chance"]) - int(current_profile["critical_chance"])
+	if critical_delta > 0:
+		return "暴击率 +%d%%" % critical_delta
+	var attack_speed_delta := int(candidate_profile["attack_speed"]) - int(current_profile["attack_speed"])
+	if attack_speed_delta > 0:
+		return "攻击速度 +%d%%" % attack_speed_delta
+	var health_delta := int(candidate_profile["max_health"]) - int(current_profile["max_health"])
+	if health_delta > 0:
+		return "最大生命 +%d" % health_delta
+	var move_speed_delta := int(candidate_profile["move_speed"]) - int(current_profile["move_speed"])
+	if move_speed_delta > 0:
+		return "移动速度 +%d" % move_speed_delta
+	var multiplier_delta := int(round((float(candidate_profile["damage_multiplier"]) - float(current_profile["damage_multiplier"])) * 100.0))
+	if multiplier_delta != 0:
+		var sign := "+" if multiplier_delta > 0 else ""
+		return "伤害倍率 %s%d%%" % [sign, multiplier_delta]
+	var candidate_form := str(candidate_profile["form_name"])
+	var current_form := str(current_profile["form_name"])
+	if candidate_form != current_form:
+		return "形态改变"
+	return ""

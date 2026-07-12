@@ -2,6 +2,16 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Improve inventory closeout usability
+
+- Reworked equipment detail popups so long equipment text scrolls while equip and salvage buttons stay visible.
+- Removed the detail popup close button and added outside-click closing while keeping `Esc` support.
+- Added a 36-slot backpack capacity display and blocked equipment pickup when the backpack is full.
+- Added one-click backpack salvage by selected rarity for 普通, 魔法, and 稀有 equipment.
+- Updated README, design notes, and the stage plan with the closeout backpack rules.
+- Validation: ran `git diff --check` and Godot 4.6.1 headless outside the sandbox with no script errors before committing.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Document stage 2 closeout plan
 
 - Added a fixed staged development plan covering stages 1 through 5.

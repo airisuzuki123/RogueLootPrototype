@@ -14,6 +14,8 @@ signal inventory_open_changed(is_open: bool)
 signal upgrade_choices_requested(choices: Array)
 signal run_ended(kills: int, gold: int)
 
+const MAX_INVENTORY_SIZE: int = 36
+
 var gold: int = 0
 var kills: int = 0
 var level: int = 1
@@ -124,13 +126,17 @@ func add_gold(amount: int, apply_bonus: bool = true) -> int:
 	_set_loot_message("金币 +%d" % final_amount)
 	return final_amount
 
-func pickup_equipment(equipment: Dictionary) -> void:
+func pickup_equipment(equipment: Dictionary) -> bool:
 	if is_run_over or equipment.is_empty():
-		return
+		return false
+	if inventory.size() >= MAX_INVENTORY_SIZE:
+		_set_loot_message("背包已满，无法拾取：%s" % equipment["name"])
+		return false
 	inventory.append(equipment.duplicate(true))
 	_sort_inventory()
 	inventory_changed.emit(inventory)
 	_set_loot_message("已放入背包：%s" % equipment["name"])
+	return true
 
 func toggle_inventory_open() -> void:
 	if is_run_over or is_upgrade_pending:
@@ -180,11 +186,35 @@ func salvage_inventory_equipment(index: int) -> void:
 	inventory_changed.emit(inventory)
 	_set_loot_message("已分解：%s，金币 +%d" % [salvaged_name, gained_gold])
 
+func salvage_inventory_by_rarity(rarity_name: String) -> void:
+	if rarity_name.is_empty():
+		return
+	var kept_items: Array[Dictionary] = []
+	var total_value := 0
+	var salvaged_count := 0
+	for equipment in inventory:
+		if str(equipment.get("rarity", "")) == rarity_name:
+			total_value += EquipmentFactory.get_salvage_value(equipment)
+			salvaged_count += 1
+		else:
+			kept_items.append(equipment)
+	if salvaged_count <= 0:
+		_set_loot_message("没有可分解的%s装备" % rarity_name)
+		return
+	inventory = kept_items
+	_sort_inventory()
+	var gained_gold := add_gold(total_value)
+	inventory_changed.emit(inventory)
+	_set_loot_message("已分解%d件%s装备，金币 +%d" % [salvaged_count, rarity_name, gained_gold])
+
 func get_inventory_items() -> Array:
 	return inventory.duplicate(true)
 
 func get_inventory_count() -> int:
 	return inventory.size()
+
+func get_inventory_capacity() -> int:
+	return MAX_INVENTORY_SIZE
 
 func get_equipped_item(slot_id: String) -> Dictionary:
 	return equipped_items.get(slot_id, {}).duplicate(true)

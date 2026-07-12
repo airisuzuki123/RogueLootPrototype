@@ -20,9 +20,10 @@ func _on_body_entered(body: Node) -> void:
 		return
 	if equipment.is_empty():
 		GameManager.add_gold(_get_scaled_gold_amount())
-	else:
-		GameManager.pickup_equipment(equipment)
-	queue_free()
+		queue_free()
+		return
+	if GameManager.pickup_equipment(equipment):
+		queue_free()
 
 func _get_scaled_equipment_chance() -> float:
 	var level_bonus := minf(0.12, float(maxi(0, source_level - 1)) * 0.015)

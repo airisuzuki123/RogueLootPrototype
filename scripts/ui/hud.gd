@@ -16,8 +16,11 @@ var equipment_delta_label: Label
 var equip_button: Button
 var salvage_button: Button
 var inventory_panel: PanelContainer
+var inventory_capacity_label: Label
 var inventory_list: GridContainer
 var equipped_slot_buttons: Dictionary = {}
+var salvage_rarity_buttons: Dictionary = {}
+var detail_modal_overlay: Control
 var detail_modal_panel: PanelContainer
 var detail_title_label: Label
 var detail_body_label: Label
@@ -170,8 +173,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if key_event.keycode == KEY_B:
 		GameManager.toggle_inventory_open()
 	elif key_event.keycode == KEY_ESCAPE and GameManager.is_inventory_open:
-		if detail_modal_panel != null and detail_modal_panel.visible:
-			detail_modal_panel.visible = false
+		if detail_modal_overlay != null and detail_modal_overlay.visible:
+			detail_modal_overlay.visible = false
 		else:
 			GameManager.set_inventory_open(false)
 
@@ -205,8 +208,8 @@ func _on_inventory_changed(items: Array) -> void:
 
 func _on_inventory_open_changed(is_open: bool) -> void:
 	inventory_panel.visible = is_open
-	if detail_modal_panel != null and not is_open:
-		detail_modal_panel.visible = false
+	if detail_modal_overlay != null and not is_open:
+		detail_modal_overlay.visible = false
 	if is_open and selected_inventory_index < 0 and not inventory_items.is_empty():
 		selected_inventory_index = 0
 	_refresh_inventory_panel()
@@ -265,8 +268,30 @@ func _build_inventory_panel(root: Control) -> void:
 
 	var title := Label.new()
 	title.text = "背包"
-	title.custom_minimum_size = Vector2(920, 28)
+	title.custom_minimum_size = Vector2(120, 28)
 	title_row.add_child(title)
+
+	inventory_capacity_label = Label.new()
+	inventory_capacity_label.custom_minimum_size = Vector2(160, 28)
+	title_row.add_child(inventory_capacity_label)
+
+	var salvage_label := Label.new()
+	salvage_label.text = "一键分解："
+	salvage_label.custom_minimum_size = Vector2(92, 28)
+	title_row.add_child(salvage_label)
+
+	for rarity in EquipmentFactory.RARITIES:
+		var rarity_name := str(rarity["name"])
+		var button := Button.new()
+		button.text = rarity_name
+		button.custom_minimum_size = Vector2(72, 32)
+		button.pressed.connect(_on_salvage_rarity_pressed.bind(rarity_name))
+		title_row.add_child(button)
+		salvage_rarity_buttons[rarity_name] = button
+
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_row.add_child(spacer)
 
 	var close_button := Button.new()
 	close_button.text = "关闭"
@@ -316,6 +341,8 @@ func _build_inventory_panel(root: Control) -> void:
 func _refresh_inventory_panel() -> void:
 	if inventory_list == null:
 		return
+	_refresh_inventory_capacity()
+	_refresh_salvage_buttons()
 	_refresh_equipped_slot_buttons()
 	for child in inventory_list.get_children():
 		child.queue_free()
@@ -342,9 +369,35 @@ func _on_inventory_item_pressed(index: int) -> void:
 	_show_inventory_detail_modal()
 
 func _on_inventory_close_pressed() -> void:
-	if detail_modal_panel != null:
-		detail_modal_panel.visible = false
+	if detail_modal_overlay != null:
+		detail_modal_overlay.visible = false
 	GameManager.set_inventory_open(false)
+
+func _on_salvage_rarity_pressed(rarity_name: String) -> void:
+	if detail_modal_overlay != null:
+		detail_modal_overlay.visible = false
+	GameManager.salvage_inventory_by_rarity(rarity_name)
+
+func _refresh_inventory_capacity() -> void:
+	if inventory_capacity_label == null:
+		return
+	var count := GameManager.get_inventory_count()
+	var capacity := GameManager.get_inventory_capacity()
+	inventory_capacity_label.text = "容量：%d / %d" % [count, capacity]
+	var color := Color(1.0, 0.45, 0.35, 1.0) if count >= capacity else Color.WHITE
+	inventory_capacity_label.add_theme_color_override("font_color", color)
+
+func _refresh_salvage_buttons() -> void:
+	for rarity_name in salvage_rarity_buttons.keys():
+		var button: Button = salvage_rarity_buttons[rarity_name]
+		button.disabled = _count_inventory_items_by_rarity(str(rarity_name)) <= 0
+
+func _count_inventory_items_by_rarity(rarity_name: String) -> int:
+	var count := 0
+	for equipment in inventory_items:
+		if str(equipment.get("rarity", "")) == rarity_name:
+			count += 1
+	return count
 
 func _add_equipped_slot_row(parent: Control, slot_ids: Array) -> void:
 	var row := HBoxContainer.new()
@@ -384,11 +437,19 @@ func _on_equipped_slot_pressed(slot_id: String) -> void:
 	_show_equipped_detail_modal(slot_id)
 
 func _build_inventory_detail_modal(root: Control) -> void:
+	detail_modal_overlay = Control.new()
+	detail_modal_overlay.visible = false
+	detail_modal_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	detail_modal_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	detail_modal_overlay.gui_input.connect(_on_detail_overlay_gui_input)
+	root.add_child(detail_modal_overlay)
+
 	detail_modal_panel = PanelContainer.new()
-	detail_modal_panel.visible = false
-	detail_modal_panel.position = Vector2(350, 110)
-	detail_modal_panel.custom_minimum_size = Vector2(580, 470)
-	root.add_child(detail_modal_panel)
+	detail_modal_panel.position = Vector2(320, 90)
+	detail_modal_panel.custom_minimum_size = Vector2(640, 520)
+	detail_modal_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	detail_modal_panel.gui_input.connect(_on_detail_panel_gui_input)
+	detail_modal_overlay.add_child(detail_modal_panel)
 
 	var modal_root := VBoxContainer.new()
 	modal_root.add_theme_constant_override("separation", 10)
@@ -399,25 +460,28 @@ func _build_inventory_detail_modal(root: Control) -> void:
 	modal_root.add_child(title_row)
 
 	detail_title_label = Label.new()
-	detail_title_label.custom_minimum_size = Vector2(460, 28)
+	detail_title_label.custom_minimum_size = Vector2(600, 28)
 	title_row.add_child(detail_title_label)
 
-	var close_button := Button.new()
-	close_button.text = "X"
-	close_button.custom_minimum_size = Vector2(44, 32)
-	close_button.pressed.connect(_on_detail_close_pressed)
-	title_row.add_child(close_button)
+	var detail_scroll := ScrollContainer.new()
+	detail_scroll.custom_minimum_size = Vector2(600, 360)
+	modal_root.add_child(detail_scroll)
+
+	var detail_content := VBoxContainer.new()
+	detail_content.custom_minimum_size = Vector2(580, 0)
+	detail_content.add_theme_constant_override("separation", 8)
+	detail_scroll.add_child(detail_content)
 
 	detail_body_label = Label.new()
-	detail_body_label.custom_minimum_size = Vector2(540, 190)
+	detail_body_label.custom_minimum_size = Vector2(580, 0)
 	detail_body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	modal_root.add_child(detail_body_label)
+	detail_content.add_child(detail_body_label)
 
 	detail_comparison_label = Label.new()
-	detail_comparison_label.custom_minimum_size = Vector2(540, 150)
+	detail_comparison_label.custom_minimum_size = Vector2(580, 0)
 	detail_comparison_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detail_comparison_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.45, 1.0))
-	modal_root.add_child(detail_comparison_label)
+	detail_content.add_child(detail_comparison_label)
 
 	var button_row := HBoxContainer.new()
 	button_row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -452,7 +516,7 @@ func _show_inventory_detail_modal() -> void:
 	detail_equip_button.visible = true
 	detail_salvage_button.visible = true
 	detail_salvage_button.text = "分解 +%d 金币" % EquipmentFactory.get_salvage_value(equipment)
-	detail_modal_panel.visible = true
+	detail_modal_overlay.visible = true
 
 func _show_equipped_detail_modal(slot_id: String) -> void:
 	var slot_label := EquipmentFactory.get_slot_label(slot_id)
@@ -465,22 +529,27 @@ func _show_equipped_detail_modal(slot_id: String) -> void:
 	detail_comparison_label.text = ""
 	detail_equip_button.visible = false
 	detail_salvage_button.visible = false
-	detail_modal_panel.visible = true
+	detail_modal_overlay.visible = true
 
 func _on_detail_equip_pressed() -> void:
 	if selected_equipment_source != "inventory":
 		return
 	GameManager.equip_inventory_equipment(selected_inventory_index)
-	detail_modal_panel.visible = false
+	detail_modal_overlay.visible = false
 
 func _on_detail_salvage_pressed() -> void:
 	if selected_equipment_source != "inventory":
 		return
 	GameManager.salvage_inventory_equipment(selected_inventory_index)
-	detail_modal_panel.visible = false
+	detail_modal_overlay.visible = false
 
-func _on_detail_close_pressed() -> void:
-	detail_modal_panel.visible = false
+func _on_detail_overlay_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		detail_modal_overlay.visible = false
+
+func _on_detail_panel_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		detail_modal_panel.accept_event()
 
 func _get_equipment_icon_text(equipment: Dictionary, is_selected: bool) -> String:
 	var prefix := ">" if is_selected else ""

@@ -19,6 +19,7 @@ var inventory_panel: PanelContainer
 var inventory_capacity_label: Label
 var inventory_list: GridContainer
 var equipped_slot_buttons: Dictionary = {}
+var loadout_summary_label: Label
 var salvage_rarity_buttons: Dictionary = {}
 var selected_salvage_rarities: Dictionary = {}
 var salvage_selected_button: Button
@@ -326,6 +327,11 @@ func _build_inventory_panel(root: Control) -> void:
 	_add_equipped_slot_row(equipped_column, ["necklace", "ring"])
 	_add_equipped_slot_row(equipped_column, ["boots"])
 
+	loadout_summary_label = Label.new()
+	loadout_summary_label.custom_minimum_size = Vector2(280, 150)
+	loadout_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	equipped_column.add_child(loadout_summary_label)
+
 	var inventory_column := VBoxContainer.new()
 	inventory_column.custom_minimum_size = Vector2(700, 500)
 	inventory_column.add_theme_constant_override("separation", 10)
@@ -450,6 +456,8 @@ func _refresh_equipped_slot_buttons() -> void:
 		else:
 			button.text = _get_equipment_icon_text(equipment, is_selected)
 			_apply_equipment_button_style(button, equipment, is_selected)
+	if loadout_summary_label != null:
+		loadout_summary_label.text = EquipmentFactory.describe_loadout_summary(equipped_items)
 
 func _on_equipped_slot_pressed(slot_id: String) -> void:
 	selected_equipment_source = "equipped"

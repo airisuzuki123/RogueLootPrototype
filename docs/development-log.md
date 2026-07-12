@@ -2,6 +2,14 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Add loadout summary to inventory
+
+- Added a backpack loadout summary for equipped total score, weapon form, damage multiplier, and summed equipment affix bonuses.
+- Displayed the summary under the current equipped slot layout so stage 2 build direction is easier to inspect.
+- Updated README, design notes, and the stage plan with the loadout summary behavior.
+- Validation: ran `git diff --check` and Godot 4.6.1 headless outside the sandbox with no script errors before committing.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Retry blocked equipment pickups
 
 - Kept equipment drops on the ground when the backpack is full.

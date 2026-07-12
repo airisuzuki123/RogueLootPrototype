@@ -159,6 +159,55 @@ static func describe_loadout(equipped_items: Dictionary) -> String:
 			lines.append("%s：%s 评分 %d" % [slot["label"], equipment["name"], get_score(equipment)])
 	return "\n".join(lines)
 
+static func describe_loadout_summary(equipped_items: Dictionary) -> String:
+	var total_score := 0
+	var profile := {
+		"damage": 0,
+		"max_health": 0,
+		"attack_speed": 0,
+		"move_speed": 0,
+		"critical_chance": 0,
+		"projectile_count": 0,
+		"pierce": 0,
+		"explosion_radius": 0,
+		"life_steal": 0,
+		"gold_bonus": 0
+	}
+	var weapon_form := "无"
+	var weapon_multiplier := 1.0
+	for slot in EQUIPMENT_SLOTS:
+		var slot_id := str(slot["id"])
+		var equipment: Dictionary = equipped_items.get(slot_id, {})
+		if equipment.is_empty():
+			continue
+		total_score += get_score(equipment)
+		var item_profile := _build_combat_profile(equipment)
+		if slot_id == "weapon":
+			weapon_form = str(item_profile["form_name"])
+			weapon_multiplier = float(item_profile["damage_multiplier"])
+		for key in profile.keys():
+			profile[key] = int(profile[key]) + int(item_profile[key])
+	var lines := [
+		"构筑总览",
+		"总评分：%d" % total_score,
+		"武器形态：%s" % weapon_form
+	]
+	var multiplier_delta := int(round((weapon_multiplier - 1.0) * 100.0))
+	if multiplier_delta != 0:
+		var sign := "+" if multiplier_delta > 0 else ""
+		lines.append("伤害倍率：%s%d%%" % [sign, multiplier_delta])
+	_add_summary_value(lines, "伤害", int(profile["damage"]), "")
+	_add_summary_value(lines, "最大生命", int(profile["max_health"]), "")
+	_add_summary_value(lines, "攻击速度", int(profile["attack_speed"]), "%")
+	_add_summary_value(lines, "移动速度", int(profile["move_speed"]), "")
+	_add_summary_value(lines, "暴击率", int(profile["critical_chance"]), "%")
+	_add_summary_value(lines, "吸血", int(profile["life_steal"]), "%")
+	_add_summary_value(lines, "金币获取", int(profile["gold_bonus"]), "%")
+	_add_summary_value(lines, "投射物", int(profile["projectile_count"]), "")
+	_add_summary_value(lines, "穿透", int(profile["pierce"]), "")
+	_add_summary_value(lines, "爆裂范围", int(profile["explosion_radius"]), "")
+	return "\n".join(lines)
+
 static func get_score(equipment: Dictionary) -> int:
 	return int(equipment.get("score", 0))
 
@@ -417,6 +466,11 @@ static func _add_percent_delta(lines: Array, label: String, candidate_value: flo
 		return
 	var sign := "+" if delta > 0 else ""
 	lines.append("%s：%s%d%%" % [label, sign, delta])
+
+static func _add_summary_value(lines: Array, label: String, value: int, suffix: String) -> void:
+	if value == 0:
+		return
+	lines.append("%s：+%d%s" % [label, value, suffix])
 
 static func _get_primary_change(candidate_profile: Dictionary, current_profile: Dictionary) -> String:
 	var projectile_delta := int(candidate_profile["projectile_count"]) - int(current_profile["projectile_count"])

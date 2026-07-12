@@ -12,7 +12,10 @@ const AFFIXES := [
 	{"id": "max_health", "label": "最大生命", "min": 10, "max": 25},
 	{"id": "attack_speed", "label": "攻击速度", "min": 6, "max": 14},
 	{"id": "move_speed", "label": "移动速度", "min": 12, "max": 24},
-	{"id": "critical_chance", "label": "暴击率", "min": 4, "max": 9}
+	{"id": "critical_chance", "label": "暴击率", "min": 4, "max": 9},
+	{"id": "projectile_count", "label": "额外投射物", "min": 1, "max": 1, "level_scale": false},
+	{"id": "pierce", "label": "穿透", "min": 1, "max": 1, "level_scale": false},
+	{"id": "explosion_radius", "label": "爆裂范围", "min": 18, "max": 32}
 ]
 
 const WEAPON_FORMS := [
@@ -65,7 +68,9 @@ static func roll_weapon(enemy_level: int = 1) -> Dictionary:
 	var score := int(form.get("score", 0))
 	for index in range(min(affix_count, affix_pool.size())):
 		var template: Dictionary = affix_pool[index]
-		var value := randi_range(template["min"], template["max"]) + enemy_level
+		var value := randi_range(template["min"], template["max"])
+		if bool(template.get("level_scale", true)):
+			value += enemy_level
 		value = int(round(float(value) * rarity["power"]))
 		affixes.append({
 			"id": template["id"],
@@ -94,6 +99,8 @@ static func describe(equipment: Dictionary) -> String:
 		var prefix := "+"
 		if affix["id"] in ["attack_speed", "critical_chance"]:
 			lines.append("%s%d%% %s" % [prefix, affix["value"], affix["label"]])
+		elif affix["id"] == "projectile_count":
+			lines.append("%s%d %s" % [prefix, affix["value"], affix["label"]])
 		else:
 			lines.append("%s%d %s" % [prefix, affix["value"], affix["label"]])
 	return "\n".join(lines)
@@ -150,4 +157,10 @@ static func _score_affix(affix_id: String, value: int) -> int:
 			return value * 2
 		"critical_chance":
 			return value * 5
+		"projectile_count":
+			return value * 16
+		"pierce":
+			return value * 14
+		"explosion_radius":
+			return value * 2
 	return value

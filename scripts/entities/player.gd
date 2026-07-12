@@ -28,6 +28,9 @@ var equipment_damage_multiplier: float = 1.0
 var equipment_spread_degrees: float = 8.0
 var equipment_explosion_radius: float = 0.0
 var equipment_explosion_damage_ratio: float = 0.0
+var affix_projectile_count_bonus: int = 0
+var affix_pierce_bonus: int = 0
+var affix_explosion_radius_bonus: float = 0.0
 @onready var visual: Polygon2D = $Visual
 
 func _ready() -> void:
@@ -95,7 +98,7 @@ func _update_auto_attack(delta: float) -> void:
 		return
 	fire_cooldown = fire_interval
 	var base_direction: Vector2 = global_position.direction_to(target.global_position)
-	var total_projectiles: int = maxi(1, projectile_count + equipment_projectile_count_bonus)
+	var total_projectiles: int = maxi(1, projectile_count + equipment_projectile_count_bonus + affix_projectile_count_bonus)
 	for index in range(total_projectiles):
 		var projectile := PROJECTILE_SCENE.instantiate()
 		var spread: float = deg_to_rad(equipment_spread_degrees * (index - (total_projectiles - 1) / 2.0))
@@ -103,9 +106,9 @@ func _update_auto_attack(delta: float) -> void:
 		projectile.direction = base_direction.rotated(spread)
 		projectile.damage = _roll_projectile_damage()
 		projectile.is_critical = projectile.damage > _get_base_projectile_damage()
-		projectile.pierce_remaining = equipment_pierce_bonus
-		projectile.explosion_radius = equipment_explosion_radius
-		projectile.explosion_damage = int(round(float(projectile.damage) * equipment_explosion_damage_ratio))
+		projectile.pierce_remaining = equipment_pierce_bonus + affix_pierce_bonus
+		projectile.explosion_radius = _get_total_explosion_radius()
+		projectile.explosion_damage = int(round(float(projectile.damage) * _get_total_explosion_damage_ratio()))
 		get_tree().current_scene.add_child(projectile)
 
 func _find_nearest_enemy() -> Node2D:
@@ -143,6 +146,12 @@ func _apply_equipment_stats(equipment: Dictionary) -> void:
 				move_speed += affix["value"]
 			"critical_chance":
 				equipment_critical_chance_bonus += affix["value"]
+			"projectile_count":
+				affix_projectile_count_bonus += affix["value"]
+			"pierce":
+				affix_pierce_bonus += affix["value"]
+			"explosion_radius":
+				affix_explosion_radius_bonus += affix["value"]
 	fire_interval = _calculate_fire_interval()
 
 func _remove_equipment_stats(equipment: Dictionary) -> void:
@@ -162,6 +171,12 @@ func _remove_equipment_stats(equipment: Dictionary) -> void:
 				move_speed -= affix["value"]
 			"critical_chance":
 				equipment_critical_chance_bonus -= affix["value"]
+			"projectile_count":
+				affix_projectile_count_bonus -= affix["value"]
+			"pierce":
+				affix_pierce_bonus -= affix["value"]
+			"explosion_radius":
+				affix_explosion_radius_bonus -= affix["value"]
 	fire_interval = _calculate_fire_interval()
 
 func _calculate_fire_interval() -> float:
@@ -177,6 +192,20 @@ func _roll_projectile_damage() -> int:
 	if randf() < critical_chance:
 		return damage * 2
 	return damage
+
+func _get_total_explosion_radius() -> float:
+	return equipment_explosion_radius + affix_explosion_radius_bonus
+
+func _get_total_explosion_damage_ratio() -> float:
+	var total_radius := _get_total_explosion_radius()
+	if total_radius <= 0.0:
+		return 0.0
+	var ratio := equipment_explosion_damage_ratio
+	if affix_explosion_radius_bonus > 0.0:
+		ratio = maxf(ratio, 0.25)
+		if equipment_explosion_damage_ratio > 0.0:
+			ratio += 0.08
+	return minf(ratio, 0.65)
 
 func _apply_weapon_form(form: Dictionary) -> void:
 	if form.is_empty():

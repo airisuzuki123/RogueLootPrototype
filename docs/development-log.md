@@ -2,6 +2,15 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Add form-linked affixes
+
+- Added weapon affixes for extra projectiles, pierce, and explosion radius.
+- Added player stat handling so affix bonuses stack with weapon forms and upgrade projectile count.
+- Added explosion-radius affix behavior that creates small burst damage on non-burst weapons and strengthens burst staffs.
+- Updated README and design notes with the expanded stage 2 affix set.
+- Validation: ran Godot 4.6.1 headless for 5 seconds outside the sandbox with no script errors.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Add weapon forms
 
 - Added weapon forms for focused, scatter, piercing, and burst staffs.

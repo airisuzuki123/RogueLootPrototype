@@ -2,6 +2,15 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Retry blocked equipment pickups
+
+- Kept equipment drops on the ground when the backpack is full.
+- Added a retry path so standing on a blocked equipment drop will pick it up after the player frees backpack space and resumes gameplay.
+- Added a short retry cooldown to avoid repeatedly spamming full-backpack pickup messages.
+- Updated README, design notes, and the stage plan with the full-backpack recovery behavior.
+- Validation: ran `git diff --check` and Godot 4.6.1 headless outside the sandbox with no script errors before committing.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Fix inventory salvage and unequip flow
 
 - Changed rarity salvage from direct disabled buttons to reusable quality toggles plus a `分解选中` action.

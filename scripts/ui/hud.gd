@@ -26,7 +26,8 @@ var salvage_selected_button: Button
 var detail_modal_overlay: Control
 var detail_modal_panel: PanelContainer
 var detail_title_label: Label
-var detail_body_label: Label
+var detail_current_label: Label
+var detail_candidate_label: Label
 var detail_comparison_label: Label
 var detail_equip_button: Button
 var detail_salvage_button: Button
@@ -475,8 +476,8 @@ func _build_inventory_detail_modal(root: Control) -> void:
 	root.add_child(detail_modal_overlay)
 
 	detail_modal_panel = PanelContainer.new()
-	detail_modal_panel.position = Vector2(320, 90)
-	detail_modal_panel.custom_minimum_size = Vector2(640, 520)
+	detail_modal_panel.position = Vector2(280, 70)
+	detail_modal_panel.custom_minimum_size = Vector2(720, 580)
 	detail_modal_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	detail_modal_panel.gui_input.connect(_on_detail_panel_gui_input)
 	detail_modal_overlay.add_child(detail_modal_panel)
@@ -490,25 +491,34 @@ func _build_inventory_detail_modal(root: Control) -> void:
 	modal_root.add_child(title_row)
 
 	detail_title_label = Label.new()
-	detail_title_label.custom_minimum_size = Vector2(600, 28)
+	detail_title_label.custom_minimum_size = Vector2(680, 28)
 	title_row.add_child(detail_title_label)
 
 	var detail_scroll := ScrollContainer.new()
-	detail_scroll.custom_minimum_size = Vector2(600, 360)
+	detail_scroll.custom_minimum_size = Vector2(680, 420)
 	modal_root.add_child(detail_scroll)
 
 	var detail_content := VBoxContainer.new()
-	detail_content.custom_minimum_size = Vector2(580, 0)
+	detail_content.custom_minimum_size = Vector2(660, 0)
 	detail_content.add_theme_constant_override("separation", 8)
 	detail_scroll.add_child(detail_content)
 
-	detail_body_label = Label.new()
-	detail_body_label.custom_minimum_size = Vector2(580, 0)
-	detail_body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detail_content.add_child(detail_body_label)
+	var side_by_side_row := HBoxContainer.new()
+	side_by_side_row.add_theme_constant_override("separation", 16)
+	detail_content.add_child(side_by_side_row)
+
+	detail_current_label = Label.new()
+	detail_current_label.custom_minimum_size = Vector2(320, 0)
+	detail_current_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	side_by_side_row.add_child(detail_current_label)
+
+	detail_candidate_label = Label.new()
+	detail_candidate_label.custom_minimum_size = Vector2(320, 0)
+	detail_candidate_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	side_by_side_row.add_child(detail_candidate_label)
 
 	detail_comparison_label = Label.new()
-	detail_comparison_label.custom_minimum_size = Vector2(580, 0)
+	detail_comparison_label.custom_minimum_size = Vector2(660, 0)
 	detail_comparison_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detail_comparison_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.45, 1.0))
 	detail_content.add_child(detail_comparison_label)
@@ -536,11 +546,11 @@ func _show_inventory_detail_modal() -> void:
 	var current_equipment := _get_current_equipment_for(equipment)
 	var slot_label := EquipmentFactory.get_slot_label(str(equipment.get("slot", "weapon")))
 	detail_title_label.text = str(equipment.get("name", "未知装备"))
-	detail_body_label.text = "选中装备\n%s" % EquipmentFactory.describe_with_score(equipment)
-	detail_comparison_label.text = "%s\n\n当前%s\n%s\n\n变化\n%s" % [
+	detail_current_label.visible = true
+	detail_current_label.text = "当前%s\n%s" % [slot_label, EquipmentFactory.describe_with_score(current_equipment)]
+	detail_candidate_label.text = "选中装备\n%s" % EquipmentFactory.describe_with_score(equipment)
+	detail_comparison_label.text = "%s\n\n变化\n%s" % [
 		EquipmentFactory.get_recommendation_text(equipment, current_equipment),
-		slot_label,
-		EquipmentFactory.describe_with_score(current_equipment),
 		EquipmentFactory.get_comparison_summary(equipment, current_equipment)
 	]
 	detail_equip_button.visible = true
@@ -553,10 +563,11 @@ func _show_equipped_detail_modal(slot_id: String) -> void:
 	var slot_label := EquipmentFactory.get_slot_label(slot_id)
 	var equipment: Dictionary = equipped_items.get(slot_id, {})
 	detail_title_label.text = "当前%s" % slot_label
+	detail_current_label.visible = false
 	if equipment.is_empty():
-		detail_body_label.text = "%s槽位为空" % slot_label
+		detail_candidate_label.text = "%s槽位为空" % slot_label
 	else:
-		detail_body_label.text = EquipmentFactory.describe_with_score(equipment)
+		detail_candidate_label.text = EquipmentFactory.describe_with_score(equipment)
 	detail_comparison_label.text = ""
 	detail_equip_button.text = "卸下"
 	detail_equip_button.visible = not equipment.is_empty()

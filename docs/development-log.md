@@ -2,6 +2,16 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Add experience orb drops
+
+- Changed enemy kills from automatic experience gain to blue-green experience orb drops that must be picked up.
+- Reduced equipment drop pressure by lowering mixed loot and equipment roll rates, while experience orbs now carry the main progression pickup rhythm.
+- Kept equipment as rarity-colored diamond drops and gold as yellow diamond drops so experience, gold, and equipment are visually distinct.
+- Reworked equipment detail comparison to show current and selected equipment side by side, with recommendation and attribute changes underneath.
+- Updated README, design notes, and the stage plan with the revised experience, loot, and comparison behavior.
+- Validation: ran `git diff --check` and Godot 4.6.1 headless outside the sandbox with no script errors before committing.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Add loadout summary to inventory
 
 - Added a backpack loadout summary for equipped total score, weapon form, damage multiplier, and summed equipment affix bonuses.

@@ -7,7 +7,7 @@ const CombatFeedback := preload("res://scripts/effects/combat_feedback.gd")
 @export var move_speed: float = 120.0
 @export var max_health: int = 20
 @export var touch_damage: int = 10
-@export var loot_chance: float = 0.45
+@export var loot_chance: float = 0.26
 @export var experience_reward: int = 1
 @export var attack_interval: float = 0.8
 @export var knockback_recovery: float = 9.0
@@ -61,14 +61,24 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO, is_critical: bo
 
 func _die() -> void:
 	GameManager.register_kill()
-	GameManager.add_experience(experience_reward)
 	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1, 0.35, 0.25, 0.95), 1.6)
+	_spawn_experience_drop()
 	if randf() <= loot_chance:
 		var loot := LOOT_DROP_SCENE.instantiate()
-		loot.global_position = global_position
+		loot.global_position = global_position + _get_random_drop_offset()
 		loot.source_level = GameManager.level
 		get_tree().current_scene.add_child(loot)
 	queue_free()
+
+func _spawn_experience_drop() -> void:
+	var experience_drop := LOOT_DROP_SCENE.instantiate()
+	experience_drop.drop_kind = "experience"
+	experience_drop.experience_amount = experience_reward
+	experience_drop.global_position = global_position + _get_random_drop_offset()
+	get_tree().current_scene.add_child(experience_drop)
+
+func _get_random_drop_offset() -> Vector2:
+	return Vector2.RIGHT.rotated(randf() * TAU) * randf_range(0.0, 16.0)
 
 func _try_touch_damage() -> void:
 	if attack_cooldown > 0.0:
@@ -116,7 +126,7 @@ func _apply_enemy_type(type_id: String) -> void:
 			move_speed = 75.0
 			touch_damage = 16
 			experience_reward = 3
-			loot_chance = 0.65
+			loot_chance = 0.38
 			visual.color = Color(0.75, 0.15, 1, 1)
 			visual.scale = Vector2(1.35, 1.35)
 		"ranged":

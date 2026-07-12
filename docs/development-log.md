@@ -2,6 +2,15 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Polish inventory equipment icons
+
+- Added framed equipment icon styling for worn slots and backpack items.
+- Used rarity-colored borders and selected-state highlights to make equipment quality and selection easier to scan.
+- Kept the existing six-slot backpack layout and popup-detail flow unchanged.
+- Updated README and design notes with the icon-frame behavior.
+- Validation: ran `git diff --check` and Godot 4.6.1 headless for 5 seconds outside the sandbox with no script errors before committing.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Rework inventory equipment layout
 
 - Expanded equipment slots from weapon, armor, and accessory to weapon, helmet, armor, boots, necklace, and ring.

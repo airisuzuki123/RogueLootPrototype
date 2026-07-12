@@ -330,10 +330,7 @@ func _refresh_inventory_panel() -> void:
 		var button := Button.new()
 		button.text = _get_equipment_icon_text(equipment, index == selected_inventory_index and selected_equipment_source == "inventory")
 		button.custom_minimum_size = Vector2(104, 82)
-		var rarity_color: Color = equipment.get("color", Color.WHITE)
-		button.add_theme_color_override("font_color", rarity_color)
-		button.add_theme_color_override("font_hover_color", rarity_color.lightened(0.16))
-		button.add_theme_color_override("font_pressed_color", rarity_color.lightened(0.24))
+		_apply_equipment_button_style(button, equipment, index == selected_inventory_index and selected_equipment_source == "inventory")
 		button.pressed.connect(_on_inventory_item_pressed.bind(index))
 		inventory_list.add_child(button)
 
@@ -374,11 +371,10 @@ func _refresh_equipped_slot_buttons() -> void:
 		var is_selected := selected_equipment_source == "equipped" and selected_equipped_slot_id == slot_id
 		if equipment.is_empty():
 			button.text = "%s\n空" % str(slot["label"])
-			button.add_theme_color_override("font_color", Color(0.72, 0.72, 0.72, 1.0))
+			_apply_empty_slot_button_style(button, is_selected)
 		else:
 			button.text = _get_equipment_icon_text(equipment, is_selected)
-			var rarity_color: Color = equipment.get("color", Color.WHITE)
-			button.add_theme_color_override("font_color", rarity_color)
+			_apply_equipment_button_style(button, equipment, is_selected)
 
 func _on_equipped_slot_pressed(slot_id: String) -> void:
 	selected_equipment_source = "equipped"
@@ -495,6 +491,47 @@ func _get_equipment_icon_text(equipment: Dictionary, is_selected: bool) -> Strin
 		int(equipment.get("level", 1)),
 		EquipmentFactory.get_score(equipment)
 	]
+
+func _apply_equipment_button_style(button: Button, equipment: Dictionary, is_selected: bool) -> void:
+	var rarity_color: Color = equipment.get("color", Color.WHITE)
+	var border_color := Color.WHITE if is_selected else rarity_color
+	var border_width := 4 if is_selected else 2
+	_apply_icon_button_style(button, border_color, Color(0.10, 0.11, 0.12, 0.96), border_width)
+	button.add_theme_color_override("font_color", rarity_color.lightened(0.12) if is_selected else rarity_color)
+	button.add_theme_color_override("font_hover_color", rarity_color.lightened(0.24))
+	button.add_theme_color_override("font_pressed_color", Color.WHITE)
+
+func _apply_empty_slot_button_style(button: Button, is_selected: bool) -> void:
+	var border_color := Color.WHITE if is_selected else Color(0.35, 0.35, 0.35, 1.0)
+	var border_width := 4 if is_selected else 2
+	_apply_icon_button_style(button, border_color, Color(0.07, 0.07, 0.08, 0.92), border_width)
+	button.add_theme_color_override("font_color", Color(0.70, 0.70, 0.70, 1.0))
+	button.add_theme_color_override("font_hover_color", Color(0.90, 0.90, 0.90, 1.0))
+	button.add_theme_color_override("font_pressed_color", Color.WHITE)
+
+func _apply_icon_button_style(button: Button, border_color: Color, bg_color: Color, border_width: int) -> void:
+	button.add_theme_stylebox_override("normal", _make_icon_style(border_color, bg_color, border_width))
+	button.add_theme_stylebox_override("hover", _make_icon_style(border_color.lightened(0.18), bg_color.lightened(0.08), border_width))
+	button.add_theme_stylebox_override("pressed", _make_icon_style(Color.WHITE, bg_color.lightened(0.14), maxi(border_width, 3)))
+	button.add_theme_stylebox_override("focus", _make_icon_style(Color.WHITE, bg_color.lightened(0.05), maxi(border_width, 3)))
+
+func _make_icon_style(border_color: Color, bg_color: Color, border_width: int) -> StyleBoxFlat:
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = bg_color
+	style.border_color = border_color
+	style.border_width_left = border_width
+	style.border_width_top = border_width
+	style.border_width_right = border_width
+	style.border_width_bottom = border_width
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_left = 4
+	style.corner_radius_bottom_right = 4
+	style.content_margin_left = 6
+	style.content_margin_top = 6
+	style.content_margin_right = 6
+	style.content_margin_bottom = 6
+	return style
 
 func _get_slot_symbol(slot_id: String) -> String:
 	match slot_id:

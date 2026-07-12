@@ -9,6 +9,8 @@ signal experience_changed(current: int, required: int, level: int)
 signal equipment_changed(equipment: Dictionary)
 signal loot_message_changed(message: String)
 signal equipment_choice_requested(candidate: Dictionary, current: Dictionary, salvage_value: int)
+signal inventory_changed(items: Array)
+signal inventory_open_changed(is_open: bool)
 signal upgrade_choices_requested(choices: Array)
 signal run_ended(kills: int, gold: int)
 
@@ -23,9 +25,11 @@ var player: Node = null
 var is_run_over: bool = false
 var is_upgrade_pending: bool = false
 var is_equipment_choice_pending: bool = false
+var is_inventory_open: bool = false
 var pending_upgrade_choices: Array = []
 var pending_equipment_choice: Dictionary = {}
 var pending_equipment_salvage_value: int = 0
+var inventory: Array[Dictionary] = []
 var equipped_weapon: Dictionary = {}
 var latest_loot_message: String = ""
 
@@ -74,14 +78,18 @@ func reset_run() -> void:
 	is_run_over = false
 	is_upgrade_pending = false
 	is_equipment_choice_pending = false
+	is_inventory_open = false
 	pending_upgrade_choices.clear()
 	pending_equipment_choice.clear()
 	pending_equipment_salvage_value = 0
+	inventory.clear()
 	equipped_weapon.clear()
 	latest_loot_message = ""
 	gold_changed.emit(gold)
 	enemy_killed.emit(kills)
 	experience_changed.emit(experience, experience_to_next_level, level)
+	inventory_changed.emit(inventory)
+	inventory_open_changed.emit(is_inventory_open)
 	equipment_changed.emit(equipped_weapon)
 	loot_message_changed.emit(latest_loot_message)
 
@@ -105,6 +113,64 @@ func add_gold(amount: int) -> void:
 func pickup_equipment(equipment: Dictionary) -> void:
 	if is_run_over or equipment.is_empty():
 		return
+	inventory.append(equipment.duplicate(true))
+	_sort_inventory()
+	inventory_changed.emit(inventory)
+	_set_loot_message("已放入背包：%s" % equipment["name"])
+
+func toggle_inventory_open() -> void:
+	if is_run_over or is_upgrade_pending:
+		return
+	set_inventory_open(not is_inventory_open)
+
+func set_inventory_open(open: bool) -> void:
+	if is_run_over:
+		open = false
+	if is_upgrade_pending and open:
+		return
+	if is_inventory_open == open:
+		return
+	is_inventory_open = open
+	inventory_open_changed.emit(is_inventory_open)
+
+func equip_inventory_equipment(index: int) -> void:
+	if index < 0 or index >= inventory.size():
+		return
+	var new_weapon := inventory[index].duplicate(true)
+	inventory.remove_at(index)
+	var old_weapon := equipped_weapon.duplicate(true)
+	if not old_weapon.is_empty():
+		inventory.append(old_weapon)
+	equipped_weapon = new_weapon
+	if player != null and player.has_method("equip_weapon"):
+		player.equip_weapon(equipped_weapon, old_weapon)
+	_sort_inventory()
+	inventory_changed.emit(inventory)
+	equipment_changed.emit(equipped_weapon)
+	if old_weapon.is_empty():
+		_set_loot_message("已装备：%s" % equipped_weapon["name"])
+	else:
+		_set_loot_message("已装备：%s，旧武器放入背包" % equipped_weapon["name"])
+
+func salvage_inventory_equipment(index: int) -> void:
+	if index < 0 or index >= inventory.size():
+		return
+	var equipment := inventory[index]
+	var value := EquipmentFactory.get_salvage_value(equipment)
+	var salvaged_name := str(equipment["name"])
+	inventory.remove_at(index)
+	gold += value
+	gold_changed.emit(gold)
+	inventory_changed.emit(inventory)
+	_set_loot_message("已分解：%s，金币 +%d" % [salvaged_name, value])
+
+func get_inventory_items() -> Array:
+	return inventory.duplicate(true)
+
+func get_inventory_count() -> int:
+	return inventory.size()
+
+func _legacy_pickup_equipment_choice(equipment: Dictionary) -> void:
 	is_equipment_choice_pending = true
 	pending_equipment_choice = equipment.duplicate(true)
 	pending_equipment_salvage_value = _calculate_salvage_value(pending_equipment_choice)
@@ -159,12 +225,13 @@ func apply_upgrade(choice_index: int) -> void:
 		player.apply_upgrade(upgrade["id"])
 
 func is_gameplay_paused() -> bool:
-	return is_upgrade_pending or is_equipment_choice_pending
+	return is_upgrade_pending or is_equipment_choice_pending or is_inventory_open
 
 func end_run() -> void:
 	if is_run_over:
 		return
 	is_run_over = true
+	set_inventory_open(false)
 	run_ended.emit(kills, gold)
 
 func _request_upgrade_choices() -> void:
@@ -187,3 +254,9 @@ func _clear_pending_equipment_choice() -> void:
 
 func _calculate_salvage_value(equipment: Dictionary) -> int:
 	return EquipmentFactory.get_salvage_value(equipment)
+
+func _sort_inventory() -> void:
+	inventory.sort_custom(_is_inventory_item_before)
+
+func _is_inventory_item_before(left: Dictionary, right: Dictionary) -> bool:
+	return EquipmentFactory.should_sort_before(left, right)

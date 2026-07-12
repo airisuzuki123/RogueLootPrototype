@@ -82,5 +82,5 @@ Do not add development-log entries for commits whose only purpose is updating `d
 ## Agent Notes
 
 Before modifying files, check `git status --short --branch`.
-After implementation, validate with Godot when the change touches scenes, scripts, preload paths, or Autoload behavior.
+Before committing, validate the commit contents. For Godot gameplay, scene, script, preload path, or Autoload changes, run the project headless validation and commit only after it passes.
 For future work, include the development-log update in the same commit as the substantive change whenever practical. Avoid separate log-only commits unless correcting a mistake in the log.

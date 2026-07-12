@@ -2,6 +2,17 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Add inventory equipment flow
+
+- Changed weapon pickup so equipment goes into a backpack instead of pausing immediately.
+- Added a backpack panel opened with `B`; combat pauses only while the backpack is open.
+- Added backpack sorting by rarity, equipment level, and score.
+- Added backpack equipment and salvage actions, returning the old equipped weapon to the backpack when replaced.
+- Added equipment level display and updated README/design notes for the new pickup flow.
+- Updated agent notes to require validation before commits.
+- Validation: ran Godot 4.6.1 headless for 5 seconds outside the sandbox with no script errors before committing.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Tune equipment economy
 
 - Added rarity-based salvage values that also scale with equipment score.

@@ -81,6 +81,7 @@ static func roll_weapon(enemy_level: int = 1) -> Dictionary:
 	var equipment := {
 		"name": "%s%s" % [rarity["name"], form["name"]],
 		"slot": "weapon",
+		"level": enemy_level,
 		"form": form,
 		"rarity": rarity["name"],
 		"color": rarity["color"],
@@ -94,6 +95,7 @@ static func describe(equipment: Dictionary) -> String:
 	if equipment.is_empty():
 		return "武器：无"
 	var lines := ["%s (%s)" % [equipment["name"], equipment["rarity"]]]
+	lines.append("等级：%d" % int(equipment.get("level", 1)))
 	var form: Dictionary = equipment.get("form", {})
 	if not form.is_empty():
 		lines.append(str(form["description"]))
@@ -124,6 +126,28 @@ static func get_salvage_value(equipment: Dictionary) -> int:
 	var rarity_base := _get_rarity_salvage_base(str(equipment.get("rarity", "")))
 	var score_value := int(ceil(float(get_score(equipment)) / 12.0))
 	return clampi(rarity_base + score_value, 1, 30)
+
+static func get_rarity_rank(equipment: Dictionary) -> int:
+	var rarity_name := str(equipment.get("rarity", ""))
+	for index in range(RARITIES.size()):
+		if str(RARITIES[index]["name"]) == rarity_name:
+			return index
+	return 0
+
+static func should_sort_before(left: Dictionary, right: Dictionary) -> bool:
+	var left_rarity := get_rarity_rank(left)
+	var right_rarity := get_rarity_rank(right)
+	if left_rarity != right_rarity:
+		return left_rarity > right_rarity
+	var left_level := int(left.get("level", 1))
+	var right_level := int(right.get("level", 1))
+	if left_level != right_level:
+		return left_level > right_level
+	var left_score := get_score(left)
+	var right_score := get_score(right)
+	if left_score != right_score:
+		return left_score > right_score
+	return str(left.get("name", "")) < str(right.get("name", ""))
 
 static func get_score_delta_text(candidate: Dictionary, current: Dictionary) -> String:
 	var delta := get_score(candidate) - get_score(current)

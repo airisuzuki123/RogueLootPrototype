@@ -20,6 +20,8 @@ var inventory_capacity_label: Label
 var inventory_list: GridContainer
 var equipped_slot_buttons: Dictionary = {}
 var salvage_rarity_buttons: Dictionary = {}
+var selected_salvage_rarities: Dictionary = {}
+var salvage_selected_button: Button
 var detail_modal_overlay: Control
 var detail_modal_panel: PanelContainer
 var detail_title_label: Label
@@ -276,7 +278,7 @@ func _build_inventory_panel(root: Control) -> void:
 	title_row.add_child(inventory_capacity_label)
 
 	var salvage_label := Label.new()
-	salvage_label.text = "一键分解："
+	salvage_label.text = "分解品质："
 	salvage_label.custom_minimum_size = Vector2(92, 28)
 	title_row.add_child(salvage_label)
 
@@ -284,10 +286,17 @@ func _build_inventory_panel(root: Control) -> void:
 		var rarity_name := str(rarity["name"])
 		var button := Button.new()
 		button.text = rarity_name
+		button.toggle_mode = true
 		button.custom_minimum_size = Vector2(72, 32)
-		button.pressed.connect(_on_salvage_rarity_pressed.bind(rarity_name))
+		button.toggled.connect(_on_salvage_rarity_toggled.bind(rarity_name))
 		title_row.add_child(button)
 		salvage_rarity_buttons[rarity_name] = button
+
+	salvage_selected_button = Button.new()
+	salvage_selected_button.text = "分解选中"
+	salvage_selected_button.custom_minimum_size = Vector2(96, 32)
+	salvage_selected_button.pressed.connect(_on_salvage_selected_pressed)
+	title_row.add_child(salvage_selected_button)
 
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -373,10 +382,19 @@ func _on_inventory_close_pressed() -> void:
 		detail_modal_overlay.visible = false
 	GameManager.set_inventory_open(false)
 
-func _on_salvage_rarity_pressed(rarity_name: String) -> void:
+func _on_salvage_rarity_toggled(is_pressed: bool, rarity_name: String) -> void:
+	if is_pressed:
+		selected_salvage_rarities[rarity_name] = true
+	else:
+		selected_salvage_rarities.erase(rarity_name)
+	_refresh_salvage_buttons()
+
+func _on_salvage_selected_pressed() -> void:
 	if detail_modal_overlay != null:
 		detail_modal_overlay.visible = false
-	GameManager.salvage_inventory_by_rarity(rarity_name)
+	GameManager.salvage_inventory_by_rarities(selected_salvage_rarities.keys())
+	selected_salvage_rarities.clear()
+	_refresh_salvage_buttons()
 
 func _refresh_inventory_capacity() -> void:
 	if inventory_capacity_label == null:
@@ -390,7 +408,11 @@ func _refresh_inventory_capacity() -> void:
 func _refresh_salvage_buttons() -> void:
 	for rarity_name in salvage_rarity_buttons.keys():
 		var button: Button = salvage_rarity_buttons[rarity_name]
-		button.disabled = _count_inventory_items_by_rarity(str(rarity_name)) <= 0
+		var count := _count_inventory_items_by_rarity(str(rarity_name))
+		button.text = "%s %d" % [str(rarity_name), count]
+		button.set_pressed_no_signal(selected_salvage_rarities.has(str(rarity_name)))
+	if salvage_selected_button != null:
+		salvage_selected_button.disabled = selected_salvage_rarities.is_empty()
 
 func _count_inventory_items_by_rarity(rarity_name: String) -> int:
 	var count := 0
@@ -514,6 +536,7 @@ func _show_inventory_detail_modal() -> void:
 		EquipmentFactory.get_comparison_summary(equipment, current_equipment)
 	]
 	detail_equip_button.visible = true
+	detail_equip_button.text = "装备"
 	detail_salvage_button.visible = true
 	detail_salvage_button.text = "分解 +%d 金币" % EquipmentFactory.get_salvage_value(equipment)
 	detail_modal_overlay.visible = true
@@ -527,15 +550,18 @@ func _show_equipped_detail_modal(slot_id: String) -> void:
 	else:
 		detail_body_label.text = EquipmentFactory.describe_with_score(equipment)
 	detail_comparison_label.text = ""
-	detail_equip_button.visible = false
+	detail_equip_button.text = "卸下"
+	detail_equip_button.visible = not equipment.is_empty()
 	detail_salvage_button.visible = false
 	detail_modal_overlay.visible = true
 
 func _on_detail_equip_pressed() -> void:
-	if selected_equipment_source != "inventory":
-		return
-	GameManager.equip_inventory_equipment(selected_inventory_index)
-	detail_modal_overlay.visible = false
+	if selected_equipment_source == "inventory":
+		GameManager.equip_inventory_equipment(selected_inventory_index)
+		detail_modal_overlay.visible = false
+	elif selected_equipment_source == "equipped":
+		if GameManager.unequip_item(selected_equipped_slot_id):
+			detail_modal_overlay.visible = false
 
 func _on_detail_salvage_pressed() -> void:
 	if selected_equipment_source != "inventory":

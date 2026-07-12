@@ -2,6 +2,16 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Fix inventory salvage and unequip flow
+
+- Changed rarity salvage from direct disabled buttons to reusable quality toggles plus a `分解选中` action.
+- Kept rarity toggles selectable after canceling so players can choose and unchoose qualities repeatedly.
+- Added unequip support from equipped item detail popups, returning the item to the backpack when capacity allows.
+- Blocked unequip when the backpack is full to avoid losing equipped items.
+- Updated README, design notes, and the stage plan with the revised salvage and unequip behavior.
+- Validation: ran `git diff --check` and Godot 4.6.1 headless outside the sandbox with no script errors before committing.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Improve inventory closeout usability
 
 - Reworked equipment detail popups so long equipment text scrolls while equip and salvage buttons stay visible.

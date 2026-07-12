@@ -175,6 +175,28 @@ func equip_inventory_equipment(index: int) -> void:
 	else:
 		_set_loot_message("已装备：%s，原%s放入背包" % [new_equipment["name"], EquipmentFactory.get_slot_label(slot_id)])
 
+func unequip_item(slot_id: String) -> bool:
+	if not equipped_items.has(slot_id):
+		return false
+	var equipment: Dictionary = equipped_items.get(slot_id, {}).duplicate(true)
+	if equipment.is_empty():
+		_set_loot_message("%s槽位为空" % EquipmentFactory.get_slot_label(slot_id))
+		return false
+	if inventory.size() >= MAX_INVENTORY_SIZE:
+		_set_loot_message("背包已满，无法卸下：%s" % equipment["name"])
+		return false
+	equipped_items[slot_id] = {}
+	inventory.append(equipment)
+	if player != null and player.has_method("equip_item"):
+		player.equip_item({}, equipment)
+	elif player != null and player.has_method("equip_weapon"):
+		player.equip_weapon({}, equipment)
+	_sort_inventory()
+	inventory_changed.emit(inventory)
+	equipment_changed.emit(equipped_items)
+	_set_loot_message("已卸下：%s" % equipment["name"])
+	return true
+
 func salvage_inventory_equipment(index: int) -> void:
 	if index < 0 or index >= inventory.size():
 		return
@@ -187,25 +209,29 @@ func salvage_inventory_equipment(index: int) -> void:
 	_set_loot_message("已分解：%s，金币 +%d" % [salvaged_name, gained_gold])
 
 func salvage_inventory_by_rarity(rarity_name: String) -> void:
-	if rarity_name.is_empty():
+	salvage_inventory_by_rarities([rarity_name])
+
+func salvage_inventory_by_rarities(rarity_names: Array) -> void:
+	if rarity_names.is_empty():
+		_set_loot_message("请选择要分解的品质")
 		return
 	var kept_items: Array[Dictionary] = []
 	var total_value := 0
 	var salvaged_count := 0
 	for equipment in inventory:
-		if str(equipment.get("rarity", "")) == rarity_name:
+		if rarity_names.has(str(equipment.get("rarity", ""))):
 			total_value += EquipmentFactory.get_salvage_value(equipment)
 			salvaged_count += 1
 		else:
 			kept_items.append(equipment)
 	if salvaged_count <= 0:
-		_set_loot_message("没有可分解的%s装备" % rarity_name)
+		_set_loot_message("没有可分解的指定品质装备")
 		return
 	inventory = kept_items
 	_sort_inventory()
 	var gained_gold := add_gold(total_value)
 	inventory_changed.emit(inventory)
-	_set_loot_message("已分解%d件%s装备，金币 +%d" % [salvaged_count, rarity_name, gained_gold])
+	_set_loot_message("已分解%d件装备，金币 +%d" % [salvaged_count, gained_gold])
 
 func get_inventory_items() -> Array:
 	return inventory.duplicate(true)

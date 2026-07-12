@@ -121,6 +121,24 @@ static func get_score_delta_text(candidate: Dictionary, current: Dictionary) -> 
 		return "评分变化：+%d" % delta
 	return "评分变化：%d" % delta
 
+static func get_comparison_summary(candidate: Dictionary, current: Dictionary) -> String:
+	var lines := [get_score_delta_text(candidate, current)]
+	var candidate_profile := _build_combat_profile(candidate)
+	var current_profile := _build_combat_profile(current)
+	_add_form_delta(lines, candidate_profile, current_profile)
+	_add_number_delta(lines, "伤害词缀", int(candidate_profile["damage"]), int(current_profile["damage"]), "")
+	_add_percent_delta(lines, "伤害倍率", float(candidate_profile["damage_multiplier"]), float(current_profile["damage_multiplier"]))
+	_add_number_delta(lines, "投射物", int(candidate_profile["projectile_count"]), int(current_profile["projectile_count"]), "")
+	_add_number_delta(lines, "穿透", int(candidate_profile["pierce"]), int(current_profile["pierce"]), "")
+	_add_number_delta(lines, "爆裂范围", int(candidate_profile["explosion_radius"]), int(current_profile["explosion_radius"]), "")
+	_add_number_delta(lines, "攻击速度", int(candidate_profile["attack_speed"]), int(current_profile["attack_speed"]), "%")
+	_add_number_delta(lines, "暴击率", int(candidate_profile["critical_chance"]), int(current_profile["critical_chance"]), "%")
+	_add_number_delta(lines, "移动速度", int(candidate_profile["move_speed"]), int(current_profile["move_speed"]), "")
+	_add_number_delta(lines, "最大生命", int(candidate_profile["max_health"]), int(current_profile["max_health"]), "")
+	if lines.size() == 1:
+		lines.append("核心变化：属性接近")
+	return "\n".join(lines)
+
 static func _roll_rarity() -> Dictionary:
 	var total_weight := 0
 	for rarity in RARITIES:
@@ -164,3 +182,68 @@ static func _score_affix(affix_id: String, value: int) -> int:
 		"explosion_radius":
 			return value * 2
 	return value
+
+static func _build_combat_profile(equipment: Dictionary) -> Dictionary:
+	var profile := {
+		"form_name": "无",
+		"damage": 0,
+		"max_health": 0,
+		"attack_speed": 0,
+		"move_speed": 0,
+		"critical_chance": 0,
+		"projectile_count": 0,
+		"pierce": 0,
+		"explosion_radius": 0,
+		"damage_multiplier": 1.0
+	}
+	if equipment.is_empty():
+		return profile
+	var form: Dictionary = equipment.get("form", {})
+	if not form.is_empty():
+		profile["form_name"] = str(form.get("name", "未知形态"))
+		profile["projectile_count"] = int(form.get("projectile_bonus", 0))
+		profile["pierce"] = int(form.get("pierce", 0))
+		profile["explosion_radius"] = int(round(float(form.get("explosion_radius", 0.0))))
+		profile["damage_multiplier"] = float(form.get("damage_multiplier", 1.0))
+	for affix in equipment.get("affixes", []):
+		var affix_id := str(affix["id"])
+		var value := int(affix["value"])
+		match affix_id:
+			"damage":
+				profile["damage"] = int(profile["damage"]) + value
+			"max_health":
+				profile["max_health"] = int(profile["max_health"]) + value
+			"attack_speed":
+				profile["attack_speed"] = int(profile["attack_speed"]) + value
+			"move_speed":
+				profile["move_speed"] = int(profile["move_speed"]) + value
+			"critical_chance":
+				profile["critical_chance"] = int(profile["critical_chance"]) + value
+			"projectile_count":
+				profile["projectile_count"] = int(profile["projectile_count"]) + value
+			"pierce":
+				profile["pierce"] = int(profile["pierce"]) + value
+			"explosion_radius":
+				profile["explosion_radius"] = int(profile["explosion_radius"]) + value
+	return profile
+
+static func _add_form_delta(lines: Array, candidate_profile: Dictionary, current_profile: Dictionary) -> void:
+	var candidate_form := str(candidate_profile["form_name"])
+	var current_form := str(current_profile["form_name"])
+	if candidate_form == current_form:
+		return
+	lines.append("形态：%s -> %s" % [current_form, candidate_form])
+
+static func _add_number_delta(lines: Array, label: String, candidate_value: int, current_value: int, suffix: String) -> void:
+	var delta := candidate_value - current_value
+	if delta == 0:
+		return
+	var sign := "+" if delta > 0 else ""
+	lines.append("%s：%s%d%s" % [label, sign, delta, suffix])
+
+static func _add_percent_delta(lines: Array, label: String, candidate_value: float, current_value: float) -> void:
+	var delta := int(round((candidate_value - current_value) * 100.0))
+	if delta == 0:
+		return
+	var sign := "+" if delta > 0 else ""
+	lines.append("%s：%s%d%%" % [label, sign, delta])

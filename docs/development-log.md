@@ -2,6 +2,14 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Add equipment comparison summary
+
+- Added a core-change summary to weapon comparison, including form, score, damage, projectile count, pierce, burst radius, attack speed, critical chance, movement speed, and max health deltas.
+- Updated the equipment pickup panel to show the richer comparison summary.
+- Updated README and design notes with the improved comparison flow.
+- Validation: ran Godot 4.6.1 headless for 5 seconds outside the sandbox with no script errors before committing.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Add form-linked affixes
 
 - Added weapon affixes for extra projectiles, pierce, and explosion radius.

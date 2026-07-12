@@ -62,7 +62,7 @@ func _build_ui() -> void:
 	equipment_choice_panel = PanelContainer.new()
 	equipment_choice_panel.visible = false
 	equipment_choice_panel.position = Vector2(320, 150)
-	equipment_choice_panel.custom_minimum_size = Vector2(640, 310)
+	equipment_choice_panel.custom_minimum_size = Vector2(640, 380)
 	root.add_child(equipment_choice_panel)
 
 	var equipment_choice_list := VBoxContainer.new()
@@ -88,6 +88,7 @@ func _build_ui() -> void:
 	comparison_row.add_child(candidate_weapon_label)
 
 	equipment_delta_label = Label.new()
+	equipment_delta_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	equipment_choice_list.add_child(equipment_delta_label)
 
 	var equipment_button_row := HBoxContainer.new()
@@ -164,7 +165,7 @@ func _on_loot_message_changed(message: String) -> void:
 func _on_equipment_choice_requested(candidate: Dictionary, current: Dictionary, salvage_value: int) -> void:
 	current_weapon_label.text = "当前\n%s" % EquipmentFactory.describe_with_score(current)
 	candidate_weapon_label.text = "新武器\n%s" % EquipmentFactory.describe_with_score(candidate)
-	equipment_delta_label.text = EquipmentFactory.get_score_delta_text(candidate, current)
+	equipment_delta_label.text = EquipmentFactory.get_comparison_summary(candidate, current)
 	salvage_button.text = "保留当前，分解 +%d 金币" % salvage_value
 	equipment_choice_panel.visible = true
 

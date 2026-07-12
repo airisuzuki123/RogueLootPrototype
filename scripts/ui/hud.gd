@@ -25,6 +25,8 @@ var inventory_equip_button: Button
 var inventory_salvage_button: Button
 var inventory_items: Array = []
 var selected_inventory_index: int = -1
+var inventory_filter_slot_id: String = "all"
+var inventory_filter_buttons: Dictionary = {}
 var equipped_items: Dictionary = {}
 var upgrade_panel: PanelContainer
 var upgrade_list: VBoxContainer
@@ -266,6 +268,13 @@ func _build_inventory_panel(root: Control) -> void:
 	close_button.pressed.connect(_on_inventory_close_pressed)
 	title_row.add_child(close_button)
 
+	var filter_row := HBoxContainer.new()
+	filter_row.add_theme_constant_override("separation", 8)
+	panel_root.add_child(filter_row)
+	_add_inventory_filter_button(filter_row, "all", "全部")
+	for slot in EquipmentFactory.EQUIPMENT_SLOTS:
+		_add_inventory_filter_button(filter_row, str(slot["id"]), str(slot["label"]))
+
 	var content_row := HBoxContainer.new()
 	content_row.add_theme_constant_override("separation", 14)
 	panel_root.add_child(content_row)
@@ -326,9 +335,12 @@ func _build_inventory_panel(root: Control) -> void:
 func _refresh_inventory_panel() -> void:
 	if inventory_list == null:
 		return
+	_ensure_selected_inventory_item_visible()
+	_refresh_inventory_filter_buttons()
 	for child in inventory_list.get_children():
 		child.queue_free()
-	for index in range(inventory_items.size()):
+	var visible_indices := _get_visible_inventory_indices()
+	for index in visible_indices:
 		var equipment: Dictionary = inventory_items[index]
 		var button := Button.new()
 		button.text = _get_inventory_item_button_text(equipment, index == selected_inventory_index)
@@ -342,11 +354,11 @@ func _refresh_inventory_panel() -> void:
 	_refresh_inventory_detail()
 
 func _refresh_inventory_detail() -> void:
-	var has_selection := selected_inventory_index >= 0 and selected_inventory_index < inventory_items.size()
+	var has_selection := selected_inventory_index >= 0 and selected_inventory_index < inventory_items.size() and _is_equipment_visible(inventory_items[selected_inventory_index])
 	inventory_equip_button.disabled = not has_selection
 	inventory_salvage_button.disabled = not has_selection
 	if not has_selection:
-		inventory_recommendation_label.text = "背包为空"
+		inventory_recommendation_label.text = "背包为空" if inventory_items.is_empty() else "当前筛选无装备"
 		current_inventory_label.text = "当前装备\n%s" % EquipmentFactory.describe_loadout(equipped_items)
 		selected_inventory_label.text = "选中\n无"
 		inventory_summary_label.text = "拾取到的装备会自动放入背包。"
@@ -389,6 +401,47 @@ func _on_inventory_salvage_pressed() -> void:
 
 func _on_inventory_close_pressed() -> void:
 	GameManager.set_inventory_open(false)
+
+func _add_inventory_filter_button(parent: Control, slot_id: String, label: String) -> void:
+	var button := Button.new()
+	button.text = label
+	button.custom_minimum_size = Vector2(78, 32)
+	button.pressed.connect(_on_inventory_filter_pressed.bind(slot_id))
+	parent.add_child(button)
+	inventory_filter_buttons[slot_id] = button
+
+func _on_inventory_filter_pressed(slot_id: String) -> void:
+	inventory_filter_slot_id = slot_id
+	_ensure_selected_inventory_item_visible()
+	_refresh_inventory_panel()
+
+func _refresh_inventory_filter_buttons() -> void:
+	for slot_id in inventory_filter_buttons.keys():
+		var button: Button = inventory_filter_buttons[slot_id]
+		button.disabled = str(slot_id) == inventory_filter_slot_id
+
+func _ensure_selected_inventory_item_visible() -> void:
+	var selection_visible := selected_inventory_index >= 0 and selected_inventory_index < inventory_items.size()
+	if selection_visible:
+		selection_visible = _is_equipment_visible(inventory_items[selected_inventory_index])
+	if selection_visible:
+		return
+	selected_inventory_index = -1
+	for index in _get_visible_inventory_indices():
+		selected_inventory_index = index
+		return
+
+func _get_visible_inventory_indices() -> Array:
+	var indices := []
+	for index in range(inventory_items.size()):
+		if _is_equipment_visible(inventory_items[index]):
+			indices.append(index)
+	return indices
+
+func _is_equipment_visible(equipment: Dictionary) -> bool:
+	if inventory_filter_slot_id == "all":
+		return true
+	return str(equipment.get("slot", "weapon")) == inventory_filter_slot_id
 
 func _get_current_equipment_for(equipment: Dictionary) -> Dictionary:
 	var slot_id := str(equipment.get("slot", "weapon"))

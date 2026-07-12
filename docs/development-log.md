@@ -2,6 +2,15 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Add inventory slot filters
+
+- Added backpack filter buttons for all equipment, weapons, armor, and accessories.
+- Kept backpack sorting unchanged while making the visible list and selection respect the active filter.
+- Updated empty-state text for filtered backpack views.
+- Updated README and design notes with the current backpack filtering behavior.
+- Validation: ran `git diff --check` and Godot 4.6.1 headless for 5 seconds outside the sandbox with no script errors before committing.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Add weapon form upgrade specializations
 
 - Added upgrade choices that can appear based on the currently equipped weapon form.

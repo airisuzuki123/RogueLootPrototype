@@ -2,6 +2,15 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Add weapon form upgrade specializations
+
+- Added upgrade choices that can appear based on the currently equipped weapon form.
+- Added focused, scatter, piercing, and burst specialization effects for damage, projectile count, pierce, and explosion radius.
+- Kept specialization effects fixed after selection so later weapon swaps do not remove already-earned upgrades.
+- Updated README and design notes with the current upgrade and weapon-form linkage.
+- Validation: ran `git diff --check` and Godot 4.6.1 headless for 5 seconds outside the sandbox with no script errors before committing.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Add sustain and gold affixes
 
 - Added life-steal and gold-gain equipment affixes with slot-specific roll pools.

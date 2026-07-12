@@ -257,11 +257,44 @@ func end_run() -> void:
 func _request_upgrade_choices() -> void:
 	is_upgrade_pending = true
 	var pool := UPGRADE_POOL.duplicate(true)
+	var form_upgrade := _get_current_form_upgrade_choice()
+	if not form_upgrade.is_empty():
+		pool.append(form_upgrade)
 	pool.shuffle()
 	pending_upgrade_choices.clear()
 	for index in range(min(3, pool.size())):
 		pending_upgrade_choices.append(pool[index])
 	upgrade_choices_requested.emit(pending_upgrade_choices)
+
+func _get_current_form_upgrade_choice() -> Dictionary:
+	var weapon: Dictionary = equipped_items.get("weapon", {})
+	var form: Dictionary = weapon.get("form", {})
+	match str(form.get("id", "")):
+		"focused":
+			return {
+				"id": "form_focused",
+				"title": "聚能专精",
+				"description": "当前武器为聚能法杖：投射物伤害 +8"
+			}
+		"scatter":
+			return {
+				"id": "form_scatter",
+				"title": "散射专精",
+				"description": "当前武器为散射法杖：每次攻击投射物 +1"
+			}
+		"piercing":
+			return {
+				"id": "form_piercing",
+				"title": "穿透专精",
+				"description": "当前武器为穿透法杖：投射物穿透 +1"
+			}
+		"burst":
+			return {
+				"id": "form_burst",
+				"title": "爆裂专精",
+				"description": "当前武器为爆裂法杖：爆裂范围 +28"
+			}
+	return {}
 
 func _set_loot_message(message: String) -> void:
 	latest_loot_message = message

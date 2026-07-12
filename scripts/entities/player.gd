@@ -33,6 +33,8 @@ var equipment_explosion_damage_ratio: float = 0.0
 var affix_projectile_count_bonus: int = 0
 var affix_pierce_bonus: int = 0
 var affix_explosion_radius_bonus: float = 0.0
+var upgrade_pierce_bonus: int = 0
+var upgrade_explosion_radius_bonus: float = 0.0
 @onready var visual: Polygon2D = $Visual
 
 func _ready() -> void:
@@ -85,6 +87,14 @@ func apply_upgrade(upgrade_id: String) -> void:
 			GameManager.update_player_health(health, max_health)
 		"multishot":
 			projectile_count += 1
+		"form_focused":
+			projectile_damage += 8
+		"form_scatter":
+			projectile_count += 1
+		"form_piercing":
+			upgrade_pierce_bonus += 1
+		"form_burst":
+			upgrade_explosion_radius_bonus += 28.0
 
 func equip_weapon(new_weapon: Dictionary, old_weapon: Dictionary = {}) -> void:
 	equip_item(new_weapon, old_weapon)
@@ -123,7 +133,7 @@ func _update_auto_attack(delta: float) -> void:
 		projectile.direction = base_direction.rotated(spread)
 		projectile.damage = _roll_projectile_damage()
 		projectile.is_critical = projectile.damage > _get_base_projectile_damage()
-		projectile.pierce_remaining = equipment_pierce_bonus + affix_pierce_bonus
+		projectile.pierce_remaining = equipment_pierce_bonus + affix_pierce_bonus + upgrade_pierce_bonus
 		projectile.explosion_radius = _get_total_explosion_radius()
 		projectile.explosion_damage = int(round(float(projectile.damage) * _get_total_explosion_damage_ratio()))
 		projectile.source_player = self
@@ -223,14 +233,14 @@ func _roll_projectile_damage() -> int:
 	return damage
 
 func _get_total_explosion_radius() -> float:
-	return equipment_explosion_radius + affix_explosion_radius_bonus
+	return equipment_explosion_radius + affix_explosion_radius_bonus + upgrade_explosion_radius_bonus
 
 func _get_total_explosion_damage_ratio() -> float:
 	var total_radius := _get_total_explosion_radius()
 	if total_radius <= 0.0:
 		return 0.0
 	var ratio := equipment_explosion_damage_ratio
-	if affix_explosion_radius_bonus > 0.0:
+	if affix_explosion_radius_bonus > 0.0 or upgrade_explosion_radius_bonus > 0.0:
 		ratio = maxf(ratio, 0.25)
 		if equipment_explosion_damage_ratio > 0.0:
 			ratio += 0.08

@@ -12,6 +12,8 @@ var is_critical: bool = false
 var pierce_remaining: int = 0
 var explosion_radius: float = 0.0
 var explosion_damage: int = 0
+var source_player: Node = null
+var life_steal_percent: int = 0
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
@@ -29,6 +31,7 @@ func _on_body_entered(body: Node) -> void:
 		return
 	if body.has_method("take_damage"):
 		body.take_damage(damage, direction.normalized() * knockback_force, is_critical)
+		_apply_life_steal(damage)
 	if explosion_radius > 0.0 and explosion_damage > 0:
 		_deal_explosion_damage(body)
 	var burst_color := Color(1.0, 0.75, 0.2, 0.95) if is_critical else Color(0.8, 0.95, 1.0, 0.8)
@@ -55,3 +58,10 @@ func _deal_explosion_damage(primary_body: Node) -> void:
 		if enemy.has_method("take_damage"):
 			var knockback := global_position.direction_to(enemy.global_position) * knockback_force * 0.55
 			enemy.take_damage(explosion_damage, knockback)
+			_apply_life_steal(explosion_damage)
+
+func _apply_life_steal(hit_damage: int) -> void:
+	if life_steal_percent <= 0 or source_player == null or not is_instance_valid(source_player):
+		return
+	if source_player.has_method("heal_from_life_steal"):
+		source_player.heal_from_life_steal(hit_damage)

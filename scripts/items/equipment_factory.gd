@@ -21,13 +21,15 @@ const AFFIXES := [
 	{"id": "critical_chance", "label": "暴击率", "min": 4, "max": 9},
 	{"id": "projectile_count", "label": "额外投射物", "min": 1, "max": 1, "level_scale": false},
 	{"id": "pierce", "label": "穿透", "min": 1, "max": 1, "level_scale": false},
-	{"id": "explosion_radius", "label": "爆裂范围", "min": 18, "max": 32}
+	{"id": "explosion_radius", "label": "爆裂范围", "min": 18, "max": 32},
+	{"id": "life_steal", "label": "吸血", "min": 3, "max": 7},
+	{"id": "gold_bonus", "label": "金币获取", "min": 8, "max": 18}
 ]
 
 const SLOT_AFFIXES := {
-	"weapon": ["damage", "attack_speed", "critical_chance", "projectile_count", "pierce", "explosion_radius"],
-	"armor": ["max_health", "move_speed", "attack_speed"],
-	"accessory": ["critical_chance", "attack_speed", "move_speed", "projectile_count", "pierce", "explosion_radius"]
+	"weapon": ["damage", "attack_speed", "critical_chance", "projectile_count", "pierce", "explosion_radius", "life_steal"],
+	"armor": ["max_health", "move_speed", "attack_speed", "gold_bonus"],
+	"accessory": ["critical_chance", "attack_speed", "move_speed", "projectile_count", "pierce", "explosion_radius", "life_steal", "gold_bonus"]
 }
 
 const WEAPON_FORMS := [
@@ -127,7 +129,7 @@ static func describe(equipment: Dictionary) -> String:
 		lines.append(str(form["description"]))
 	for affix in equipment["affixes"]:
 		var prefix := "+"
-		if affix["id"] in ["attack_speed", "critical_chance"]:
+		if affix["id"] in ["attack_speed", "critical_chance", "life_steal", "gold_bonus"]:
 			lines.append("%s%d%% %s" % [prefix, affix["value"], affix["label"]])
 		elif affix["id"] == "projectile_count":
 			lines.append("%s%d %s" % [prefix, affix["value"], affix["label"]])
@@ -251,6 +253,8 @@ static func get_comparison_summary(candidate: Dictionary, current: Dictionary) -
 	_add_number_delta(lines, "爆裂范围", int(candidate_profile["explosion_radius"]), int(current_profile["explosion_radius"]), "")
 	_add_number_delta(lines, "攻击速度", int(candidate_profile["attack_speed"]), int(current_profile["attack_speed"]), "%")
 	_add_number_delta(lines, "暴击率", int(candidate_profile["critical_chance"]), int(current_profile["critical_chance"]), "%")
+	_add_number_delta(lines, "吸血", int(candidate_profile["life_steal"]), int(current_profile["life_steal"]), "%")
+	_add_number_delta(lines, "金币获取", int(candidate_profile["gold_bonus"]), int(current_profile["gold_bonus"]), "%")
 	_add_number_delta(lines, "移动速度", int(candidate_profile["move_speed"]), int(current_profile["move_speed"]), "")
 	_add_number_delta(lines, "最大生命", int(candidate_profile["max_health"]), int(current_profile["max_health"]), "")
 	if lines.size() == 1:
@@ -331,6 +335,10 @@ static func _score_affix(affix_id: String, value: int) -> int:
 			return value * 14
 		"explosion_radius":
 			return value * 2
+		"life_steal":
+			return value * 6
+		"gold_bonus":
+			return value * 2
 	return value
 
 static func _build_combat_profile(equipment: Dictionary) -> Dictionary:
@@ -344,6 +352,8 @@ static func _build_combat_profile(equipment: Dictionary) -> Dictionary:
 		"projectile_count": 0,
 		"pierce": 0,
 		"explosion_radius": 0,
+		"life_steal": 0,
+		"gold_bonus": 0,
 		"damage_multiplier": 1.0
 	}
 	if equipment.is_empty():
@@ -375,6 +385,10 @@ static func _build_combat_profile(equipment: Dictionary) -> Dictionary:
 				profile["pierce"] = int(profile["pierce"]) + value
 			"explosion_radius":
 				profile["explosion_radius"] = int(profile["explosion_radius"]) + value
+			"life_steal":
+				profile["life_steal"] = int(profile["life_steal"]) + value
+			"gold_bonus":
+				profile["gold_bonus"] = int(profile["gold_bonus"]) + value
 	return profile
 
 static func _add_form_delta(lines: Array, candidate_profile: Dictionary, current_profile: Dictionary) -> void:
@@ -414,9 +428,15 @@ static func _get_primary_change(candidate_profile: Dictionary, current_profile: 
 	var critical_delta := int(candidate_profile["critical_chance"]) - int(current_profile["critical_chance"])
 	if critical_delta > 0:
 		return "暴击率 +%d%%" % critical_delta
+	var life_steal_delta := int(candidate_profile["life_steal"]) - int(current_profile["life_steal"])
+	if life_steal_delta > 0:
+		return "吸血 +%d%%" % life_steal_delta
 	var attack_speed_delta := int(candidate_profile["attack_speed"]) - int(current_profile["attack_speed"])
 	if attack_speed_delta > 0:
 		return "攻击速度 +%d%%" % attack_speed_delta
+	var gold_bonus_delta := int(candidate_profile["gold_bonus"]) - int(current_profile["gold_bonus"])
+	if gold_bonus_delta > 0:
+		return "金币获取 +%d%%" % gold_bonus_delta
 	var health_delta := int(candidate_profile["max_health"]) - int(current_profile["max_health"])
 	if health_delta > 0:
 		return "最大生命 +%d" % health_delta

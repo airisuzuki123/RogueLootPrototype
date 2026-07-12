@@ -107,12 +107,19 @@ func update_player_health(current: int, maximum: int) -> void:
 	player_max_health = maximum
 	health_changed.emit(current, maximum)
 
-func add_gold(amount: int) -> void:
+func add_gold(amount: int, apply_bonus: bool = true) -> int:
 	if is_run_over:
-		return
-	gold += amount
+		return 0
+	var final_amount := amount
+	if apply_bonus and player != null and player.has_method("get_gold_bonus_percent"):
+		var bonus_percent := int(player.get_gold_bonus_percent())
+		if bonus_percent > 0:
+			final_amount += int(round(float(amount) * float(bonus_percent) / 100.0))
+	final_amount = maxi(0, final_amount)
+	gold += final_amount
 	gold_changed.emit(gold)
-	_set_loot_message("金币 +%d" % amount)
+	_set_loot_message("金币 +%d" % final_amount)
+	return final_amount
 
 func pickup_equipment(equipment: Dictionary) -> void:
 	if is_run_over or equipment.is_empty():
@@ -166,10 +173,9 @@ func salvage_inventory_equipment(index: int) -> void:
 	var value := EquipmentFactory.get_salvage_value(equipment)
 	var salvaged_name := str(equipment["name"])
 	inventory.remove_at(index)
-	gold += value
-	gold_changed.emit(gold)
+	var gained_gold := add_gold(value)
 	inventory_changed.emit(inventory)
-	_set_loot_message("已分解：%s，金币 +%d" % [salvaged_name, value])
+	_set_loot_message("已分解：%s，金币 +%d" % [salvaged_name, gained_gold])
 
 func get_inventory_items() -> Array:
 	return inventory.duplicate(true)
@@ -209,9 +215,8 @@ func salvage_pending_equipment() -> void:
 	var salvaged_name := str(pending_equipment_choice["name"])
 	var value := pending_equipment_salvage_value
 	_clear_pending_equipment_choice()
-	gold += value
-	gold_changed.emit(gold)
-	_set_loot_message("已分解：%s，金币 +%d" % [salvaged_name, value])
+	var gained_gold := add_gold(value)
+	_set_loot_message("已分解：%s，金币 +%d" % [salvaged_name, gained_gold])
 
 func register_kill() -> void:
 	if is_run_over:

@@ -22,6 +22,8 @@ var equipment_attack_speed_bonus: int = 0
 var equipment_health_bonus: int = 0
 var equipment_move_speed_bonus: int = 0
 var equipment_critical_chance_bonus: int = 0
+var equipment_life_steal_bonus: int = 0
+var equipment_gold_bonus: int = 0
 var equipment_projectile_count_bonus: int = 0
 var equipment_pierce_bonus: int = 0
 var equipment_damage_multiplier: float = 1.0
@@ -94,6 +96,16 @@ func equip_item(new_item: Dictionary, old_item: Dictionary = {}) -> void:
 		_apply_equipment_stats(new_item)
 	GameManager.update_player_health(health, max_health)
 
+func heal_from_life_steal(hit_damage: int) -> void:
+	if equipment_life_steal_bonus <= 0 or health <= 0 or health >= max_health:
+		return
+	var heal_amount: int = max(1, int(round(float(hit_damage) * float(equipment_life_steal_bonus) / 100.0)))
+	health = min(max_health, health + heal_amount)
+	GameManager.update_player_health(health, max_health)
+
+func get_gold_bonus_percent() -> int:
+	return equipment_gold_bonus
+
 func _update_auto_attack(delta: float) -> void:
 	fire_cooldown -= delta
 	if fire_cooldown > 0.0:
@@ -114,6 +126,8 @@ func _update_auto_attack(delta: float) -> void:
 		projectile.pierce_remaining = equipment_pierce_bonus + affix_pierce_bonus
 		projectile.explosion_radius = _get_total_explosion_radius()
 		projectile.explosion_damage = int(round(float(projectile.damage) * _get_total_explosion_damage_ratio()))
+		projectile.source_player = self
+		projectile.life_steal_percent = equipment_life_steal_bonus
 		get_tree().current_scene.add_child(projectile)
 
 func _find_nearest_enemy() -> Node2D:
@@ -152,6 +166,10 @@ func _apply_equipment_stats(equipment: Dictionary) -> void:
 				move_speed += affix["value"]
 			"critical_chance":
 				equipment_critical_chance_bonus += affix["value"]
+			"life_steal":
+				equipment_life_steal_bonus += affix["value"]
+			"gold_bonus":
+				equipment_gold_bonus += affix["value"]
 			"projectile_count":
 				affix_projectile_count_bonus += affix["value"]
 			"pierce":
@@ -178,6 +196,10 @@ func _remove_equipment_stats(equipment: Dictionary) -> void:
 				move_speed -= affix["value"]
 			"critical_chance":
 				equipment_critical_chance_bonus -= affix["value"]
+			"life_steal":
+				equipment_life_steal_bonus -= affix["value"]
+			"gold_bonus":
+				equipment_gold_bonus -= affix["value"]
 			"projectile_count":
 				affix_projectile_count_bonus -= affix["value"]
 			"pierce":

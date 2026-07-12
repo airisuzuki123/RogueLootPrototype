@@ -2,6 +2,16 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Add sustain and gold affixes
+
+- Added life-steal and gold-gain equipment affixes with slot-specific roll pools.
+- Added player life-steal handling for projectile and explosion hits.
+- Added player gold-gain handling for gold pickups and equipment salvage rewards.
+- Updated equipment scoring, comparison summaries, and recommendation text to account for the new affixes.
+- Updated README and design notes with the current sustain and economy affix behavior.
+- Validation: ran `git diff --check` and Godot 4.6.1 headless for 5 seconds outside the sandbox; first Godot run caught a type inference error in the new life-steal calculation, second run passed after fixing it.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Add multi-slot equipment
 
 - Added weapon, armor, and accessory equipment slots with slot-specific affix pools.

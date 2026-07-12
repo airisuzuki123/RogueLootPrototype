@@ -10,7 +10,7 @@ This file records successful GitHub pushes for the project.
 - Reworked equipment detail comparison to show current and selected equipment side by side, with recommendation and attribute changes underneath.
 - Updated README, design notes, and the stage plan with the revised experience, loot, and comparison behavior.
 - Validation: ran `git diff --check` and Godot 4.6.1 headless outside the sandbox with no script errors before committing.
-- Push result: pushed `main` to `origin/main` successfully.
+- Push result: first two push attempts failed with connection errors, then retrying with HTTP/1.1 and a larger post buffer pushed `main` to `origin/main` successfully.
 
 ## 2026-07-12 - Add loadout summary to inventory
 

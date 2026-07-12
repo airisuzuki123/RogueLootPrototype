@@ -2,6 +2,16 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Rework inventory equipment layout
+
+- Expanded equipment slots from weapon, armor, and accessory to weapon, helmet, armor, boots, necklace, and ring.
+- Updated slot-specific affix pools and default equipped state for the six-slot loadout.
+- Reworked the backpack UI into a left-side equipped layout and right-side icon grid without initial tabs or filters.
+- Moved equipment details, same-slot comparison, equip, and salvage actions into a click-open detail popup.
+- Updated README and design notes with the six-slot equipment layout and popup-detail backpack flow.
+- Validation: ran `git diff --check` and Godot 4.6.1 headless for 5 seconds outside the sandbox with no script errors before committing.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Add inventory slot filters
 
 - Added backpack filter buttons for all equipment, weapons, armor, and accessories.

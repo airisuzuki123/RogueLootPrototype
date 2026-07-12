@@ -32,8 +32,11 @@ var pending_equipment_salvage_value: int = 0
 var inventory: Array[Dictionary] = []
 var equipped_items := {
 	"weapon": {},
+	"helmet": {},
 	"armor": {},
-	"accessory": {}
+	"boots": {},
+	"necklace": {},
+	"ring": {}
 }
 var latest_loot_message: String = ""
 
@@ -309,11 +312,13 @@ func _calculate_salvage_value(equipment: Dictionary) -> int:
 	return EquipmentFactory.get_salvage_value(equipment)
 
 func _reset_equipped_items() -> void:
-	equipped_items = {
-		"weapon": {},
-		"armor": {},
-		"accessory": {}
-	}
+	equipped_items = _create_empty_equipped_items()
+
+func _create_empty_equipped_items() -> Dictionary:
+	var empty_items := {}
+	for slot in EquipmentFactory.EQUIPMENT_SLOTS:
+		empty_items[str(slot["id"])] = {}
+	return empty_items
 
 func _sort_inventory() -> void:
 	inventory.sort_custom(_is_inventory_item_before)

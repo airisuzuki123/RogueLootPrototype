@@ -16,17 +16,18 @@ var equipment_delta_label: Label
 var equip_button: Button
 var salvage_button: Button
 var inventory_panel: PanelContainer
-var inventory_list: VBoxContainer
-var inventory_recommendation_label: Label
-var current_inventory_label: Label
-var selected_inventory_label: Label
-var inventory_summary_label: Label
-var inventory_equip_button: Button
-var inventory_salvage_button: Button
+var inventory_list: GridContainer
+var equipped_slot_buttons: Dictionary = {}
+var detail_modal_panel: PanelContainer
+var detail_title_label: Label
+var detail_body_label: Label
+var detail_comparison_label: Label
+var detail_equip_button: Button
+var detail_salvage_button: Button
 var inventory_items: Array = []
 var selected_inventory_index: int = -1
-var inventory_filter_slot_id: String = "all"
-var inventory_filter_buttons: Dictionary = {}
+var selected_equipment_source: String = ""
+var selected_equipped_slot_id: String = ""
 var equipped_items: Dictionary = {}
 var upgrade_panel: PanelContainer
 var upgrade_list: VBoxContainer
@@ -169,7 +170,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if key_event.keycode == KEY_B:
 		GameManager.toggle_inventory_open()
 	elif key_event.keycode == KEY_ESCAPE and GameManager.is_inventory_open:
-		GameManager.set_inventory_open(false)
+		if detail_modal_panel != null and detail_modal_panel.visible:
+			detail_modal_panel.visible = false
+		else:
+			GameManager.set_inventory_open(false)
 
 func _on_gold_changed(total: int) -> void:
 	gold_label.text = "金币：%d" % total
@@ -201,6 +205,8 @@ func _on_inventory_changed(items: Array) -> void:
 
 func _on_inventory_open_changed(is_open: bool) -> void:
 	inventory_panel.visible = is_open
+	if detail_modal_panel != null and not is_open:
+		detail_modal_panel.visible = false
 	if is_open and selected_inventory_index < 0 and not inventory_items.is_empty():
 		selected_inventory_index = 0
 	_refresh_inventory_panel()
@@ -245,12 +251,12 @@ func _on_run_ended(kills: int, gold: int) -> void:
 func _build_inventory_panel(root: Control) -> void:
 	inventory_panel = PanelContainer.new()
 	inventory_panel.visible = false
-	inventory_panel.position = Vector2(200, 70)
-	inventory_panel.custom_minimum_size = Vector2(880, 560)
+	inventory_panel.position = Vector2(110, 60)
+	inventory_panel.custom_minimum_size = Vector2(1060, 600)
 	root.add_child(inventory_panel)
 
 	var panel_root := VBoxContainer.new()
-	panel_root.add_theme_constant_override("separation", 10)
+	panel_root.add_theme_constant_override("separation", 12)
 	inventory_panel.add_child(panel_root)
 
 	var title_row := HBoxContainer.new()
@@ -259,7 +265,7 @@ func _build_inventory_panel(root: Control) -> void:
 
 	var title := Label.new()
 	title.text = "背包"
-	title.custom_minimum_size = Vector2(740, 28)
+	title.custom_minimum_size = Vector2(920, 28)
 	title_row.add_child(title)
 
 	var close_button := Button.new()
@@ -268,180 +274,243 @@ func _build_inventory_panel(root: Control) -> void:
 	close_button.pressed.connect(_on_inventory_close_pressed)
 	title_row.add_child(close_button)
 
-	var filter_row := HBoxContainer.new()
-	filter_row.add_theme_constant_override("separation", 8)
-	panel_root.add_child(filter_row)
-	_add_inventory_filter_button(filter_row, "all", "全部")
-	for slot in EquipmentFactory.EQUIPMENT_SLOTS:
-		_add_inventory_filter_button(filter_row, str(slot["id"]), str(slot["label"]))
-
 	var content_row := HBoxContainer.new()
-	content_row.add_theme_constant_override("separation", 14)
+	content_row.add_theme_constant_override("separation", 18)
 	panel_root.add_child(content_row)
 
-	var list_scroll := ScrollContainer.new()
-	list_scroll.custom_minimum_size = Vector2(320, 430)
-	content_row.add_child(list_scroll)
+	var equipped_column := VBoxContainer.new()
+	equipped_column.custom_minimum_size = Vector2(300, 500)
+	equipped_column.add_theme_constant_override("separation", 12)
+	content_row.add_child(equipped_column)
 
-	inventory_list = VBoxContainer.new()
-	inventory_list.add_theme_constant_override("separation", 6)
+	var equipped_title := Label.new()
+	equipped_title.text = "当前穿戴"
+	equipped_column.add_child(equipped_title)
+
+	_add_equipped_slot_row(equipped_column, ["helmet"])
+	_add_equipped_slot_row(equipped_column, ["weapon", "armor"])
+	_add_equipped_slot_row(equipped_column, ["necklace", "ring"])
+	_add_equipped_slot_row(equipped_column, ["boots"])
+
+	var inventory_column := VBoxContainer.new()
+	inventory_column.custom_minimum_size = Vector2(700, 500)
+	inventory_column.add_theme_constant_override("separation", 10)
+	content_row.add_child(inventory_column)
+
+	var inventory_title := Label.new()
+	inventory_title.text = "背包装备"
+	inventory_column.add_child(inventory_title)
+
+	var list_scroll := ScrollContainer.new()
+	list_scroll.custom_minimum_size = Vector2(690, 460)
+	inventory_column.add_child(list_scroll)
+
+	inventory_list = GridContainer.new()
+	inventory_list.columns = 6
+	inventory_list.add_theme_constant_override("h_separation", 8)
+	inventory_list.add_theme_constant_override("v_separation", 8)
 	list_scroll.add_child(inventory_list)
 
-	var detail_column := VBoxContainer.new()
-	detail_column.custom_minimum_size = Vector2(500, 430)
-	detail_column.add_theme_constant_override("separation", 10)
-	content_row.add_child(detail_column)
-
-	inventory_recommendation_label = Label.new()
-	inventory_recommendation_label.custom_minimum_size = Vector2(500, 34)
-	inventory_recommendation_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	inventory_recommendation_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.45, 1.0))
-	detail_column.add_child(inventory_recommendation_label)
-
-	var comparison_row := HBoxContainer.new()
-	comparison_row.add_theme_constant_override("separation", 12)
-	detail_column.add_child(comparison_row)
-
-	current_inventory_label = Label.new()
-	current_inventory_label.custom_minimum_size = Vector2(240, 205)
-	current_inventory_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	comparison_row.add_child(current_inventory_label)
-
-	selected_inventory_label = Label.new()
-	selected_inventory_label.custom_minimum_size = Vector2(240, 205)
-	selected_inventory_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	comparison_row.add_child(selected_inventory_label)
-
-	inventory_summary_label = Label.new()
-	inventory_summary_label.custom_minimum_size = Vector2(500, 110)
-	inventory_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detail_column.add_child(inventory_summary_label)
-
-	var button_row := HBoxContainer.new()
-	button_row.add_theme_constant_override("separation", 12)
-	detail_column.add_child(button_row)
-
-	inventory_equip_button = Button.new()
-	inventory_equip_button.text = "装备"
-	inventory_equip_button.custom_minimum_size = Vector2(120, 44)
-	inventory_equip_button.pressed.connect(_on_inventory_equip_pressed)
-	button_row.add_child(inventory_equip_button)
-
-	inventory_salvage_button = Button.new()
-	inventory_salvage_button.custom_minimum_size = Vector2(180, 44)
-	inventory_salvage_button.pressed.connect(_on_inventory_salvage_pressed)
-	button_row.add_child(inventory_salvage_button)
+	_build_inventory_detail_modal(root)
 
 func _refresh_inventory_panel() -> void:
 	if inventory_list == null:
 		return
-	_ensure_selected_inventory_item_visible()
-	_refresh_inventory_filter_buttons()
+	_refresh_equipped_slot_buttons()
 	for child in inventory_list.get_children():
 		child.queue_free()
-	var visible_indices := _get_visible_inventory_indices()
-	for index in visible_indices:
+	if inventory_items.is_empty():
+		var empty_label := Label.new()
+		empty_label.text = "背包为空"
+		empty_label.custom_minimum_size = Vector2(180, 42)
+		inventory_list.add_child(empty_label)
+		return
+	for index in range(inventory_items.size()):
 		var equipment: Dictionary = inventory_items[index]
 		var button := Button.new()
-		button.text = _get_inventory_item_button_text(equipment, index == selected_inventory_index)
-		button.custom_minimum_size = Vector2(300, 64)
+		button.text = _get_equipment_icon_text(equipment, index == selected_inventory_index and selected_equipment_source == "inventory")
+		button.custom_minimum_size = Vector2(104, 82)
 		var rarity_color: Color = equipment.get("color", Color.WHITE)
 		button.add_theme_color_override("font_color", rarity_color)
 		button.add_theme_color_override("font_hover_color", rarity_color.lightened(0.16))
 		button.add_theme_color_override("font_pressed_color", rarity_color.lightened(0.24))
 		button.pressed.connect(_on_inventory_item_pressed.bind(index))
 		inventory_list.add_child(button)
-	_refresh_inventory_detail()
 
-func _refresh_inventory_detail() -> void:
-	var has_selection := selected_inventory_index >= 0 and selected_inventory_index < inventory_items.size() and _is_equipment_visible(inventory_items[selected_inventory_index])
-	inventory_equip_button.disabled = not has_selection
-	inventory_salvage_button.disabled = not has_selection
-	if not has_selection:
-		inventory_recommendation_label.text = "背包为空" if inventory_items.is_empty() else "当前筛选无装备"
-		current_inventory_label.text = "当前装备\n%s" % EquipmentFactory.describe_loadout(equipped_items)
-		selected_inventory_label.text = "选中\n无"
-		inventory_summary_label.text = "拾取到的装备会自动放入背包。"
-		inventory_salvage_button.text = "分解"
+func _on_inventory_item_pressed(index: int) -> void:
+	selected_inventory_index = index
+	selected_equipment_source = "inventory"
+	selected_equipped_slot_id = ""
+	_refresh_inventory_panel()
+	_show_inventory_detail_modal()
+
+func _on_inventory_close_pressed() -> void:
+	if detail_modal_panel != null:
+		detail_modal_panel.visible = false
+	GameManager.set_inventory_open(false)
+
+func _add_equipped_slot_row(parent: Control, slot_ids: Array) -> void:
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 12)
+	parent.add_child(row)
+	for slot_id in slot_ids:
+		_add_equipped_slot_button(row, str(slot_id))
+
+func _add_equipped_slot_button(parent: Control, slot_id: String) -> void:
+	var button := Button.new()
+	button.custom_minimum_size = Vector2(116, 76)
+	button.pressed.connect(_on_equipped_slot_pressed.bind(slot_id))
+	parent.add_child(button)
+	equipped_slot_buttons[slot_id] = button
+
+func _refresh_equipped_slot_buttons() -> void:
+	for slot in EquipmentFactory.EQUIPMENT_SLOTS:
+		var slot_id := str(slot["id"])
+		if not equipped_slot_buttons.has(slot_id):
+			continue
+		var button: Button = equipped_slot_buttons[slot_id]
+		var equipment: Dictionary = equipped_items.get(slot_id, {})
+		var is_selected := selected_equipment_source == "equipped" and selected_equipped_slot_id == slot_id
+		if equipment.is_empty():
+			button.text = "%s\n空" % str(slot["label"])
+			button.add_theme_color_override("font_color", Color(0.72, 0.72, 0.72, 1.0))
+		else:
+			button.text = _get_equipment_icon_text(equipment, is_selected)
+			var rarity_color: Color = equipment.get("color", Color.WHITE)
+			button.add_theme_color_override("font_color", rarity_color)
+
+func _on_equipped_slot_pressed(slot_id: String) -> void:
+	selected_equipment_source = "equipped"
+	selected_equipped_slot_id = slot_id
+	selected_inventory_index = -1
+	_refresh_inventory_panel()
+	_show_equipped_detail_modal(slot_id)
+
+func _build_inventory_detail_modal(root: Control) -> void:
+	detail_modal_panel = PanelContainer.new()
+	detail_modal_panel.visible = false
+	detail_modal_panel.position = Vector2(350, 110)
+	detail_modal_panel.custom_minimum_size = Vector2(580, 470)
+	root.add_child(detail_modal_panel)
+
+	var modal_root := VBoxContainer.new()
+	modal_root.add_theme_constant_override("separation", 10)
+	detail_modal_panel.add_child(modal_root)
+
+	var title_row := HBoxContainer.new()
+	title_row.add_theme_constant_override("separation", 12)
+	modal_root.add_child(title_row)
+
+	detail_title_label = Label.new()
+	detail_title_label.custom_minimum_size = Vector2(460, 28)
+	title_row.add_child(detail_title_label)
+
+	var close_button := Button.new()
+	close_button.text = "X"
+	close_button.custom_minimum_size = Vector2(44, 32)
+	close_button.pressed.connect(_on_detail_close_pressed)
+	title_row.add_child(close_button)
+
+	detail_body_label = Label.new()
+	detail_body_label.custom_minimum_size = Vector2(540, 190)
+	detail_body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	modal_root.add_child(detail_body_label)
+
+	detail_comparison_label = Label.new()
+	detail_comparison_label.custom_minimum_size = Vector2(540, 150)
+	detail_comparison_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detail_comparison_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.45, 1.0))
+	modal_root.add_child(detail_comparison_label)
+
+	var button_row := HBoxContainer.new()
+	button_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	button_row.add_theme_constant_override("separation", 12)
+	modal_root.add_child(button_row)
+
+	detail_equip_button = Button.new()
+	detail_equip_button.text = "装备"
+	detail_equip_button.custom_minimum_size = Vector2(120, 42)
+	detail_equip_button.pressed.connect(_on_detail_equip_pressed)
+	button_row.add_child(detail_equip_button)
+
+	detail_salvage_button = Button.new()
+	detail_salvage_button.custom_minimum_size = Vector2(170, 42)
+	detail_salvage_button.pressed.connect(_on_detail_salvage_pressed)
+	button_row.add_child(detail_salvage_button)
+
+func _show_inventory_detail_modal() -> void:
+	if selected_inventory_index < 0 or selected_inventory_index >= inventory_items.size():
 		return
 	var equipment: Dictionary = inventory_items[selected_inventory_index]
 	var current_equipment := _get_current_equipment_for(equipment)
 	var slot_label := EquipmentFactory.get_slot_label(str(equipment.get("slot", "weapon")))
-	inventory_recommendation_label.text = EquipmentFactory.get_recommendation_text(equipment, current_equipment)
-	current_inventory_label.text = "当前%s\n%s" % [slot_label, EquipmentFactory.describe_with_score(current_equipment)]
-	selected_inventory_label.text = "选中\n%s" % EquipmentFactory.describe_with_score(equipment)
-	inventory_summary_label.text = "变化\n%s" % EquipmentFactory.get_comparison_summary(equipment, current_equipment)
-	inventory_salvage_button.text = "分解 +%d 金币" % EquipmentFactory.get_salvage_value(equipment)
-
-func _get_inventory_item_button_text(equipment: Dictionary, is_selected: bool) -> String:
-	var prefix := ">" if is_selected else " "
-	var slot_label := EquipmentFactory.get_slot_label(str(equipment.get("slot", "weapon")))
-	var form_name := EquipmentFactory.get_form_name(equipment).replace("法杖", "")
-	var score_delta := EquipmentFactory.get_score_delta_label(equipment, _get_current_equipment_for(equipment))
-	return "%s %s  [%s/%s]\n%s | 等级 %d | 评分 %d (%s)" % [
-		prefix,
-		str(equipment.get("name", "未知装备")),
+	detail_title_label.text = str(equipment.get("name", "未知装备"))
+	detail_body_label.text = "选中装备\n%s" % EquipmentFactory.describe_with_score(equipment)
+	detail_comparison_label.text = "%s\n\n当前%s\n%s\n\n变化\n%s" % [
+		EquipmentFactory.get_recommendation_text(equipment, current_equipment),
 		slot_label,
-		form_name,
-		str(equipment.get("rarity", "普通")),
+		EquipmentFactory.describe_with_score(current_equipment),
+		EquipmentFactory.get_comparison_summary(equipment, current_equipment)
+	]
+	detail_equip_button.visible = true
+	detail_salvage_button.visible = true
+	detail_salvage_button.text = "分解 +%d 金币" % EquipmentFactory.get_salvage_value(equipment)
+	detail_modal_panel.visible = true
+
+func _show_equipped_detail_modal(slot_id: String) -> void:
+	var slot_label := EquipmentFactory.get_slot_label(slot_id)
+	var equipment: Dictionary = equipped_items.get(slot_id, {})
+	detail_title_label.text = "当前%s" % slot_label
+	if equipment.is_empty():
+		detail_body_label.text = "%s槽位为空" % slot_label
+	else:
+		detail_body_label.text = EquipmentFactory.describe_with_score(equipment)
+	detail_comparison_label.text = ""
+	detail_equip_button.visible = false
+	detail_salvage_button.visible = false
+	detail_modal_panel.visible = true
+
+func _on_detail_equip_pressed() -> void:
+	if selected_equipment_source != "inventory":
+		return
+	GameManager.equip_inventory_equipment(selected_inventory_index)
+	detail_modal_panel.visible = false
+
+func _on_detail_salvage_pressed() -> void:
+	if selected_equipment_source != "inventory":
+		return
+	GameManager.salvage_inventory_equipment(selected_inventory_index)
+	detail_modal_panel.visible = false
+
+func _on_detail_close_pressed() -> void:
+	detail_modal_panel.visible = false
+
+func _get_equipment_icon_text(equipment: Dictionary, is_selected: bool) -> String:
+	var prefix := ">" if is_selected else ""
+	var slot_symbol := _get_slot_symbol(str(equipment.get("slot", "weapon")))
+	return "%s%s\nLv%d  %d" % [
+		prefix,
+		slot_symbol,
 		int(equipment.get("level", 1)),
-		EquipmentFactory.get_score(equipment),
-		score_delta
+		EquipmentFactory.get_score(equipment)
 	]
 
-func _on_inventory_item_pressed(index: int) -> void:
-	selected_inventory_index = index
-	_refresh_inventory_panel()
-
-func _on_inventory_equip_pressed() -> void:
-	GameManager.equip_inventory_equipment(selected_inventory_index)
-
-func _on_inventory_salvage_pressed() -> void:
-	GameManager.salvage_inventory_equipment(selected_inventory_index)
-
-func _on_inventory_close_pressed() -> void:
-	GameManager.set_inventory_open(false)
-
-func _add_inventory_filter_button(parent: Control, slot_id: String, label: String) -> void:
-	var button := Button.new()
-	button.text = label
-	button.custom_minimum_size = Vector2(78, 32)
-	button.pressed.connect(_on_inventory_filter_pressed.bind(slot_id))
-	parent.add_child(button)
-	inventory_filter_buttons[slot_id] = button
-
-func _on_inventory_filter_pressed(slot_id: String) -> void:
-	inventory_filter_slot_id = slot_id
-	_ensure_selected_inventory_item_visible()
-	_refresh_inventory_panel()
-
-func _refresh_inventory_filter_buttons() -> void:
-	for slot_id in inventory_filter_buttons.keys():
-		var button: Button = inventory_filter_buttons[slot_id]
-		button.disabled = str(slot_id) == inventory_filter_slot_id
-
-func _ensure_selected_inventory_item_visible() -> void:
-	var selection_visible := selected_inventory_index >= 0 and selected_inventory_index < inventory_items.size()
-	if selection_visible:
-		selection_visible = _is_equipment_visible(inventory_items[selected_inventory_index])
-	if selection_visible:
-		return
-	selected_inventory_index = -1
-	for index in _get_visible_inventory_indices():
-		selected_inventory_index = index
-		return
-
-func _get_visible_inventory_indices() -> Array:
-	var indices := []
-	for index in range(inventory_items.size()):
-		if _is_equipment_visible(inventory_items[index]):
-			indices.append(index)
-	return indices
-
-func _is_equipment_visible(equipment: Dictionary) -> bool:
-	if inventory_filter_slot_id == "all":
-		return true
-	return str(equipment.get("slot", "weapon")) == inventory_filter_slot_id
+func _get_slot_symbol(slot_id: String) -> String:
+	match slot_id:
+		"weapon":
+			return "杖"
+		"helmet":
+			return "盔"
+		"armor":
+			return "甲"
+		"boots":
+			return "靴"
+		"necklace":
+			return "链"
+		"ring":
+			return "戒"
+	return "装"
 
 func _get_current_equipment_for(equipment: Dictionary) -> Dictionary:
 	var slot_id := str(equipment.get("slot", "weapon"))

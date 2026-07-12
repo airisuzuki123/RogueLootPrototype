@@ -8,9 +8,12 @@ const RARITIES := [
 ]
 
 const EQUIPMENT_SLOTS := [
-	{"id": "weapon", "label": "武器", "base_name": "法杖", "weight": 58},
-	{"id": "armor", "label": "护甲", "base_name": "战甲", "weight": 25},
-	{"id": "accessory", "label": "饰品", "base_name": "护符", "weight": 17}
+	{"id": "weapon", "label": "武器", "base_name": "法杖", "weight": 42},
+	{"id": "helmet", "label": "头盔", "base_name": "头盔", "weight": 12},
+	{"id": "armor", "label": "护甲", "base_name": "战甲", "weight": 16},
+	{"id": "boots", "label": "鞋子", "base_name": "战靴", "weight": 12},
+	{"id": "necklace", "label": "项链", "base_name": "项链", "weight": 9},
+	{"id": "ring", "label": "戒指", "base_name": "戒指", "weight": 9}
 ]
 
 const AFFIXES := [
@@ -28,8 +31,11 @@ const AFFIXES := [
 
 const SLOT_AFFIXES := {
 	"weapon": ["damage", "attack_speed", "critical_chance", "projectile_count", "pierce", "explosion_radius", "life_steal"],
-	"armor": ["max_health", "move_speed", "attack_speed", "gold_bonus"],
-	"accessory": ["critical_chance", "attack_speed", "move_speed", "projectile_count", "pierce", "explosion_radius", "life_steal", "gold_bonus"]
+	"helmet": ["max_health", "critical_chance", "life_steal"],
+	"armor": ["max_health", "move_speed", "gold_bonus"],
+	"boots": ["move_speed", "attack_speed", "gold_bonus"],
+	"necklace": ["critical_chance", "life_steal", "explosion_radius", "gold_bonus"],
+	"ring": ["attack_speed", "projectile_count", "pierce", "gold_bonus"]
 }
 
 const WEAPON_FORMS := [

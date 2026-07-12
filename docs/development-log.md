@@ -8,7 +8,7 @@ This file records successful GitHub pushes for the project.
 - Displayed the summary under the current equipped slot layout so stage 2 build direction is easier to inspect.
 - Updated README, design notes, and the stage plan with the loadout summary behavior.
 - Validation: ran `git diff --check` and Godot 4.6.1 headless outside the sandbox with no script errors before committing.
-- Push result: pushed `main` to `origin/main` successfully.
+- Push result: first push timed out, the next two retries failed with connection errors, then retrying with HTTP/1.1 pushed `main` to `origin/main` successfully.
 
 ## 2026-07-12 - Retry blocked equipment pickups
 

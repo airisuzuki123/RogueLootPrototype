@@ -2,6 +2,15 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-12 - Differentiate loot drop visuals
+
+- Changed experience orbs to blue-green round drops marked with `经`.
+- Changed gold drops to yellow coin-like round drops marked with `金`.
+- Changed equipment drops to larger rarity-colored diamonds marked by equipment slot.
+- Updated README, design notes, and the stage plan with the clearer loot visual language.
+- Validation: ran `git diff --check` and Godot 4.6.1 headless outside the sandbox with no script errors before committing.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Add experience orb drops
 
 - Changed enemy kills from automatic experience gain to blue-green experience orb drops that must be picked up.

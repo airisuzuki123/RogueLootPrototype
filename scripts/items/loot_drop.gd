@@ -20,7 +20,7 @@ func _ready() -> void:
 		_configure_experience_visual()
 	elif randf() <= _get_scaled_equipment_chance():
 		equipment = EquipmentFactory.roll_equipment(source_level)
-		$Visual.color = equipment["color"]
+		_configure_equipment_visual()
 	else:
 		_configure_gold_visual()
 	body_entered.connect(_on_body_entered)
@@ -65,11 +65,48 @@ func _get_scaled_gold_amount() -> int:
 
 func _configure_gold_visual() -> void:
 	$Visual.color = Color(1.0, 0.82, 0.18, 1.0)
-	$Visual.polygon = PackedVector2Array([Vector2(0, -8), Vector2(8, 0), Vector2(0, 8), Vector2(-8, 0)])
+	$Visual.polygon = _make_regular_polygon(12, 8.0)
+	_configure_marker_label("金", Color(0.24, 0.16, 0.02, 1.0), 13)
 
 func _configure_experience_visual() -> void:
 	$Visual.color = Color(0.2, 0.95, 1.0, 1.0)
-	$Visual.polygon = _make_regular_polygon(8, 6.0)
+	$Visual.polygon = _make_regular_polygon(12, 7.0)
+	_configure_marker_label("经", Color(0.02, 0.18, 0.22, 1.0), 12)
+
+func _configure_equipment_visual() -> void:
+	$Visual.color = equipment["color"]
+	$Visual.polygon = PackedVector2Array([Vector2(0, -12), Vector2(12, 0), Vector2(0, 12), Vector2(-12, 0)])
+	_configure_marker_label(_get_equipment_slot_symbol(), Color.WHITE, 12)
+
+func _configure_marker_label(text: String, color: Color, font_size: int) -> void:
+	var marker := Label.new()
+	marker.text = text
+	marker.position = Vector2(-12, -10)
+	marker.size = Vector2(24, 20)
+	marker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	marker.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	marker.add_theme_font_size_override("font_size", font_size)
+	marker.add_theme_color_override("font_color", color)
+	marker.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	marker.add_theme_constant_override("outline_size", 3)
+	marker.z_index = 2
+	add_child(marker)
+
+func _get_equipment_slot_symbol() -> String:
+	match str(equipment.get("slot", "weapon")):
+		"weapon":
+			return "杖"
+		"helmet":
+			return "盔"
+		"armor":
+			return "甲"
+		"boots":
+			return "靴"
+		"necklace":
+			return "链"
+		"ring":
+			return "戒"
+	return "装"
 
 func _make_regular_polygon(points: int, radius: float) -> PackedVector2Array:
 	var polygon := PackedVector2Array()

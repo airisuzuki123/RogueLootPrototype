@@ -29,8 +29,9 @@ const RUN_PHASES: Array[Dictionary] = [
 		"enemy_level_bonus": 0,
 		"enemy_weight_bonus": {"ranged": 10},
 		"bullet_pattern": "aimed",
+		"bullet_patterns": ["aimed", "aimed_burst"],
 		"bullet_speed_multiplier": 0.88,
-		"goal": "阅读直线弹道，积累经验球完成第一轮升级",
+		"goal": "阅读直线与集束弹道，积累经验球完成第一轮升级",
 		"kill_target": 10,
 		"reward_gold": 8,
 		"reward_experience": 2,
@@ -45,6 +46,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"enemy_level_bonus": 0,
 		"enemy_weight_bonus": {"runner": 8, "ranged": 28},
 		"bullet_pattern": "fan",
+		"bullet_patterns": ["fan", "aimed_burst"],
 		"bullet_speed_multiplier": 0.95,
 		"goal": "穿过扇形弹幕，保持移动空间",
 		"kill_target": 18,
@@ -61,8 +63,9 @@ const RUN_PHASES: Array[Dictionary] = [
 		"enemy_level_bonus": 1,
 		"enemy_weight_bonus": {"tank": 8, "ranged": 34},
 		"bullet_pattern": "ring",
+		"bullet_patterns": ["ring", "cross"],
 		"bullet_speed_multiplier": 1.0,
-		"goal": "观察环形弹幕缺口，处理远程压力",
+		"goal": "观察环形和交叉弹幕缺口，处理远程压力",
 		"kill_target": 26,
 		"reward_gold": 16,
 		"reward_experience": 4,
@@ -77,8 +80,9 @@ const RUN_PHASES: Array[Dictionary] = [
 		"enemy_level_bonus": 1,
 		"enemy_weight_bonus": {"runner": 8, "tank": 8, "ranged": 38},
 		"bullet_pattern": "spiral",
+		"bullet_patterns": ["spiral", "fan", "double_ring"],
 		"bullet_speed_multiplier": 1.08,
-		"goal": "预判旋转弹幕轨迹，保持输出空间",
+		"goal": "预判旋转和双层环弹幕轨迹，保持输出空间",
 		"kill_target": 40,
 		"reward_gold": 24,
 		"reward_experience": 5,
@@ -93,8 +97,9 @@ const RUN_PHASES: Array[Dictionary] = [
 		"enemy_level_bonus": 2,
 		"enemy_weight_bonus": {"runner": 10, "tank": 12, "ranged": 44},
 		"bullet_pattern": "wall",
+		"bullet_patterns": ["wall", "spiral", "flower"],
 		"bullet_speed_multiplier": 1.15,
-		"goal": "穿越弹幕墙，撑过最后一波压力",
+		"goal": "穿越弹幕墙和花形弹幕，撑过最后一波压力",
 		"kill_target": 60,
 		"reward_gold": 35,
 		"reward_experience": 6,
@@ -240,7 +245,11 @@ func get_current_phase_enemy_weight_bonus(enemy_type: String) -> int:
 	return maxi(0, int(weight_bonus.get(enemy_type, 0)))
 
 func get_current_phase_bullet_pattern() -> String:
-	return str(get_current_run_phase().get("bullet_pattern", "aimed"))
+	var phase := get_current_run_phase()
+	var patterns: Array = phase.get("bullet_patterns", [])
+	if patterns.is_empty():
+		return str(phase.get("bullet_pattern", "aimed"))
+	return str(patterns.pick_random())
 
 func get_current_phase_bullet_speed_multiplier() -> float:
 	return maxf(0.2, float(get_current_run_phase().get("bullet_speed_multiplier", 1.0)))

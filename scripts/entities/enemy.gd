@@ -95,14 +95,22 @@ func _try_ranged_attack(direction: Vector2) -> void:
 		return
 	attack_cooldown = attack_interval
 	match GameManager.get_current_phase_bullet_pattern():
+		"aimed_burst":
+			_fire_aimed_burst_pattern(direction)
 		"fan":
 			_fire_fan_pattern(direction)
 		"ring":
 			_fire_ring_pattern()
+		"cross":
+			_fire_cross_pattern(direction)
 		"spiral":
 			_fire_spiral_pattern()
+		"double_ring":
+			_fire_double_ring_pattern()
 		"wall":
 			_fire_wall_pattern(direction)
+		"flower":
+			_fire_flower_pattern()
 		_:
 			_fire_aimed_pattern(direction)
 
@@ -168,6 +176,14 @@ func _fire_aimed_pattern(direction: Vector2) -> void:
 	_spawn_enemy_projectile(direction, Vector2.ZERO, Color(1.0, 0.48, 0.22, 1.0), 1.0)
 	_show_ranged_burst(Color(1.0, 0.55, 0.25, 0.75), 0.75)
 
+func _fire_aimed_burst_pattern(direction: Vector2) -> void:
+	var side := direction.orthogonal().normalized()
+	for index in range(3):
+		var offset := side * (float(index) - 1.0) * 12.0
+		var angle := deg_to_rad((float(index) - 1.0) * 5.0)
+		_spawn_enemy_projectile(direction.rotated(angle), offset, Color(1.0, 0.62, 0.28, 1.0), 0.92, 1.08)
+	_show_ranged_burst(Color(1.0, 0.58, 0.2, 0.82), 0.9)
+
 func _fire_fan_pattern(direction: Vector2) -> void:
 	var bullet_count := 5
 	var spread_degrees := 52.0
@@ -185,6 +201,16 @@ func _fire_ring_pattern() -> void:
 		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(1.0, 0.42, 0.95, 1.0), 0.86)
 	_show_ranged_burst(Color(1.0, 0.35, 0.9, 0.85), 1.2)
 
+func _fire_cross_pattern(direction: Vector2) -> void:
+	var base_angle := direction.angle()
+	for index in range(4):
+		var angle := base_angle + TAU * float(index) / 4.0
+		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(0.5, 1.0, 0.65, 1.0), 0.9, 1.0)
+	for index in range(4):
+		var angle := base_angle + deg_to_rad(45.0) + TAU * float(index) / 4.0
+		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(0.28, 0.82, 1.0, 1.0), 0.78, 0.78)
+	_show_ranged_burst(Color(0.35, 1.0, 0.75, 0.85), 1.05)
+
 func _fire_spiral_pattern() -> void:
 	var bullet_count := 7
 	spiral_angle = wrapf(spiral_angle + deg_to_rad(34.0), 0.0, TAU)
@@ -192,6 +218,17 @@ func _fire_spiral_pattern() -> void:
 		var angle := spiral_angle + TAU * float(index) / float(bullet_count)
 		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(1.0, 0.86, 0.28, 1.0), 0.84)
 	_show_ranged_burst(Color(1.0, 0.75, 0.22, 0.86), 1.15)
+
+func _fire_double_ring_pattern() -> void:
+	var bullet_count := 10
+	var offset := randf() * TAU
+	for index in range(bullet_count):
+		var angle := offset + TAU * float(index) / float(bullet_count)
+		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(1.0, 0.34, 0.72, 1.0), 0.78, 0.82)
+	for index in range(bullet_count):
+		var angle := offset + PI / float(bullet_count) + TAU * float(index) / float(bullet_count)
+		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(0.45, 0.88, 1.0, 1.0), 0.92, 1.12)
+	_show_ranged_burst(Color(0.95, 0.45, 1.0, 0.88), 1.3)
 
 func _fire_wall_pattern(direction: Vector2) -> void:
 	var bullet_count := 7
@@ -202,12 +239,24 @@ func _fire_wall_pattern(direction: Vector2) -> void:
 		_spawn_enemy_projectile(direction, offset, Color(0.55, 0.72, 1.0, 1.0), 0.95)
 	_show_ranged_burst(Color(0.4, 0.62, 1.0, 0.88), 1.25)
 
-func _spawn_enemy_projectile(direction: Vector2, offset: Vector2, color: Color, scale_multiplier: float) -> void:
+func _fire_flower_pattern() -> void:
+	var bullet_count := 16
+	var offset := randf() * TAU
+	for index in range(bullet_count):
+		var angle := offset + TAU * float(index) / float(bullet_count)
+		var is_outer := index % 2 == 0
+		var color := Color(1.0, 0.45, 0.95, 1.0) if is_outer else Color(1.0, 0.92, 0.35, 1.0)
+		var scale_multiplier := 0.92 if is_outer else 0.72
+		var speed_scale := 1.08 if is_outer else 0.72
+		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, color, scale_multiplier, speed_scale)
+	_show_ranged_burst(Color(1.0, 0.55, 0.95, 0.9), 1.4)
+
+func _spawn_enemy_projectile(direction: Vector2, offset: Vector2, color: Color, scale_multiplier: float, speed_scale: float = 1.0) -> void:
 	var projectile := ENEMY_PROJECTILE_SCENE.instantiate()
 	projectile.global_position = global_position + offset
 	var speed_multiplier := GameManager.get_current_phase_bullet_speed_multiplier()
 	if projectile.has_method("configure"):
-		projectile.configure(direction, touch_damage, projectile_speed * speed_multiplier, color, scale_multiplier)
+		projectile.configure(direction, touch_damage, projectile_speed * speed_multiplier * speed_scale, color, scale_multiplier)
 	else:
 		projectile.direction = direction
 		projectile.damage = touch_damage

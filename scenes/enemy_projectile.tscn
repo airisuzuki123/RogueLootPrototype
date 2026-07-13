@@ -14,6 +14,7 @@ offsets = PackedFloat32Array(0, 1)
 colors = PackedColorArray(1, 1, 1, 0, 1, 0.92, 0.72, 0.34)
 
 [node name="EnemyProjectile" type="Area2D"]
+z_index = 3
 script = ExtResource("1_enemy_projectile")
 
 [node name="Trail" type="Line2D" parent="."]

@@ -1,12 +1,37 @@
-[gd_scene load_steps=3 format=3 uid="uid://projectile_scene"]
+[gd_scene load_steps=5 format=3 uid="uid://projectile_scene"]
 
 [ext_resource type="Script" path="res://scripts/entities/projectile.gd" id="1_projectile"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_projectile"]
 radius = 5.0
 
+[sub_resource type="Gradient" id="Gradient_player_projectile_trail"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(0.48, 0.92, 1, 0, 0.72, 0.98, 1, 0.36)
+
+[sub_resource type="Gradient" id="Gradient_player_projectile_core"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0.42)
+
 [node name="Projectile" type="Area2D"]
+z_index = 1
 script = ExtResource("1_projectile")
+
+[node name="Trail" type="Line2D" parent="."]
+width = 4.0
+default_color = Color(0.62, 0.95, 1, 0.36)
+gradient = SubResource("Gradient_player_projectile_trail")
+points = PackedVector2Array(-24, 0, 0, 0)
+
+[node name="TrailCore" type="Line2D" parent="."]
+width = 1.4
+default_color = Color(1, 1, 1, 0.42)
+gradient = SubResource("Gradient_player_projectile_core")
+points = PackedVector2Array(-16, 0, 0, 0)
+
+[node name="Glow" type="Polygon2D" parent="."]
+color = Color(0.5, 0.95, 1, 0.22)
+polygon = PackedVector2Array(11, 0, 4, 6, -6, 5, -10, 0, -6, -5, 4, -6)
 
 [node name="Visual" type="Polygon2D" parent="."]
 color = Color(0.9, 0.95, 1, 1)
@@ -14,4 +39,3 @@ polygon = PackedVector2Array(8, 0, -4, 5, -4, -5)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_projectile")
-

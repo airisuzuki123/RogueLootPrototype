@@ -231,10 +231,12 @@ func _on_experience_changed(current: int, required: int, level: int) -> void:
 
 func _on_run_time_changed(elapsed_seconds: int, phase: Dictionary, remaining_seconds: int) -> void:
 	var remaining_text := "剩余 %s" % _format_time(remaining_seconds) if remaining_seconds >= 0 else "持续压力"
-	run_phase_label.text = "时间 %s | %s\n阶段：%s | 目标：%s" % [
+	var next_phase_text := _format_next_phase_text()
+	run_phase_label.text = "时间 %s | %s\n阶段：%s | %s\n目标：%s" % [
 		_format_time(elapsed_seconds),
 		remaining_text,
 		str(phase.get("name", "未知阶段")),
+		next_phase_text,
 		str(phase.get("goal", ""))
 	]
 
@@ -750,6 +752,12 @@ func _format_time(total_seconds: int) -> String:
 	var minutes := total_seconds / 60
 	var seconds := total_seconds % 60
 	return "%02d:%02d" % [minutes, seconds]
+
+func _format_next_phase_text() -> String:
+	var next_phase := GameManager.get_next_run_phase()
+	if next_phase.is_empty():
+		return "终局"
+	return "下一阶段：%s" % str(next_phase.get("name", "未知阶段"))
 
 func _format_phase_reward(phase: Dictionary) -> String:
 	var parts: Array[String] = []

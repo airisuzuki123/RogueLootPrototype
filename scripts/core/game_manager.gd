@@ -123,6 +123,7 @@ var run_elapsed_time: float = 0.0
 var current_phase_index: int = 0
 var current_phase_kill_start: int = 0
 var current_phase_objective_completed: bool = false
+var current_phase_warning_sent: bool = false
 var latest_run_time_second: int = -1
 
 const UPGRADE_POOL := [
@@ -183,6 +184,7 @@ func reset_run() -> void:
 	current_phase_index = 0
 	current_phase_kill_start = 0
 	current_phase_objective_completed = false
+	current_phase_warning_sent = false
 	latest_run_time_second = -1
 	gold_changed.emit(gold)
 	enemy_killed.emit(kills)
@@ -206,6 +208,7 @@ func update_run_time(delta: float) -> void:
 		_emit_run_time_changed(true)
 		complete_run()
 		return
+	_update_phase_warning()
 	_emit_run_time_changed(false)
 
 func get_current_run_phase() -> Dictionary:
@@ -245,6 +248,12 @@ func get_current_phase_objective_target() -> int:
 
 func is_current_phase_objective_completed() -> bool:
 	return current_phase_objective_completed
+
+func get_next_run_phase() -> Dictionary:
+	var next_index := current_phase_index + 1
+	if next_index < 0 or next_index >= RUN_PHASES.size():
+		return {}
+	return RUN_PHASES[next_index].duplicate(true)
 
 func register_player(player_node: Node) -> void:
 	player = player_node
@@ -471,6 +480,7 @@ func _update_run_phase() -> void:
 	current_phase_index = new_phase_index
 	current_phase_kill_start = kills
 	current_phase_objective_completed = false
+	current_phase_warning_sent = false
 	var phase := get_current_run_phase()
 	run_phase_changed.emit(phase)
 	var message := "进入阶段：%s - %s" % [str(phase.get("name", "未知阶段")), str(phase.get("goal", ""))]
@@ -512,6 +522,21 @@ func _apply_phase_objective_reward() -> void:
 	var reward_text := "，".join(reward_parts) if not reward_parts.is_empty() else "无额外奖励"
 	var message := "阶段目标完成：%s，%s" % [str(phase.get("name", "未知阶段")), reward_text]
 	_set_loot_message(message)
+	_set_milestone_message(message)
+
+func _update_phase_warning() -> void:
+	if current_phase_warning_sent:
+		return
+	var remaining_seconds := get_current_phase_remaining_seconds()
+	if remaining_seconds < 0 or remaining_seconds > 10:
+		return
+	current_phase_warning_sent = true
+	var next_phase := get_next_run_phase()
+	var message := ""
+	if next_phase.is_empty():
+		message = "终局试炼即将完成，坚持最后 %d 秒" % remaining_seconds
+	else:
+		message = "%d 秒后进入：%s" % [remaining_seconds, str(next_phase.get("name", "下一阶段"))]
 	_set_milestone_message(message)
 
 func _get_phase_index_for_time(elapsed_time: float) -> int:

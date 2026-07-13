@@ -230,7 +230,7 @@ func _on_experience_changed(current: int, required: int, level: int) -> void:
 	experience_label.text = "等级 %d  经验：%d / %d" % [level, current, required]
 
 func _on_run_time_changed(elapsed_seconds: int, phase: Dictionary, remaining_seconds: int) -> void:
-	var remaining_text := "持续压力" if remaining_seconds < 0 else "剩余 %s" % _format_time(remaining_seconds)
+	var remaining_text := "剩余 %s" % _format_time(remaining_seconds) if remaining_seconds >= 0 else "持续压力"
 	run_phase_label.text = "时间 %s | %s\n阶段：%s | 目标：%s" % [
 		_format_time(elapsed_seconds),
 		remaining_text,
@@ -326,7 +326,13 @@ func _on_upgrade_button_pressed(index: int) -> void:
 func _on_run_ended(kills: int, gold: int) -> void:
 	inventory_panel.visible = false
 	game_over_label.visible = true
-	game_over_label.text = "本局结束\n击杀：%d\n金币：%d" % [kills, gold]
+	var title := "试炼完成" if GameManager.is_run_completed else "本局结束"
+	game_over_label.text = "%s\n时间：%s\n击杀：%d\n金币：%d" % [
+		title,
+		_format_time(GameManager.get_run_elapsed_seconds()),
+		kills,
+		gold
+	]
 
 func _build_inventory_panel(root: Control) -> void:
 	inventory_panel = PanelContainer.new()

@@ -78,13 +78,13 @@ const RUN_PHASES: Array[Dictionary] = [
 	},
 	{
 		"id": "endless_pressure",
-		"name": "终局压力",
-		"duration": -1.0,
+		"name": "终局试炼",
+		"duration": 75.0,
 		"spawn_interval": 0.65,
 		"spawn_count": 2,
 		"enemy_level_bonus": 2,
 		"enemy_weight_bonus": {"runner": 18, "tank": 18, "ranged": 24},
-		"goal": "尽可能延长生存时间",
+		"goal": "撑过最后一波压力并完成本局",
 		"kill_target": 60,
 		"reward_gold": 35,
 		"reward_experience": 6,
@@ -101,6 +101,7 @@ var player_health: int = 0
 var player_max_health: int = 0
 var player: Node = null
 var is_run_over: bool = false
+var is_run_completed: bool = false
 var is_upgrade_pending: bool = false
 var is_equipment_choice_pending: bool = false
 var is_inventory_open: bool = false
@@ -167,6 +168,7 @@ func reset_run() -> void:
 	player_max_health = 0
 	player = null
 	is_run_over = false
+	is_run_completed = false
 	is_upgrade_pending = false
 	is_equipment_choice_pending = false
 	is_inventory_open = false
@@ -199,6 +201,11 @@ func update_run_time(delta: float) -> void:
 		return
 	run_elapsed_time += delta
 	_update_run_phase()
+	if _is_run_duration_complete():
+		run_elapsed_time = _get_total_run_duration()
+		_emit_run_time_changed(true)
+		complete_run()
+		return
 	_emit_run_time_changed(false)
 
 func get_current_run_phase() -> Dictionary:
@@ -444,12 +451,18 @@ func apply_upgrade(choice_index: int) -> void:
 func is_gameplay_paused() -> bool:
 	return is_upgrade_pending or is_equipment_choice_pending or is_inventory_open
 
-func end_run() -> void:
+func end_run(completed: bool = false) -> void:
 	if is_run_over:
 		return
 	is_run_over = true
+	is_run_completed = completed
 	set_inventory_open(false)
+	if completed:
+		_set_milestone_message("试炼完成")
 	run_ended.emit(kills, gold)
+
+func complete_run() -> void:
+	end_run(true)
 
 func _update_run_phase() -> void:
 	var new_phase_index := _get_phase_index_for_time(run_elapsed_time)
@@ -511,6 +524,19 @@ func _get_phase_index_for_time(elapsed_time: float) -> int:
 		if elapsed_time < cursor:
 			return index
 	return maxi(0, RUN_PHASES.size() - 1)
+
+func _is_run_duration_complete() -> bool:
+	var total_duration := _get_total_run_duration()
+	return total_duration >= 0.0 and run_elapsed_time >= total_duration
+
+func _get_total_run_duration() -> float:
+	var total_duration := 0.0
+	for phase in RUN_PHASES:
+		var duration := float(phase.get("duration", -1.0))
+		if duration < 0.0:
+			return -1.0
+		total_duration += duration
+	return total_duration
 
 func _get_phase_start_time(phase_index: int) -> float:
 	var cursor := 0.0

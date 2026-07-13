@@ -6,12 +6,13 @@ const EquipmentFactory := preload("res://scripts/items/equipment_factory.gd")
 @export var pickup_radius: float = 20.0
 @export var equipment_chance: float = 0.10
 @export var source_level: int = 1
+@export var equipment_only: bool = false
 
 var equipment: Dictionary = {}
 var blocked_pickup_retry_cooldown: float = 0.0
 
 func _ready() -> void:
-	if randf() <= _get_scaled_equipment_chance():
+	if equipment_only or randf() <= _get_scaled_equipment_chance():
 		equipment = EquipmentFactory.roll_equipment(source_level)
 		_configure_equipment_visual()
 	else:
@@ -46,8 +47,11 @@ func _try_pickup(_body: Node) -> void:
 		blocked_pickup_retry_cooldown = 0.8
 
 func _get_scaled_equipment_chance() -> float:
-	var level_bonus := minf(0.06, float(maxi(0, source_level - 1)) * 0.006)
-	return clampf(equipment_chance + level_bonus, 0.0, 0.18)
+	return get_scaled_equipment_chance_for_level(source_level, equipment_chance)
+
+static func get_scaled_equipment_chance_for_level(level: int, base_chance: float = 0.10) -> float:
+	var level_bonus := minf(0.06, float(maxi(0, level - 1)) * 0.006)
+	return clampf(base_chance + level_bonus, 0.0, 0.18)
 
 func _get_scaled_gold_amount() -> int:
 	return gold_amount + int(floor(float(maxi(0, source_level - 1)) / 3.0))

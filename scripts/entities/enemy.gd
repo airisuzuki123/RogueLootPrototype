@@ -3,6 +3,7 @@ extends CharacterBody2D
 const LOOT_DROP_SCENE := preload("res://scenes/loot_drop.tscn")
 const ENEMY_PROJECTILE_SCENE := preload("res://scenes/enemy_projectile.tscn")
 const CombatFeedback := preload("res://scripts/effects/combat_feedback.gd")
+const LootDrop := preload("res://scripts/items/loot_drop.gd")
 
 @export var move_speed: float = 120.0
 @export var max_health: int = 20
@@ -73,11 +74,22 @@ func _die() -> void:
 	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1, 0.35, 0.25, 0.95), 1.6)
 	GameManager.add_experience(experience_reward)
 	if randf() <= loot_chance:
+		_drop_loot_or_gold()
+	queue_free()
+
+func _drop_loot_or_gold() -> void:
+	var equipment_drop_chance := LootDrop.get_scaled_equipment_chance_for_level(GameManager.level)
+	if randf() <= equipment_drop_chance:
 		var loot := LOOT_DROP_SCENE.instantiate()
 		loot.global_position = global_position + _get_random_drop_offset()
 		loot.source_level = GameManager.level
+		loot.equipment_only = true
 		get_tree().current_scene.add_child(loot)
-	queue_free()
+	else:
+		GameManager.add_gold(_get_scaled_gold_amount())
+
+func _get_scaled_gold_amount() -> int:
+	return 1 + int(floor(float(maxi(0, GameManager.level - 1)) / 3.0))
 
 func _get_random_drop_offset() -> Vector2:
 	return Vector2.RIGHT.rotated(randf() * TAU) * randf_range(0.0, 16.0)

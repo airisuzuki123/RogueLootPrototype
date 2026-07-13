@@ -39,17 +39,35 @@ Use this validation after gameplay script changes when possible.
 
 All player-facing in-game text must be Simplified Chinese by default. This includes HUD labels, upgrade names/descriptions, equipment names, rarity names, affix labels, pickup messages, game-over text, button labels, tutorial text, and combat prompts.
 
-Internal ids, file names, signal names, variable names, and commit messages may remain English.
+Internal ids, file names, signal names, and variable names may remain English.
+Commit messages should be written in Simplified Chinese by default, unless the user explicitly asks otherwise.
 
-## Git and Push Log Rule
+## Stage Plan Rule
 
-Record successful GitHub pushes for substantive work in:
+The standard project plan is recorded in:
+
+```text
+docs/stage-plan.md
+```
+
+The current plan is fixed as 8 stages. Follow that plan in order and do not adjust the stage count, order, or goals unless the user explicitly asks to re-plan.
+
+## Git Local Versioning and Demo Push Rule
+
+Use Git for local version management. Short-term workflow:
+
+- Commit completed work locally after validation.
+- Do not push to GitHub unless the user explicitly asks for a demo/version push.
+- Use Chinese commit messages for local commits.
+- Continue to keep commits focused.
+
+Record successful GitHub pushes for substantive demo/version pushes in:
 
 ```text
 docs/development-log.md
 ```
 
-Record gameplay, system, content, validation, tooling, or documentation changes that materially affect the project. Do not create recursive log-only entries.
+Record gameplay, system, content, validation, tooling, or documentation changes that materially affect the pushed demo/version. Do not create recursive log-only entries.
 
 Each recorded entry should include:
 
@@ -61,12 +79,13 @@ Each recorded entry should include:
 
 When the log update is included in the same commit as the substantive change, do not try to record that commit's own hash inside the same commit. This changes the commit content and therefore changes the hash. In that case, record the commit message in the log and report the final hash in the assistant's final response after the push succeeds.
 
-Preferred workflow:
+Preferred demo push workflow:
 
 1. Implement the change.
 2. Validate it.
-3. Update `docs/development-log.md` in the same commit, before pushing.
-4. Push once.
+3. Commit locally with a Chinese commit message.
+4. When the user asks for a demo/version push, update `docs/development-log.md` for the pushed set of changes.
+5. Push once when possible.
 
 If a push fails, do not record it as successful. If a retry succeeds, note the failed attempt inside the same substantive entry.
 
@@ -75,7 +94,7 @@ Do not add development-log entries for commits whose only purpose is updating `d
 ## Commit Guidelines
 
 - Use focused commits.
-- Commit messages should start with a verb, for example `Add combat feedback pass`.
+- Commit messages should be clear Simplified Chinese summaries, for example `新增单局阶段节奏`.
 - Keep Godot-generated `.uid` files when Godot creates them for scripts.
 - Keep `.gitattributes` updated when new Godot text file types are introduced.
 
@@ -83,4 +102,4 @@ Do not add development-log entries for commits whose only purpose is updating `d
 
 Before modifying files, check `git status --short --branch`.
 Before committing, validate the commit contents. For Godot gameplay, scene, script, preload path, or Autoload changes, run the project headless validation and commit only after it passes.
-For future work, include the development-log update in the same commit as the substantive change whenever practical. Avoid separate log-only commits unless correcting a mistake in the log.
+For future work, do not update the development log for every local-only commit. Update it when preparing a demo/version push, unless correcting a mistake in the log.

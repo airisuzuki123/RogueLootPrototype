@@ -21,6 +21,8 @@ var target: Node2D
 var attack_cooldown: float = 0.0
 var knockback_velocity: Vector2 = Vector2.ZERO
 var spiral_angle: float = 0.0
+var strafe_direction: float = 1.0
+var strafe_timer: float = 0.0
 @onready var visual: Polygon2D = $Visual
 @onready var health_bar: ProgressBar = $HealthBar
 
@@ -34,6 +36,7 @@ func _physics_process(delta: float) -> void:
 	if GameManager.is_run_over or GameManager.is_gameplay_paused():
 		return
 	attack_cooldown -= delta
+	_update_strafe(delta)
 	if target == null or not is_instance_valid(target):
 		return
 	var to_target := target.global_position - global_position
@@ -42,7 +45,7 @@ func _physics_process(delta: float) -> void:
 	velocity = _get_desired_velocity(direction, distance) + knockback_velocity
 	move_and_slide()
 	knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, knockback_recovery * knockback_velocity.length() * delta)
-	if enemy_type == "ranged" and distance <= ranged_attack_range:
+	if _is_bullet_enemy() and distance <= ranged_attack_range:
 		_try_ranged_attack(direction)
 	elif distance <= 24.0:
 		_try_touch_damage()
@@ -94,7 +97,7 @@ func _try_ranged_attack(direction: Vector2) -> void:
 	if attack_cooldown > 0.0:
 		return
 	attack_cooldown = attack_interval
-	match GameManager.get_current_phase_bullet_pattern():
+	match _select_bullet_pattern():
 		"aimed_burst":
 			_fire_aimed_burst_pattern(direction)
 		"fan":
@@ -154,6 +157,30 @@ func _apply_enemy_type(type_id: String) -> void:
 			loot_chance = 0.30
 			visual.color = Color(0.15, 0.85, 1.0, 1)
 			visual.scale = Vector2(1.0, 1.0)
+		"weaver":
+			max_health = 20
+			move_speed = 128.0
+			touch_damage = 6
+			attack_interval = 1.25
+			projectile_speed = 255.0
+			ranged_attack_range = 330.0
+			ranged_keep_distance = 210.0
+			experience_reward = 2
+			loot_chance = 0.28
+			visual.color = Color(0.45, 0.45, 1.0, 1)
+			visual.scale = Vector2(0.95, 0.95)
+		"turret":
+			max_health = 34
+			move_speed = 38.0
+			touch_damage = 9
+			attack_interval = 1.75
+			projectile_speed = 210.0
+			ranged_attack_range = 430.0
+			ranged_keep_distance = 280.0
+			experience_reward = 3
+			loot_chance = 0.34
+			visual.color = Color(1.0, 0.30, 0.95, 1)
+			visual.scale = Vector2(1.15, 1.15)
 		_:
 			enemy_type = "grunt"
 			max_health = 20
@@ -164,13 +191,46 @@ func _apply_enemy_type(type_id: String) -> void:
 			visual.scale = Vector2.ONE
 
 func _get_desired_velocity(direction: Vector2, distance: float) -> Vector2:
-	if enemy_type != "ranged":
+	if not _is_bullet_enemy():
 		return direction * move_speed
+	if enemy_type == "turret":
+		if distance < ranged_keep_distance:
+			return -direction * move_speed
+		if distance > ranged_attack_range * 0.72:
+			return direction * move_speed * 0.55
+		return Vector2.ZERO
+	if enemy_type == "weaver" and distance <= ranged_attack_range:
+		var side := direction.orthogonal().normalized() * strafe_direction * move_speed * 0.58
+		if distance < ranged_keep_distance:
+			return -direction * move_speed * 0.65 + side
+		if distance > ranged_attack_range * 0.82:
+			return direction * move_speed * 0.45 + side
+		return side
 	if distance < ranged_keep_distance:
 		return -direction * move_speed
 	if distance > ranged_attack_range:
 		return direction * move_speed
 	return Vector2.ZERO
+
+func _is_bullet_enemy() -> bool:
+	return enemy_type == "ranged" or enemy_type == "weaver" or enemy_type == "turret"
+
+func _update_strafe(delta: float) -> void:
+	if enemy_type != "weaver":
+		return
+	strafe_timer -= delta
+	if strafe_timer > 0.0:
+		return
+	strafe_timer = randf_range(1.1, 1.9)
+	strafe_direction *= -1.0
+
+func _select_bullet_pattern() -> String:
+	match enemy_type:
+		"weaver":
+			return ["fan", "cross", "aimed_burst", "wall"].pick_random()
+		"turret":
+			return ["ring", "double_ring", "flower", "spiral"].pick_random()
+	return GameManager.get_current_phase_bullet_pattern()
 
 func _fire_aimed_pattern(direction: Vector2) -> void:
 	_spawn_enemy_projectile(direction, Vector2.ZERO, Color(1.0, 0.48, 0.22, 1.0), 1.0)

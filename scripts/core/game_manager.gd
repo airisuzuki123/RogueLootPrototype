@@ -15,6 +15,8 @@ signal upgrade_choices_requested(choices: Array)
 signal run_ended(kills: int, gold: int)
 signal run_time_changed(elapsed_seconds: int, phase: Dictionary, remaining_seconds: int)
 signal run_phase_changed(phase: Dictionary)
+signal run_phase_objective_changed(phase: Dictionary, progress: int, target: int, completed: bool)
+signal run_milestone_message_changed(message: String)
 
 const MAX_INVENTORY_SIZE: int = 36
 const RUN_PHASES: Array[Dictionary] = [
@@ -26,7 +28,11 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_count": 1,
 		"enemy_level_bonus": 0,
 		"enemy_weight_bonus": {},
-		"goal": "积累经验球，完成第一轮升级"
+		"goal": "积累经验球，完成第一轮升级",
+		"kill_target": 10,
+		"reward_gold": 8,
+		"reward_experience": 2,
+		"reward_heal": 0
 	},
 	{
 		"id": "chase",
@@ -36,7 +42,11 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_count": 1,
 		"enemy_level_bonus": 0,
 		"enemy_weight_bonus": {"runner": 18},
-		"goal": "应对快速敌人，保持移动空间"
+		"goal": "应对快速敌人，保持移动空间",
+		"kill_target": 18,
+		"reward_gold": 12,
+		"reward_experience": 3,
+		"reward_heal": 10
 	},
 	{
 		"id": "mixed",
@@ -46,7 +56,11 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_count": 1,
 		"enemy_level_bonus": 1,
 		"enemy_weight_bonus": {"tank": 14, "ranged": 18},
-		"goal": "处理坦克和远程敌人的组合压力"
+		"goal": "处理坦克和远程敌人的组合压力",
+		"kill_target": 26,
+		"reward_gold": 16,
+		"reward_experience": 4,
+		"reward_heal": 15
 	},
 	{
 		"id": "surge",
@@ -56,7 +70,11 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_count": 2,
 		"enemy_level_bonus": 1,
 		"enemy_weight_bonus": {"runner": 16, "tank": 10, "ranged": 18},
-		"goal": "用当前构筑清理更密集的敌群"
+		"goal": "用当前构筑清理更密集的敌群",
+		"kill_target": 40,
+		"reward_gold": 24,
+		"reward_experience": 5,
+		"reward_heal": 20
 	},
 	{
 		"id": "endless_pressure",
@@ -66,7 +84,11 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_count": 2,
 		"enemy_level_bonus": 2,
 		"enemy_weight_bonus": {"runner": 18, "tank": 18, "ranged": 24},
-		"goal": "尽可能延长生存时间"
+		"goal": "尽可能延长生存时间",
+		"kill_target": 60,
+		"reward_gold": 35,
+		"reward_experience": 6,
+		"reward_heal": 25
 	}
 ]
 
@@ -95,8 +117,11 @@ var equipped_items := {
 	"ring": {}
 }
 var latest_loot_message: String = ""
+var latest_milestone_message: String = ""
 var run_elapsed_time: float = 0.0
 var current_phase_index: int = 0
+var current_phase_kill_start: int = 0
+var current_phase_objective_completed: bool = false
 var latest_run_time_second: int = -1
 
 const UPGRADE_POOL := [
@@ -151,8 +176,11 @@ func reset_run() -> void:
 	inventory.clear()
 	_reset_equipped_items()
 	latest_loot_message = ""
+	latest_milestone_message = ""
 	run_elapsed_time = 0.0
 	current_phase_index = 0
+	current_phase_kill_start = 0
+	current_phase_objective_completed = false
 	latest_run_time_second = -1
 	gold_changed.emit(gold)
 	enemy_killed.emit(kills)
@@ -161,8 +189,10 @@ func reset_run() -> void:
 	inventory_open_changed.emit(is_inventory_open)
 	equipment_changed.emit(equipped_items)
 	loot_message_changed.emit(latest_loot_message)
+	run_milestone_message_changed.emit(latest_milestone_message)
 	run_phase_changed.emit(get_current_run_phase())
 	_emit_run_time_changed(true)
+	_emit_phase_objective_changed()
 
 func update_run_time(delta: float) -> void:
 	if is_run_over or is_gameplay_paused():
@@ -199,6 +229,15 @@ func get_current_phase_remaining_seconds() -> int:
 		return -1
 	var phase_elapsed := run_elapsed_time - _get_phase_start_time(current_phase_index)
 	return maxi(0, int(ceil(duration - phase_elapsed)))
+
+func get_current_phase_objective_progress() -> int:
+	return maxi(0, kills - current_phase_kill_start)
+
+func get_current_phase_objective_target() -> int:
+	return maxi(0, int(get_current_run_phase().get("kill_target", 0)))
+
+func is_current_phase_objective_completed() -> bool:
+	return current_phase_objective_completed
 
 func register_player(player_node: Node) -> void:
 	player = player_node
@@ -380,6 +419,7 @@ func register_kill() -> void:
 		return
 	kills += 1
 	enemy_killed.emit(kills)
+	_update_current_phase_objective()
 
 func add_experience(amount: int) -> void:
 	if is_run_over:
@@ -416,10 +456,50 @@ func _update_run_phase() -> void:
 	if new_phase_index == current_phase_index:
 		return
 	current_phase_index = new_phase_index
+	current_phase_kill_start = kills
+	current_phase_objective_completed = false
 	var phase := get_current_run_phase()
 	run_phase_changed.emit(phase)
-	_set_loot_message("进入阶段：%s - %s" % [str(phase.get("name", "未知阶段")), str(phase.get("goal", ""))])
+	var message := "进入阶段：%s - %s" % [str(phase.get("name", "未知阶段")), str(phase.get("goal", ""))]
+	_set_loot_message(message)
+	_set_milestone_message(message)
 	_emit_run_time_changed(true)
+	_emit_phase_objective_changed()
+
+func _update_current_phase_objective() -> void:
+	if current_phase_objective_completed:
+		return
+	var target := get_current_phase_objective_target()
+	if target <= 0:
+		return
+	var progress := get_current_phase_objective_progress()
+	if progress < target:
+		_emit_phase_objective_changed()
+		return
+	current_phase_objective_completed = true
+	_apply_phase_objective_reward()
+	_emit_phase_objective_changed()
+
+func _apply_phase_objective_reward() -> void:
+	var phase := get_current_run_phase()
+	var reward_parts: Array[String] = []
+	var reward_gold := maxi(0, int(phase.get("reward_gold", 0)))
+	var reward_experience := maxi(0, int(phase.get("reward_experience", 0)))
+	var reward_heal := maxi(0, int(phase.get("reward_heal", 0)))
+	if reward_gold > 0:
+		var gained_gold := add_gold(reward_gold)
+		reward_parts.append("金币 +%d" % gained_gold)
+	if reward_experience > 0:
+		add_experience(reward_experience)
+		reward_parts.append("经验 +%d" % reward_experience)
+	if reward_heal > 0 and player != null and player.has_method("heal_fixed_amount"):
+		var healed_amount := int(player.heal_fixed_amount(reward_heal))
+		if healed_amount > 0:
+			reward_parts.append("生命 +%d" % healed_amount)
+	var reward_text := "，".join(reward_parts) if not reward_parts.is_empty() else "无额外奖励"
+	var message := "阶段目标完成：%s，%s" % [str(phase.get("name", "未知阶段")), reward_text]
+	_set_loot_message(message)
+	_set_milestone_message(message)
 
 func _get_phase_index_for_time(elapsed_time: float) -> int:
 	var cursor := 0.0
@@ -447,6 +527,14 @@ func _emit_run_time_changed(force: bool) -> void:
 		return
 	latest_run_time_second = elapsed_seconds
 	run_time_changed.emit(elapsed_seconds, get_current_run_phase(), get_current_phase_remaining_seconds())
+
+func _emit_phase_objective_changed() -> void:
+	run_phase_objective_changed.emit(
+		get_current_run_phase(),
+		get_current_phase_objective_progress(),
+		get_current_phase_objective_target(),
+		current_phase_objective_completed
+	)
 
 func _request_upgrade_choices() -> void:
 	is_upgrade_pending = true
@@ -493,6 +581,10 @@ func _get_current_form_upgrade_choice() -> Dictionary:
 func _set_loot_message(message: String) -> void:
 	latest_loot_message = message
 	loot_message_changed.emit(latest_loot_message)
+
+func _set_milestone_message(message: String) -> void:
+	latest_milestone_message = message
+	run_milestone_message_changed.emit(latest_milestone_message)
 
 func _clear_pending_equipment_choice() -> void:
 	pending_equipment_choice.clear()

@@ -69,6 +69,14 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 func sync_health_state() -> void:
 	GameManager.update_player_health(health, max_health)
 
+func heal_fixed_amount(amount: int) -> int:
+	if amount <= 0 or health <= 0 or health >= max_health:
+		return 0
+	var old_health := health
+	health = min(max_health, health + amount)
+	GameManager.update_player_health(health, max_health)
+	return health - old_health
+
 func apply_upgrade(upgrade_id: String) -> void:
 	match upgrade_id:
 		"damage":

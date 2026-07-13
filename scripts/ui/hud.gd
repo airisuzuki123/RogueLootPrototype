@@ -7,9 +7,11 @@ var kills_label: Label
 var health_label: Label
 var experience_label: Label
 var run_phase_label: Label
+var phase_objective_label: Label
 var equipment_label: Label
 var loot_message_label: Label
 var hint_label: Label
+var milestone_label: Label
 var equipment_choice_panel: PanelContainer
 var current_weapon_label: Label
 var candidate_weapon_label: Label
@@ -40,6 +42,7 @@ var equipped_items: Dictionary = {}
 var upgrade_panel: PanelContainer
 var upgrade_list: VBoxContainer
 var game_over_label: Label
+var milestone_tween: Tween
 
 func _ready() -> void:
 	layer = 10
@@ -66,6 +69,10 @@ func _build_ui() -> void:
 	run_phase_label = Label.new()
 	run_phase_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	stats.add_child(run_phase_label)
+
+	phase_objective_label = Label.new()
+	phase_objective_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	stats.add_child(phase_objective_label)
 
 	gold_label = Label.new()
 	stats.add_child(gold_label)
@@ -153,6 +160,19 @@ func _build_ui() -> void:
 	game_over_label.position = Vector2(440, 320)
 	root.add_child(game_over_label)
 
+	milestone_label = Label.new()
+	milestone_label.visible = false
+	milestone_label.position = Vector2(360, 92)
+	milestone_label.custom_minimum_size = Vector2(560, 90)
+	milestone_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	milestone_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	milestone_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	milestone_label.add_theme_font_size_override("font_size", 24)
+	milestone_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.48, 1.0))
+	milestone_label.add_theme_color_override("font_outline_color", Color(0.05, 0.04, 0.02, 0.95))
+	milestone_label.add_theme_constant_override("outline_size", 5)
+	root.add_child(milestone_label)
+
 func _connect_signals() -> void:
 	GameManager.gold_changed.connect(_on_gold_changed)
 	GameManager.enemy_killed.connect(_on_enemy_killed)
@@ -166,12 +186,20 @@ func _connect_signals() -> void:
 	GameManager.upgrade_choices_requested.connect(_on_upgrade_choices_requested)
 	GameManager.run_ended.connect(_on_run_ended)
 	GameManager.run_time_changed.connect(_on_run_time_changed)
+	GameManager.run_phase_objective_changed.connect(_on_run_phase_objective_changed)
+	GameManager.run_milestone_message_changed.connect(_on_run_milestone_message_changed)
 
 func _refresh_all() -> void:
 	_on_gold_changed(GameManager.gold)
 	_on_enemy_killed(GameManager.kills)
 	_on_experience_changed(GameManager.experience, GameManager.experience_to_next_level, GameManager.level)
 	_on_run_time_changed(GameManager.get_run_elapsed_seconds(), GameManager.get_current_run_phase(), GameManager.get_current_phase_remaining_seconds())
+	_on_run_phase_objective_changed(
+		GameManager.get_current_run_phase(),
+		GameManager.get_current_phase_objective_progress(),
+		GameManager.get_current_phase_objective_target(),
+		GameManager.is_current_phase_objective_completed()
+	)
 	_on_health_changed(GameManager.player_health, GameManager.player_max_health)
 	_on_equipment_changed(GameManager.equipped_items)
 	_on_loot_message_changed(GameManager.latest_loot_message)
@@ -209,6 +237,35 @@ func _on_run_time_changed(elapsed_seconds: int, phase: Dictionary, remaining_sec
 		str(phase.get("name", "未知阶段")),
 		str(phase.get("goal", ""))
 	]
+
+func _on_run_phase_objective_changed(phase: Dictionary, progress: int, target: int, completed: bool) -> void:
+	if target <= 0:
+		phase_objective_label.text = ""
+		return
+	var capped_progress := mini(progress, target)
+	var status_text := "（已完成）" if completed else ""
+	phase_objective_label.text = "阶段击杀：%d / %d%s\n阶段奖励：%s" % [
+		capped_progress,
+		target,
+		status_text,
+		_format_phase_reward(phase)
+	]
+
+func _on_run_milestone_message_changed(message: String) -> void:
+	if milestone_label == null:
+		return
+	if milestone_tween != null:
+		milestone_tween.kill()
+	if message.is_empty():
+		milestone_label.visible = false
+		return
+	milestone_label.text = message
+	milestone_label.visible = true
+	milestone_label.modulate.a = 1.0
+	milestone_tween = create_tween()
+	milestone_tween.tween_interval(2.2)
+	milestone_tween.tween_property(milestone_label, "modulate:a", 0.0, 0.45)
+	milestone_tween.tween_callback(Callable(milestone_label, "hide"))
 
 func _on_equipment_changed(new_equipped_items: Dictionary) -> void:
 	equipped_items = new_equipped_items.duplicate(true)
@@ -687,3 +744,18 @@ func _format_time(total_seconds: int) -> String:
 	var minutes := total_seconds / 60
 	var seconds := total_seconds % 60
 	return "%02d:%02d" % [minutes, seconds]
+
+func _format_phase_reward(phase: Dictionary) -> String:
+	var parts: Array[String] = []
+	var reward_gold := maxi(0, int(phase.get("reward_gold", 0)))
+	var reward_experience := maxi(0, int(phase.get("reward_experience", 0)))
+	var reward_heal := maxi(0, int(phase.get("reward_heal", 0)))
+	if reward_gold > 0:
+		parts.append("金币 +%d" % reward_gold)
+	if reward_experience > 0:
+		parts.append("经验 +%d" % reward_experience)
+	if reward_heal > 0:
+		parts.append("生命 +%d" % reward_heal)
+	if parts.is_empty():
+		return "无"
+	return "，".join(parts)

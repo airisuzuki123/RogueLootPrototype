@@ -12,12 +12,14 @@ const CombatFeedback := preload("res://scripts/effects/combat_feedback.gd")
 @export var attack_interval: float = 0.8
 @export var knockback_recovery: float = 9.0
 @export var enemy_type: String = "grunt"
+@export var arena_margin: float = 12.0
 @export var ranged_attack_range: float = 260.0
 @export var ranged_keep_distance: float = 170.0
 @export var projectile_speed: float = 240.0
 
 var health: int
 var target: Node2D
+var movement_bounds: Rect2 = Rect2()
 var attack_cooldown: float = 0.0
 var knockback_velocity: Vector2 = Vector2.ZERO
 var spiral_angle: float = 0.0
@@ -44,6 +46,7 @@ func _physics_process(delta: float) -> void:
 	var direction := to_target.normalized()
 	velocity = _get_desired_velocity(direction, distance) + knockback_velocity
 	move_and_slide()
+	_clamp_to_movement_bounds()
 	knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, knockback_recovery * knockback_velocity.length() * delta)
 	if _is_bullet_enemy() and distance <= ranged_attack_range:
 		_try_ranged_attack(direction)
@@ -130,6 +133,10 @@ func _update_health_bar(show_when_damaged: bool) -> void:
 func configure(type_id: String) -> void:
 	enemy_type = type_id
 
+func set_movement_bounds(bounds: Rect2) -> void:
+	movement_bounds = bounds
+	_clamp_to_movement_bounds()
+
 func _apply_enemy_type(type_id: String) -> void:
 	match type_id:
 		"runner":
@@ -211,6 +218,12 @@ func _get_desired_velocity(direction: Vector2, distance: float) -> Vector2:
 	if distance > ranged_attack_range:
 		return direction * move_speed
 	return Vector2.ZERO
+
+func _clamp_to_movement_bounds() -> void:
+	if movement_bounds.size.x <= 0.0 or movement_bounds.size.y <= 0.0:
+		return
+	global_position.x = clampf(global_position.x, movement_bounds.position.x + arena_margin, movement_bounds.end.x - arena_margin)
+	global_position.y = clampf(global_position.y, movement_bounds.position.y + arena_margin, movement_bounds.end.y - arena_margin)
 
 func _is_bullet_enemy() -> bool:
 	return enemy_type == "ranged" or enemy_type == "weaver" or enemy_type == "turret"

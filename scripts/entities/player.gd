@@ -8,11 +8,12 @@ const CombatFeedback := preload("res://scripts/effects/combat_feedback.gd")
 @export var fire_interval: float = 0.45
 @export var projectile_damage: int = 10
 @export var projectile_count: int = 1
-@export var screen_margin: float = 16.0
+@export var screen_margin: float = 10.0
 @export var invulnerability_duration: float = 0.55
 @export var knockback_recovery: float = 11.0
 
 var health: int
+var movement_bounds: Rect2 = Rect2()
 var fire_cooldown: float = 0.0
 var invulnerability_timer: float = 0.0
 var knockback_velocity: Vector2 = Vector2.ZERO
@@ -36,6 +37,7 @@ var affix_explosion_radius_bonus: float = 0.0
 var upgrade_pierce_bonus: int = 0
 var upgrade_explosion_radius_bonus: float = 0.0
 @onready var visual: Polygon2D = $Visual
+@onready var hit_core: Polygon2D = $HitCore
 
 func _ready() -> void:
 	health = max_health
@@ -50,7 +52,7 @@ func _physics_process(delta: float) -> void:
 	velocity = direction * move_speed + knockback_velocity
 	move_and_slide()
 	knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, knockback_recovery * knockback_velocity.length() * delta)
-	_clamp_to_screen()
+	_clamp_to_movement_bounds()
 	_update_auto_attack(delta)
 
 func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
@@ -68,6 +70,10 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 
 func sync_health_state() -> void:
 	GameManager.update_player_health(health, max_health)
+
+func set_movement_bounds(bounds: Rect2) -> void:
+	movement_bounds = bounds
+	_clamp_to_movement_bounds()
 
 func heal_fixed_amount(amount: int) -> int:
 	if amount <= 0 or health <= 0 or health >= max_health:
@@ -161,10 +167,13 @@ func _find_nearest_enemy() -> Node2D:
 			nearest = enemy
 	return nearest
 
-func _clamp_to_screen() -> void:
-	var viewport_rect := get_viewport_rect()
-	global_position.x = clampf(global_position.x, screen_margin, viewport_rect.size.x - screen_margin)
-	global_position.y = clampf(global_position.y, screen_margin, viewport_rect.size.y - screen_margin)
+func _clamp_to_movement_bounds() -> void:
+	var bounds := movement_bounds
+	if bounds.size.x <= 0.0 or bounds.size.y <= 0.0:
+		var viewport_rect := get_viewport_rect()
+		bounds = Rect2(Vector2.ZERO, viewport_rect.size)
+	global_position.x = clampf(global_position.x, bounds.position.x + screen_margin, bounds.end.x - screen_margin)
+	global_position.y = clampf(global_position.y, bounds.position.y + screen_margin, bounds.end.y - screen_margin)
 
 func _apply_equipment_stats(equipment: Dictionary) -> void:
 	if str(equipment.get("slot", "weapon")) == "weapon":
@@ -276,6 +285,8 @@ func _reset_weapon_form() -> void:
 func _update_invulnerability(delta: float) -> void:
 	if invulnerability_timer <= 0.0:
 		visual.modulate.a = 1.0
+		hit_core.modulate = Color.WHITE
 		return
 	invulnerability_timer -= delta
 	visual.modulate.a = 0.35 if int(invulnerability_timer * 20.0) % 2 == 0 else 1.0
+	hit_core.modulate = Color(1.0, 0.95, 0.35, 1.0)

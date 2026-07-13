@@ -5,6 +5,7 @@ const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
 const HUD_SCENE := preload("res://scenes/hud.tscn")
 
 @onready var enemy_spawn_timer: Timer = $EnemySpawnTimer
+@onready var arena_bounds: Node2D = $ArenaBounds
 
 @export var spawn_radius: float = 460.0
 @export var minimum_spawn_radius: float = 360.0
@@ -35,8 +36,10 @@ func _process(delta: float) -> void:
 
 func _spawn_player() -> void:
 	player = PLAYER_SCENE.instantiate()
-	player.global_position = Vector2(640, 360)
+	player.global_position = _get_arena_center()
 	add_child(player)
+	if player.has_method("set_movement_bounds"):
+		player.set_movement_bounds(_get_arena_rect())
 	GameManager.register_player(player)
 
 func _spawn_hud() -> void:
@@ -56,16 +59,19 @@ func _spawn_single_enemy() -> void:
 	enemy.configure(_roll_enemy_type())
 	enemy.target = player
 	enemy.global_position = _random_spawn_position_around(player.global_position, spawn_radius)
+	if enemy.has_method("set_movement_bounds"):
+		enemy.set_movement_bounds(_get_arena_rect())
 	add_child(enemy)
 
 func _random_spawn_position_around(center: Vector2, radius: float) -> Vector2:
-	var angle := randf() * TAU
-	var spawn_distance := randf_range(minimum_spawn_radius, radius)
-	var viewport_size := get_viewport_rect().size
-	var position := center + Vector2(cos(angle), sin(angle)) * spawn_distance
-	position.x = clampf(position.x, 24.0, viewport_size.x - 24.0)
-	position.y = clampf(position.y, 24.0, viewport_size.y - 24.0)
-	return position
+	var spawn_rect := _get_spawn_rect()
+	for attempt in range(18):
+		var angle := randf() * TAU
+		var spawn_distance := randf_range(minimum_spawn_radius, radius)
+		var position := center + Vector2(cos(angle), sin(angle)) * spawn_distance
+		if spawn_rect.has_point(position):
+			return position
+	return _random_position_on_arena_edge(center, spawn_rect)
 
 func _on_run_ended(_kills: int, _gold: int) -> void:
 	enemy_spawn_timer.stop()
@@ -94,3 +100,39 @@ func _roll_enemy_type() -> String:
 		if roll <= cursor:
 			return str(entry["type"])
 	return "grunt"
+
+func _get_arena_rect() -> Rect2:
+	if arena_bounds != null and arena_bounds.has_method("get_arena_rect"):
+		return arena_bounds.get_arena_rect()
+	var viewport_rect := get_viewport_rect()
+	return Rect2(Vector2.ZERO, viewport_rect.size)
+
+func _get_spawn_rect() -> Rect2:
+	if arena_bounds != null and arena_bounds.has_method("get_spawn_rect"):
+		return arena_bounds.get_spawn_rect(28.0)
+	return _get_arena_rect().grow(-28.0)
+
+func _get_arena_center() -> Vector2:
+	var rect := _get_arena_rect()
+	return rect.position + rect.size * 0.5
+
+func _random_position_on_arena_edge(center: Vector2, spawn_rect: Rect2) -> Vector2:
+	var side := randi_range(0, 3)
+	var position := Vector2.ZERO
+	match side:
+		0:
+			position = Vector2(randf_range(spawn_rect.position.x, spawn_rect.end.x), spawn_rect.position.y)
+		1:
+			position = Vector2(spawn_rect.end.x, randf_range(spawn_rect.position.y, spawn_rect.end.y))
+		2:
+			position = Vector2(randf_range(spawn_rect.position.x, spawn_rect.end.x), spawn_rect.end.y)
+		_:
+			position = Vector2(spawn_rect.position.x, randf_range(spawn_rect.position.y, spawn_rect.end.y))
+	if position.distance_to(center) < minimum_spawn_radius:
+		var fallback_direction := center.direction_to(position)
+		if fallback_direction.is_zero_approx():
+			fallback_direction = Vector2.RIGHT.rotated(randf() * TAU)
+		position = center + fallback_direction * minimum_spawn_radius
+		position.x = clampf(position.x, spawn_rect.position.x, spawn_rect.end.x)
+		position.y = clampf(position.y, spawn_rect.position.y, spawn_rect.end.y)
+	return position

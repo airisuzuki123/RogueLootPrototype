@@ -71,20 +71,13 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO, is_critical: bo
 func _die() -> void:
 	GameManager.register_kill()
 	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1, 0.35, 0.25, 0.95), 1.6)
-	_spawn_experience_drop()
+	GameManager.add_experience(experience_reward)
 	if randf() <= loot_chance:
 		var loot := LOOT_DROP_SCENE.instantiate()
 		loot.global_position = global_position + _get_random_drop_offset()
 		loot.source_level = GameManager.level
 		get_tree().current_scene.add_child(loot)
 	queue_free()
-
-func _spawn_experience_drop() -> void:
-	var experience_drop := LOOT_DROP_SCENE.instantiate()
-	experience_drop.drop_kind = "experience"
-	experience_drop.experience_amount = experience_reward
-	experience_drop.global_position = global_position + _get_random_drop_offset()
-	get_tree().current_scene.add_child(experience_drop)
 
 func _get_random_drop_offset() -> Vector2:
 	return Vector2.RIGHT.rotated(randf() * TAU) * randf_range(0.0, 16.0)

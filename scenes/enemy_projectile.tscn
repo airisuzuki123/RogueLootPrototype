@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://enemy_projectile_scene"]
+[gd_scene load_steps=5 format=3 uid="uid://enemy_projectile_scene"]
 
 [ext_resource type="Script" path="res://scripts/entities/enemy_projectile.gd" id="1_enemy_projectile"]
 
@@ -7,16 +7,26 @@ radius = 5.0
 
 [sub_resource type="Gradient" id="Gradient_enemy_projectile_trail"]
 offsets = PackedFloat32Array(0, 1)
-colors = PackedColorArray(1, 0.45, 0.2, 0, 1, 0.45, 0.2, 0.42)
+colors = PackedColorArray(1, 0.45, 0.2, 0, 1, 0.45, 0.2, 0.5)
+
+[sub_resource type="Gradient" id="Gradient_enemy_projectile_trail_core"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 0.92, 0.72, 0.34)
 
 [node name="EnemyProjectile" type="Area2D"]
 script = ExtResource("1_enemy_projectile")
 
 [node name="Trail" type="Line2D" parent="."]
-width = 6.0
-default_color = Color(1, 0.45, 0.2, 0.45)
+width = 7.0
+default_color = Color(1, 0.45, 0.2, 0.5)
 gradient = SubResource("Gradient_enemy_projectile_trail")
-points = PackedVector2Array(-28, 0, 0, 0)
+points = PackedVector2Array(-36, 0, 0, 0)
+
+[node name="TrailCore" type="Line2D" parent="."]
+width = 2.0
+default_color = Color(1, 0.92, 0.72, 0.34)
+gradient = SubResource("Gradient_enemy_projectile_trail_core")
+points = PackedVector2Array(-24, 0, 0, 0)
 
 [node name="Glow" type="Polygon2D" parent="."]
 color = Color(1, 0.45, 0.2, 0.28)

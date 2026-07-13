@@ -12,6 +12,7 @@ var glow_base_scale: Vector2 = Vector2.ONE
 @onready var visual: Polygon2D = $Visual
 @onready var glow: Polygon2D = $Glow
 @onready var trail: Line2D = $Trail
+@onready var trail_core: Line2D = $TrailCore
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
 func _ready() -> void:
@@ -28,6 +29,8 @@ func configure(new_direction: Vector2, new_damage: int, new_speed: float, color:
 		glow = get_node_or_null("Glow") as Polygon2D
 	if trail == null:
 		trail = get_node_or_null("Trail") as Line2D
+	if trail_core == null:
+		trail_core = get_node_or_null("TrailCore") as Line2D
 	if collision_shape == null:
 		collision_shape = get_node_or_null("CollisionShape2D") as CollisionShape2D
 	if visual == null:
@@ -39,12 +42,20 @@ func configure(new_direction: Vector2, new_damage: int, new_speed: float, color:
 		glow_base_scale = Vector2.ONE * scale_multiplier
 		glow.scale = glow_base_scale
 	if trail != null:
-		trail.default_color = Color(color.r, color.g, color.b, 0.42)
-		trail.width = 6.0 * scale_multiplier
+		trail.default_color = Color(color.r, color.g, color.b, 0.5)
+		trail.width = 7.0 * scale_multiplier
 		if trail.gradient != null:
 			trail.gradient = trail.gradient.duplicate()
 			trail.gradient.set_color(0, Color(color.r, color.g, color.b, 0.0))
-			trail.gradient.set_color(1, Color(color.r, color.g, color.b, 0.42))
+			trail.gradient.set_color(1, Color(color.r, color.g, color.b, 0.5))
+	if trail_core != null:
+		var core_color := color.lerp(Color.WHITE, 0.42)
+		trail_core.default_color = Color(core_color.r, core_color.g, core_color.b, 0.34)
+		trail_core.width = 2.0 * scale_multiplier
+		if trail_core.gradient != null:
+			trail_core.gradient = trail_core.gradient.duplicate()
+			trail_core.gradient.set_color(0, Color(core_color.r, core_color.g, core_color.b, 0.0))
+			trail_core.gradient.set_color(1, Color(core_color.r, core_color.g, core_color.b, 0.34))
 	if collision_shape != null and collision_shape.shape is CircleShape2D:
 		collision_shape.shape = collision_shape.shape.duplicate()
 		var shape := collision_shape.shape as CircleShape2D
@@ -68,11 +79,13 @@ func _update_visual_rotation() -> void:
 		glow.rotation = direction.angle()
 	if trail != null:
 		trail.rotation = direction.angle()
+	if trail_core != null:
+		trail_core.rotation = direction.angle()
 
 func _update_pulse() -> void:
 	if glow == null:
 		return
-	var pulse := 1.0 + sin(Time.get_ticks_msec() * 0.014) * 0.12
+	var pulse: float = 1.0 + sin(Time.get_ticks_msec() * 0.014) * 0.12
 	glow.scale = glow_base_scale * pulse
 
 func _on_body_entered(body: Node) -> void:

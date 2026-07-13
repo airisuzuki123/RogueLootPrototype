@@ -2,23 +2,16 @@ extends Area2D
 
 const EquipmentFactory := preload("res://scripts/items/equipment_factory.gd")
 
-const DROP_MIXED := "mixed"
-const DROP_EXPERIENCE := "experience"
-
 @export var gold_amount: int = 1
 @export var pickup_radius: float = 20.0
 @export var equipment_chance: float = 0.10
 @export var source_level: int = 1
-@export var drop_kind: String = DROP_MIXED
-@export var experience_amount: int = 1
 
 var equipment: Dictionary = {}
 var blocked_pickup_retry_cooldown: float = 0.0
 
 func _ready() -> void:
-	if drop_kind == DROP_EXPERIENCE:
-		_configure_experience_visual()
-	elif randf() <= _get_scaled_equipment_chance():
+	if randf() <= _get_scaled_equipment_chance():
 		equipment = EquipmentFactory.roll_equipment(source_level)
 		_configure_equipment_visual()
 	else:
@@ -43,10 +36,6 @@ func _on_body_entered(body: Node) -> void:
 	_try_pickup(body)
 
 func _try_pickup(_body: Node) -> void:
-	if drop_kind == DROP_EXPERIENCE:
-		GameManager.add_experience(experience_amount)
-		queue_free()
-		return
 	if equipment.is_empty():
 		GameManager.add_gold(_get_scaled_gold_amount())
 		queue_free()

@@ -6,6 +6,7 @@ var gold_label: Label
 var kills_label: Label
 var health_label: Label
 var experience_label: Label
+var run_phase_label: Label
 var equipment_label: Label
 var loot_message_label: Label
 var hint_label: Label
@@ -61,6 +62,10 @@ func _build_ui() -> void:
 
 	experience_label = Label.new()
 	stats.add_child(experience_label)
+
+	run_phase_label = Label.new()
+	run_phase_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	stats.add_child(run_phase_label)
 
 	gold_label = Label.new()
 	stats.add_child(gold_label)
@@ -160,11 +165,13 @@ func _connect_signals() -> void:
 	GameManager.inventory_open_changed.connect(_on_inventory_open_changed)
 	GameManager.upgrade_choices_requested.connect(_on_upgrade_choices_requested)
 	GameManager.run_ended.connect(_on_run_ended)
+	GameManager.run_time_changed.connect(_on_run_time_changed)
 
 func _refresh_all() -> void:
 	_on_gold_changed(GameManager.gold)
 	_on_enemy_killed(GameManager.kills)
 	_on_experience_changed(GameManager.experience, GameManager.experience_to_next_level, GameManager.level)
+	_on_run_time_changed(GameManager.get_run_elapsed_seconds(), GameManager.get_current_run_phase(), GameManager.get_current_phase_remaining_seconds())
 	_on_health_changed(GameManager.player_health, GameManager.player_max_health)
 	_on_equipment_changed(GameManager.equipped_items)
 	_on_loot_message_changed(GameManager.latest_loot_message)
@@ -193,6 +200,15 @@ func _on_health_changed(current: int, maximum: int) -> void:
 
 func _on_experience_changed(current: int, required: int, level: int) -> void:
 	experience_label.text = "等级 %d  经验：%d / %d" % [level, current, required]
+
+func _on_run_time_changed(elapsed_seconds: int, phase: Dictionary, remaining_seconds: int) -> void:
+	var remaining_text := "持续压力" if remaining_seconds < 0 else "剩余 %s" % _format_time(remaining_seconds)
+	run_phase_label.text = "时间 %s | %s\n阶段：%s | 目标：%s" % [
+		_format_time(elapsed_seconds),
+		remaining_text,
+		str(phase.get("name", "未知阶段")),
+		str(phase.get("goal", ""))
+	]
 
 func _on_equipment_changed(new_equipped_items: Dictionary) -> void:
 	equipped_items = new_equipped_items.duplicate(true)
@@ -666,3 +682,8 @@ func _get_slot_symbol(slot_id: String) -> String:
 func _get_current_equipment_for(equipment: Dictionary) -> Dictionary:
 	var slot_id := str(equipment.get("slot", "weapon"))
 	return equipped_items.get(slot_id, {})
+
+func _format_time(total_seconds: int) -> String:
+	var minutes := total_seconds / 60
+	var seconds := total_seconds % 60
+	return "%02d:%02d" % [minutes, seconds]

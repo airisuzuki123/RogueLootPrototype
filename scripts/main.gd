@@ -25,7 +25,11 @@ func _ready() -> void:
 	_spawn_player()
 	_spawn_hud()
 	enemy_spawn_timer.timeout.connect(_spawn_enemy)
+	GameManager.run_phase_changed.connect(_on_run_phase_changed)
 	GameManager.run_ended.connect(_on_run_ended)
+
+func _process(delta: float) -> void:
+	GameManager.update_run_time(delta)
 
 func _spawn_player() -> void:
 	player = PLAYER_SCENE.instantiate()
@@ -40,12 +44,17 @@ func _spawn_hud() -> void:
 func _spawn_enemy() -> void:
 	if player == null or not is_instance_valid(player) or GameManager.is_run_over or GameManager.is_gameplay_paused():
 		return
+	var spawn_count := GameManager.get_current_phase_spawn_count()
+	for index in range(spawn_count):
+		_spawn_single_enemy()
+	_update_spawn_interval()
+
+func _spawn_single_enemy() -> void:
 	var enemy := ENEMY_SCENE.instantiate()
 	enemy.configure(_roll_enemy_type())
 	enemy.target = player
 	enemy.global_position = _random_spawn_position_around(player.global_position, spawn_radius)
 	add_child(enemy)
-	_update_spawn_interval()
 
 func _random_spawn_position_around(center: Vector2, radius: float) -> Vector2:
 	var angle := randf() * TAU
@@ -59,22 +68,27 @@ func _random_spawn_position_around(center: Vector2, radius: float) -> Vector2:
 func _on_run_ended(_kills: int, _gold: int) -> void:
 	enemy_spawn_timer.stop()
 
+func _on_run_phase_changed(_phase: Dictionary) -> void:
+	_update_spawn_interval()
+
 func _update_spawn_interval() -> void:
-	var target_interval := maxf(minimum_spawn_interval, 1.25 - (GameManager.level - 1) * spawn_interval_reduction_per_level)
+	var phase_interval := GameManager.get_current_phase_spawn_interval()
+	var target_interval := maxf(minimum_spawn_interval, phase_interval - (GameManager.level - 1) * spawn_interval_reduction_per_level)
 	enemy_spawn_timer.wait_time = target_interval
 
 func _roll_enemy_type() -> String:
 	var available: Array[Dictionary] = []
 	var total_weight := 0
+	var effective_level := GameManager.level + GameManager.get_current_phase_enemy_level_bonus()
 	for entry in enemy_spawn_table:
-		if GameManager.level < int(entry["min_level"]):
+		if effective_level < int(entry["min_level"]):
 			continue
 		available.append(entry)
-		total_weight += int(entry["weight"])
+		total_weight += int(entry["weight"]) + GameManager.get_current_phase_enemy_weight_bonus(str(entry["type"]))
 	var roll := randi_range(1, max(1, total_weight))
 	var cursor := 0
 	for entry in available:
-		cursor += int(entry["weight"])
+		cursor += int(entry["weight"]) + GameManager.get_current_phase_enemy_weight_bonus(str(entry["type"]))
 		if roll <= cursor:
 			return str(entry["type"])
 	return "grunt"

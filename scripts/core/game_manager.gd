@@ -13,8 +13,62 @@ signal inventory_changed(items: Array)
 signal inventory_open_changed(is_open: bool)
 signal upgrade_choices_requested(choices: Array)
 signal run_ended(kills: int, gold: int)
+signal run_time_changed(elapsed_seconds: int, phase: Dictionary, remaining_seconds: int)
+signal run_phase_changed(phase: Dictionary)
 
 const MAX_INVENTORY_SIZE: int = 36
+const RUN_PHASES: Array[Dictionary] = [
+	{
+		"id": "opening",
+		"name": "初始清场",
+		"duration": 45.0,
+		"spawn_interval": 1.25,
+		"spawn_count": 1,
+		"enemy_level_bonus": 0,
+		"enemy_weight_bonus": {},
+		"goal": "积累经验球，完成第一轮升级"
+	},
+	{
+		"id": "chase",
+		"name": "追击加压",
+		"duration": 60.0,
+		"spawn_interval": 1.05,
+		"spawn_count": 1,
+		"enemy_level_bonus": 0,
+		"enemy_weight_bonus": {"runner": 18},
+		"goal": "应对快速敌人，保持移动空间"
+	},
+	{
+		"id": "mixed",
+		"name": "混编压迫",
+		"duration": 75.0,
+		"spawn_interval": 0.90,
+		"spawn_count": 1,
+		"enemy_level_bonus": 1,
+		"enemy_weight_bonus": {"tank": 14, "ranged": 18},
+		"goal": "处理坦克和远程敌人的组合压力"
+	},
+	{
+		"id": "surge",
+		"name": "密集来袭",
+		"duration": 90.0,
+		"spawn_interval": 0.75,
+		"spawn_count": 2,
+		"enemy_level_bonus": 1,
+		"enemy_weight_bonus": {"runner": 16, "tank": 10, "ranged": 18},
+		"goal": "用当前构筑清理更密集的敌群"
+	},
+	{
+		"id": "endless_pressure",
+		"name": "终局压力",
+		"duration": -1.0,
+		"spawn_interval": 0.65,
+		"spawn_count": 2,
+		"enemy_level_bonus": 2,
+		"enemy_weight_bonus": {"runner": 18, "tank": 18, "ranged": 24},
+		"goal": "尽可能延长生存时间"
+	}
+]
 
 var gold: int = 0
 var kills: int = 0
@@ -41,6 +95,9 @@ var equipped_items := {
 	"ring": {}
 }
 var latest_loot_message: String = ""
+var run_elapsed_time: float = 0.0
+var current_phase_index: int = 0
+var latest_run_time_second: int = -1
 
 const UPGRADE_POOL := [
 	{
@@ -94,6 +151,9 @@ func reset_run() -> void:
 	inventory.clear()
 	_reset_equipped_items()
 	latest_loot_message = ""
+	run_elapsed_time = 0.0
+	current_phase_index = 0
+	latest_run_time_second = -1
 	gold_changed.emit(gold)
 	enemy_killed.emit(kills)
 	experience_changed.emit(experience, experience_to_next_level, level)
@@ -101,6 +161,44 @@ func reset_run() -> void:
 	inventory_open_changed.emit(is_inventory_open)
 	equipment_changed.emit(equipped_items)
 	loot_message_changed.emit(latest_loot_message)
+	run_phase_changed.emit(get_current_run_phase())
+	_emit_run_time_changed(true)
+
+func update_run_time(delta: float) -> void:
+	if is_run_over or is_gameplay_paused():
+		return
+	run_elapsed_time += delta
+	_update_run_phase()
+	_emit_run_time_changed(false)
+
+func get_current_run_phase() -> Dictionary:
+	if RUN_PHASES.is_empty():
+		return {}
+	return RUN_PHASES[clampi(current_phase_index, 0, RUN_PHASES.size() - 1)].duplicate(true)
+
+func get_current_phase_spawn_interval() -> float:
+	return float(get_current_run_phase().get("spawn_interval", 1.25))
+
+func get_current_phase_spawn_count() -> int:
+	return maxi(1, int(get_current_run_phase().get("spawn_count", 1)))
+
+func get_current_phase_enemy_level_bonus() -> int:
+	return maxi(0, int(get_current_run_phase().get("enemy_level_bonus", 0)))
+
+func get_current_phase_enemy_weight_bonus(enemy_type: String) -> int:
+	var weight_bonus: Dictionary = get_current_run_phase().get("enemy_weight_bonus", {})
+	return maxi(0, int(weight_bonus.get(enemy_type, 0)))
+
+func get_run_elapsed_seconds() -> int:
+	return int(floor(run_elapsed_time))
+
+func get_current_phase_remaining_seconds() -> int:
+	var phase := get_current_run_phase()
+	var duration := float(phase.get("duration", -1.0))
+	if duration < 0.0:
+		return -1
+	var phase_elapsed := run_elapsed_time - _get_phase_start_time(current_phase_index)
+	return maxi(0, int(ceil(duration - phase_elapsed)))
 
 func register_player(player_node: Node) -> void:
 	player = player_node
@@ -312,6 +410,43 @@ func end_run() -> void:
 	is_run_over = true
 	set_inventory_open(false)
 	run_ended.emit(kills, gold)
+
+func _update_run_phase() -> void:
+	var new_phase_index := _get_phase_index_for_time(run_elapsed_time)
+	if new_phase_index == current_phase_index:
+		return
+	current_phase_index = new_phase_index
+	var phase := get_current_run_phase()
+	run_phase_changed.emit(phase)
+	_set_loot_message("进入阶段：%s - %s" % [str(phase.get("name", "未知阶段")), str(phase.get("goal", ""))])
+	_emit_run_time_changed(true)
+
+func _get_phase_index_for_time(elapsed_time: float) -> int:
+	var cursor := 0.0
+	for index in range(RUN_PHASES.size()):
+		var duration := float(RUN_PHASES[index].get("duration", -1.0))
+		if duration < 0.0:
+			return index
+		cursor += duration
+		if elapsed_time < cursor:
+			return index
+	return maxi(0, RUN_PHASES.size() - 1)
+
+func _get_phase_start_time(phase_index: int) -> float:
+	var cursor := 0.0
+	for index in range(mini(phase_index, RUN_PHASES.size())):
+		var duration := float(RUN_PHASES[index].get("duration", -1.0))
+		if duration < 0.0:
+			return cursor
+		cursor += duration
+	return cursor
+
+func _emit_run_time_changed(force: bool) -> void:
+	var elapsed_seconds := get_run_elapsed_seconds()
+	if not force and elapsed_seconds == latest_run_time_second:
+		return
+	latest_run_time_second = elapsed_seconds
+	run_time_changed.emit(elapsed_seconds, get_current_run_phase(), get_current_phase_remaining_seconds())
 
 func _request_upgrade_choices() -> void:
 	is_upgrade_pending = true

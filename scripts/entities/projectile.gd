@@ -19,7 +19,7 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 
 func _physics_process(delta: float) -> void:
-	if GameManager.is_gameplay_paused():
+	if GameManager.is_run_over or GameManager.is_gameplay_paused():
 		return
 	global_position += direction.normalized() * speed * delta
 	lifetime -= delta

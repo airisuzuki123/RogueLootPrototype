@@ -27,8 +27,10 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 1.25,
 		"spawn_count": 1,
 		"enemy_level_bonus": 0,
-		"enemy_weight_bonus": {},
-		"goal": "积累经验球，完成第一轮升级",
+		"enemy_weight_bonus": {"ranged": 10},
+		"bullet_pattern": "aimed",
+		"bullet_speed_multiplier": 0.88,
+		"goal": "阅读直线弹道，积累经验球完成第一轮升级",
 		"kill_target": 10,
 		"reward_gold": 8,
 		"reward_experience": 2,
@@ -41,8 +43,10 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 1.05,
 		"spawn_count": 1,
 		"enemy_level_bonus": 0,
-		"enemy_weight_bonus": {"runner": 18},
-		"goal": "应对快速敌人，保持移动空间",
+		"enemy_weight_bonus": {"runner": 8, "ranged": 28},
+		"bullet_pattern": "fan",
+		"bullet_speed_multiplier": 0.95,
+		"goal": "穿过扇形弹幕，保持移动空间",
 		"kill_target": 18,
 		"reward_gold": 12,
 		"reward_experience": 3,
@@ -55,8 +59,10 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.90,
 		"spawn_count": 1,
 		"enemy_level_bonus": 1,
-		"enemy_weight_bonus": {"tank": 14, "ranged": 18},
-		"goal": "处理坦克和远程敌人的组合压力",
+		"enemy_weight_bonus": {"tank": 8, "ranged": 34},
+		"bullet_pattern": "ring",
+		"bullet_speed_multiplier": 1.0,
+		"goal": "观察环形弹幕缺口，处理远程压力",
 		"kill_target": 26,
 		"reward_gold": 16,
 		"reward_experience": 4,
@@ -69,8 +75,10 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.75,
 		"spawn_count": 2,
 		"enemy_level_bonus": 1,
-		"enemy_weight_bonus": {"runner": 16, "tank": 10, "ranged": 18},
-		"goal": "用当前构筑清理更密集的敌群",
+		"enemy_weight_bonus": {"runner": 8, "tank": 8, "ranged": 38},
+		"bullet_pattern": "spiral",
+		"bullet_speed_multiplier": 1.08,
+		"goal": "预判旋转弹幕轨迹，保持输出空间",
 		"kill_target": 40,
 		"reward_gold": 24,
 		"reward_experience": 5,
@@ -83,8 +91,10 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.65,
 		"spawn_count": 2,
 		"enemy_level_bonus": 2,
-		"enemy_weight_bonus": {"runner": 18, "tank": 18, "ranged": 24},
-		"goal": "撑过最后一波压力并完成本局",
+		"enemy_weight_bonus": {"runner": 10, "tank": 12, "ranged": 44},
+		"bullet_pattern": "wall",
+		"bullet_speed_multiplier": 1.15,
+		"goal": "穿越弹幕墙，撑过最后一波压力",
 		"kill_target": 60,
 		"reward_gold": 35,
 		"reward_experience": 6,
@@ -228,6 +238,12 @@ func get_current_phase_enemy_level_bonus() -> int:
 func get_current_phase_enemy_weight_bonus(enemy_type: String) -> int:
 	var weight_bonus: Dictionary = get_current_run_phase().get("enemy_weight_bonus", {})
 	return maxi(0, int(weight_bonus.get(enemy_type, 0)))
+
+func get_current_phase_bullet_pattern() -> String:
+	return str(get_current_run_phase().get("bullet_pattern", "aimed"))
+
+func get_current_phase_bullet_speed_multiplier() -> float:
+	return maxf(0.2, float(get_current_run_phase().get("bullet_speed_multiplier", 1.0)))
 
 func get_run_elapsed_seconds() -> int:
 	return int(floor(run_elapsed_time))

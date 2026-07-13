@@ -14,11 +14,13 @@ const CombatFeedback := preload("res://scripts/effects/combat_feedback.gd")
 @export var enemy_type: String = "grunt"
 @export var ranged_attack_range: float = 260.0
 @export var ranged_keep_distance: float = 170.0
+@export var projectile_speed: float = 240.0
 
 var health: int
 var target: Node2D
 var attack_cooldown: float = 0.0
 var knockback_velocity: Vector2 = Vector2.ZERO
+var spiral_angle: float = 0.0
 @onready var visual: Polygon2D = $Visual
 @onready var health_bar: ProgressBar = $HealthBar
 
@@ -92,12 +94,17 @@ func _try_ranged_attack(direction: Vector2) -> void:
 	if attack_cooldown > 0.0:
 		return
 	attack_cooldown = attack_interval
-	var projectile := ENEMY_PROJECTILE_SCENE.instantiate()
-	projectile.global_position = global_position
-	projectile.direction = direction
-	projectile.damage = touch_damage
-	get_tree().current_scene.add_child(projectile)
-	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1, 0.55, 0.25, 0.75), 0.7)
+	match GameManager.get_current_phase_bullet_pattern():
+		"fan":
+			_fire_fan_pattern(direction)
+		"ring":
+			_fire_ring_pattern()
+		"spiral":
+			_fire_spiral_pattern()
+		"wall":
+			_fire_wall_pattern(direction)
+		_:
+			_fire_aimed_pattern(direction)
 
 func _flash_on_hit() -> void:
 	visual.modulate = Color(1.6, 1.6, 1.6, 1)
@@ -130,12 +137,14 @@ func _apply_enemy_type(type_id: String) -> void:
 			visual.color = Color(0.75, 0.15, 1, 1)
 			visual.scale = Vector2(1.35, 1.35)
 		"ranged":
-			max_health = 18
+			max_health = 22
 			move_speed = 95.0
-			touch_damage = 8
-			attack_interval = 1.35
+			touch_damage = 7
+			attack_interval = 1.45
+			projectile_speed = 230.0
 			experience_reward = 2
-			visual.color = Color(0.25, 1, 0.65, 1)
+			loot_chance = 0.30
+			visual.color = Color(0.15, 0.85, 1.0, 1)
 			visual.scale = Vector2(1.0, 1.0)
 		_:
 			enemy_type = "grunt"
@@ -154,3 +163,55 @@ func _get_desired_velocity(direction: Vector2, distance: float) -> Vector2:
 	if distance > ranged_attack_range:
 		return direction * move_speed
 	return Vector2.ZERO
+
+func _fire_aimed_pattern(direction: Vector2) -> void:
+	_spawn_enemy_projectile(direction, Vector2.ZERO, Color(1.0, 0.48, 0.22, 1.0), 1.0)
+	_show_ranged_burst(Color(1.0, 0.55, 0.25, 0.75), 0.75)
+
+func _fire_fan_pattern(direction: Vector2) -> void:
+	var bullet_count := 5
+	var spread_degrees := 52.0
+	for index in range(bullet_count):
+		var t := 0.0 if bullet_count <= 1 else float(index) / float(bullet_count - 1)
+		var angle := deg_to_rad(lerpf(-spread_degrees * 0.5, spread_degrees * 0.5, t))
+		_spawn_enemy_projectile(direction.rotated(angle), Vector2.ZERO, Color(0.35, 0.95, 1.0, 1.0), 0.92)
+	_show_ranged_burst(Color(0.25, 0.85, 1.0, 0.82), 0.95)
+
+func _fire_ring_pattern() -> void:
+	var bullet_count := 12
+	var offset := randf() * TAU
+	for index in range(bullet_count):
+		var angle := offset + TAU * float(index) / float(bullet_count)
+		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(1.0, 0.42, 0.95, 1.0), 0.86)
+	_show_ranged_burst(Color(1.0, 0.35, 0.9, 0.85), 1.2)
+
+func _fire_spiral_pattern() -> void:
+	var bullet_count := 7
+	spiral_angle = wrapf(spiral_angle + deg_to_rad(34.0), 0.0, TAU)
+	for index in range(bullet_count):
+		var angle := spiral_angle + TAU * float(index) / float(bullet_count)
+		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(1.0, 0.86, 0.28, 1.0), 0.84)
+	_show_ranged_burst(Color(1.0, 0.75, 0.22, 0.86), 1.15)
+
+func _fire_wall_pattern(direction: Vector2) -> void:
+	var bullet_count := 7
+	var spacing := 22.0
+	var side := direction.orthogonal().normalized()
+	for index in range(bullet_count):
+		var offset := side * (float(index) - float(bullet_count - 1) * 0.5) * spacing
+		_spawn_enemy_projectile(direction, offset, Color(0.55, 0.72, 1.0, 1.0), 0.95)
+	_show_ranged_burst(Color(0.4, 0.62, 1.0, 0.88), 1.25)
+
+func _spawn_enemy_projectile(direction: Vector2, offset: Vector2, color: Color, scale_multiplier: float) -> void:
+	var projectile := ENEMY_PROJECTILE_SCENE.instantiate()
+	projectile.global_position = global_position + offset
+	var speed_multiplier := GameManager.get_current_phase_bullet_speed_multiplier()
+	if projectile.has_method("configure"):
+		projectile.configure(direction, touch_damage, projectile_speed * speed_multiplier, color, scale_multiplier)
+	else:
+		projectile.direction = direction
+		projectile.damage = touch_damage
+	get_tree().current_scene.add_child(projectile)
+
+func _show_ranged_burst(color: Color, size: float) -> void:
+	CombatFeedback.show_burst(get_tree().current_scene, global_position, color, size)

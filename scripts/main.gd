@@ -13,10 +13,10 @@ const HUD_SCENE := preload("res://scenes/hud.tscn")
 
 var player: CharacterBody2D
 var enemy_spawn_table: Array[Dictionary] = [
-	{"type": "grunt", "weight": 60, "min_level": 1},
-	{"type": "runner", "weight": 25, "min_level": 1},
+	{"type": "grunt", "weight": 42, "min_level": 1},
+	{"type": "runner", "weight": 18, "min_level": 1},
 	{"type": "tank", "weight": 12, "min_level": 2},
-	{"type": "ranged", "weight": 18, "min_level": 3}
+	{"type": "ranged", "weight": 30, "min_level": 1}
 ]
 
 func _ready() -> void:

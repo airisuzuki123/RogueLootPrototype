@@ -7,14 +7,18 @@ const ENEMY_PROJECTILE_SCENE := preload("res://scenes/enemy_projectile.tscn")
 
 @onready var enemy_spawn_timer: Timer = $EnemySpawnTimer
 @onready var arena_pattern_timer: Timer = $ArenaPatternTimer
+@onready var arena_warning_timer: Timer = $ArenaWarningTimer
 @onready var arena_bounds: Node2D = $ArenaBounds
+@onready var arena_warning: Node2D = $ArenaWarning
 
 @export var spawn_radius: float = 460.0
 @export var minimum_spawn_radius: float = 360.0
 @export var spawn_interval_reduction_per_level: float = 0.04
 @export var minimum_spawn_interval: float = 0.55
+@export var arena_warning_duration: float = 0.75
 
 var player: CharacterBody2D
+var pending_arena_pattern: Dictionary = {}
 var enemy_spawn_table: Array[Dictionary] = [
 	{"type": "grunt", "weight": 36, "min_level": 1},
 	{"type": "runner", "weight": 16, "min_level": 1},
@@ -30,7 +34,8 @@ func _ready() -> void:
 	_spawn_player()
 	_spawn_hud()
 	enemy_spawn_timer.timeout.connect(_spawn_enemy)
-	arena_pattern_timer.timeout.connect(_spawn_arena_pattern)
+	arena_pattern_timer.timeout.connect(_prepare_arena_pattern)
+	arena_warning_timer.timeout.connect(_fire_pending_arena_pattern)
 	GameManager.run_phase_changed.connect(_on_run_phase_changed)
 	GameManager.run_ended.connect(_on_run_ended)
 	_update_arena_pattern_interval()
@@ -80,6 +85,9 @@ func _random_spawn_position_around(center: Vector2, radius: float) -> Vector2:
 func _on_run_ended(_kills: int, _gold: int) -> void:
 	enemy_spawn_timer.stop()
 	arena_pattern_timer.stop()
+	arena_warning_timer.stop()
+	if arena_warning.has_method("clear_warning"):
+		arena_warning.clear_warning()
 
 func _on_run_phase_changed(_phase: Dictionary) -> void:
 	_update_spawn_interval()
@@ -116,32 +124,120 @@ func _roll_enemy_type() -> String:
 			return str(entry["type"])
 	return "grunt"
 
-func _spawn_arena_pattern() -> void:
+func _prepare_arena_pattern() -> void:
 	if player == null or not is_instance_valid(player) or GameManager.is_run_over or GameManager.is_gameplay_paused():
 		return
 	var phase := GameManager.get_current_run_phase()
 	var patterns: Array = phase.get("arena_patterns", [])
 	if patterns.is_empty():
 		return
-	match str(patterns.pick_random()):
+	pending_arena_pattern = _create_arena_pattern_plan(str(patterns.pick_random()))
+	if pending_arena_pattern.is_empty():
+		return
+	if arena_warning.has_method("show_warning"):
+		arena_warning.show_warning(_get_arena_warning_segments(pending_arena_pattern), arena_warning_duration)
+	arena_warning_timer.start(arena_warning_duration)
+
+func _fire_pending_arena_pattern() -> void:
+	if pending_arena_pattern.is_empty():
+		return
+	if GameManager.is_run_over:
+		pending_arena_pattern.clear()
+		return
+	if GameManager.is_gameplay_paused():
+		arena_warning_timer.start(0.1)
+		return
+	_fire_arena_pattern_plan(pending_arena_pattern)
+	pending_arena_pattern.clear()
+
+func _create_arena_pattern_plan(pattern_id: String) -> Dictionary:
+	match pattern_id:
 		"cross_curtain":
-			_fire_cross_curtain()
+			var first_side := randi_range(0, 3)
+			return {
+				"id": "curtain",
+				"sides": [
+					_create_curtain_side(first_side, 10, 2),
+					_create_curtain_side((first_side + 1) % 4, 10, 2)
+				]
+			}
 		"alternating_curtain":
-			_fire_alternating_curtain()
+			var first_side := randi_range(0, 1)
+			return {
+				"id": "curtain",
+				"sides": [
+					_create_curtain_side(first_side, 12, 2),
+					_create_curtain_side(first_side + 2, 12, 2)
+				]
+			}
+		"corner_pinwheel":
+			return {"id": "corner_pinwheel"}
+	return {
+		"id": "curtain",
+		"sides": [_create_curtain_side(randi_range(0, 3), 10, 2)]
+	}
+
+func _create_curtain_side(side: int, bullet_count: int, gap_width: int) -> Dictionary:
+	return {
+		"side": side,
+		"bullet_count": bullet_count,
+		"gap_width": gap_width,
+		"gap_index": randi_range(1, maxi(1, bullet_count - gap_width - 1))
+	}
+
+func _fire_arena_pattern_plan(pattern_plan: Dictionary) -> void:
+	match str(pattern_plan.get("id", "")):
 		"corner_pinwheel":
 			_fire_corner_pinwheel()
 		_:
-			_fire_side_curtain(randi_range(0, 3), 10, 2)
+			var sides: Array = pattern_plan.get("sides", [])
+			for side_index in range(sides.size()):
+				var side_data: Dictionary = sides[side_index]
+				_fire_side_curtain(
+					int(side_data.get("side", 0)),
+					int(side_data.get("bullet_count", 10)),
+					int(side_data.get("gap_width", 2)),
+					int(side_data.get("gap_index", 1))
+				)
 
-func _fire_cross_curtain() -> void:
-	var first_side := randi_range(0, 3)
-	_fire_side_curtain(first_side, 10, 2)
-	_fire_side_curtain((first_side + 1) % 4, 10, 2)
+func _get_arena_warning_segments(pattern_plan: Dictionary) -> Array[Dictionary]:
+	match str(pattern_plan.get("id", "")):
+		"corner_pinwheel":
+			return _get_corner_pinwheel_warning_segments()
+	var segments: Array[Dictionary] = []
+	var sides: Array = pattern_plan.get("sides", [])
+	for side_index in range(sides.size()):
+		var side_data: Dictionary = sides[side_index]
+		segments.append_array(_get_side_curtain_warning_segments(
+			int(side_data.get("side", 0)),
+			int(side_data.get("bullet_count", 10)),
+			int(side_data.get("gap_width", 2)),
+			int(side_data.get("gap_index", 1))
+		))
+	return segments
 
-func _fire_alternating_curtain() -> void:
-	var first_side := randi_range(0, 1)
-	_fire_side_curtain(first_side, 12, 2)
-	_fire_side_curtain(first_side + 2, 12, 2)
+func _get_corner_pinwheel_warning_segments() -> Array[Dictionary]:
+	var rect := _get_spawn_rect()
+	var corners := [
+		rect.position,
+		Vector2(rect.end.x, rect.position.y),
+		rect.end,
+		Vector2(rect.position.x, rect.end.y)
+	]
+	var center := _get_arena_center()
+	var segments: Array[Dictionary] = []
+	for corner_index in range(corners.size()):
+		var corner: Vector2 = corners[corner_index]
+		var base_direction := corner.direction_to(center)
+		for index in range(5):
+			var angle := deg_to_rad((float(index) - 2.0) * 13.0)
+			segments.append({
+				"start": corner,
+				"end": corner + base_direction.rotated(angle) * 260.0,
+				"color": Color(1.0, 0.36, 0.9, 1.0),
+				"width": 3.0
+			})
+	return segments
 
 func _fire_corner_pinwheel() -> void:
 	var rect := _get_spawn_rect()
@@ -159,8 +255,23 @@ func _fire_corner_pinwheel() -> void:
 			var angle := deg_to_rad((float(index) - 2.0) * 13.0)
 			_spawn_arena_projectile(corner, base_direction.rotated(angle), Color(1.0, 0.36, 0.9, 1.0), 0.78, 0.88)
 
-func _fire_side_curtain(side: int, bullet_count: int, gap_width: int) -> void:
-	var gap_index := randi_range(1, maxi(1, bullet_count - gap_width - 1))
+func _get_side_curtain_warning_segments(side: int, bullet_count: int, gap_width: int, gap_index: int) -> Array[Dictionary]:
+	var segments: Array[Dictionary] = []
+	for index in range(bullet_count):
+		if index >= gap_index and index < gap_index + gap_width:
+			continue
+		var data := _get_side_projectile_spawn(side, index, bullet_count)
+		var position: Vector2 = data["position"]
+		var direction: Vector2 = data["direction"]
+		segments.append({
+			"start": position,
+			"end": position + direction * 220.0,
+			"color": Color(0.45, 0.82, 1.0, 1.0),
+			"width": 3.0
+		})
+	return segments
+
+func _fire_side_curtain(side: int, bullet_count: int, gap_width: int, gap_index: int) -> void:
 	for index in range(bullet_count):
 		if index >= gap_index and index < gap_index + gap_width:
 			continue

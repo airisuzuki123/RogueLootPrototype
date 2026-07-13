@@ -23,6 +23,7 @@ var movement_bounds: Rect2 = Rect2()
 var attack_cooldown: float = 0.0
 var knockback_velocity: Vector2 = Vector2.ZERO
 var spiral_angle: float = 0.0
+var sweep_angle: float = 0.0
 var strafe_direction: float = 1.0
 var strafe_timer: float = 0.0
 @onready var visual: Polygon2D = $Visual
@@ -111,8 +112,12 @@ func _try_ranged_attack(direction: Vector2) -> void:
 			_fire_cross_pattern(direction)
 		"spiral":
 			_fire_spiral_pattern()
+		"sweep":
+			_fire_sweep_pattern(direction)
 		"double_ring":
 			_fire_double_ring_pattern()
+		"pinwheel":
+			_fire_pinwheel_pattern()
 		"wall":
 			_fire_wall_pattern(direction)
 		"flower":
@@ -240,9 +245,9 @@ func _update_strafe(delta: float) -> void:
 func _select_bullet_pattern() -> String:
 	match enemy_type:
 		"weaver":
-			return ["fan", "cross", "aimed_burst", "wall"].pick_random()
+			return ["fan", "cross", "aimed_burst", "wall", "sweep"].pick_random()
 		"turret":
-			return ["ring", "double_ring", "flower", "spiral"].pick_random()
+			return ["ring", "double_ring", "flower", "spiral", "pinwheel"].pick_random()
 	return GameManager.get_current_phase_bullet_pattern()
 
 func _fire_aimed_pattern(direction: Vector2) -> void:
@@ -292,6 +297,18 @@ func _fire_spiral_pattern() -> void:
 		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(1.0, 0.86, 0.28, 1.0), 0.84)
 	_show_ranged_burst(Color(1.0, 0.75, 0.22, 0.86), 1.15)
 
+func _fire_sweep_pattern(direction: Vector2) -> void:
+	var bullet_count := 6
+	var spread_degrees := 64.0
+	sweep_angle = wrapf(sweep_angle + deg_to_rad(18.0), -PI, PI)
+	var base_direction := direction.rotated(sin(sweep_angle) * deg_to_rad(22.0))
+	for index in range(bullet_count):
+		var t := 0.0 if bullet_count <= 1 else float(index) / float(bullet_count - 1)
+		var angle := deg_to_rad(lerpf(-spread_degrees * 0.5, spread_degrees * 0.5, t))
+		var color := Color(0.35, 1.0, 0.92, 1.0) if index % 2 == 0 else Color(0.78, 0.55, 1.0, 1.0)
+		_spawn_enemy_projectile(base_direction.rotated(angle), Vector2.ZERO, color, 0.82, 0.95)
+	_show_ranged_burst(Color(0.45, 0.9, 1.0, 0.86), 1.1)
+
 func _fire_double_ring_pattern() -> void:
 	var bullet_count := 10
 	var offset := randf() * TAU
@@ -302,6 +319,18 @@ func _fire_double_ring_pattern() -> void:
 		var angle := offset + PI / float(bullet_count) + TAU * float(index) / float(bullet_count)
 		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(0.45, 0.88, 1.0, 1.0), 0.92, 1.12)
 	_show_ranged_burst(Color(0.95, 0.45, 1.0, 0.88), 1.3)
+
+func _fire_pinwheel_pattern() -> void:
+	var bullet_count := 8
+	spiral_angle = wrapf(spiral_angle + deg_to_rad(27.0), 0.0, TAU)
+	for index in range(bullet_count):
+		var angle := spiral_angle + TAU * float(index) / float(bullet_count)
+		var is_primary := index % 2 == 0
+		var color := Color(1.0, 0.38, 0.85, 1.0) if is_primary else Color(0.38, 0.92, 1.0, 1.0)
+		var scale_multiplier := 0.9 if is_primary else 0.72
+		var speed_scale := 1.05 if is_primary else 0.82
+		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, color, scale_multiplier, speed_scale)
+	_show_ranged_burst(Color(0.9, 0.5, 1.0, 0.9), 1.25)
 
 func _fire_wall_pattern(direction: Vector2) -> void:
 	var bullet_count := 7

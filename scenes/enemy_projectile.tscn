@@ -1,12 +1,26 @@
-[gd_scene load_steps=3 format=3 uid="uid://enemy_projectile_scene"]
+[gd_scene load_steps=4 format=3 uid="uid://enemy_projectile_scene"]
 
 [ext_resource type="Script" path="res://scripts/entities/enemy_projectile.gd" id="1_enemy_projectile"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_enemy_projectile"]
 radius = 5.0
 
+[sub_resource type="Gradient" id="Gradient_enemy_projectile_trail"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 0.45, 0.2, 0, 1, 0.45, 0.2, 0.42)
+
 [node name="EnemyProjectile" type="Area2D"]
 script = ExtResource("1_enemy_projectile")
+
+[node name="Trail" type="Line2D" parent="."]
+width = 6.0
+default_color = Color(1, 0.45, 0.2, 0.45)
+gradient = SubResource("Gradient_enemy_projectile_trail")
+points = PackedVector2Array(-28, 0, 0, 0)
+
+[node name="Glow" type="Polygon2D" parent="."]
+color = Color(1, 0.45, 0.2, 0.28)
+polygon = PackedVector2Array(12, 0, 6, 8, -5, 8, -11, 0, -5, -8, 6, -8)
 
 [node name="Visual" type="Polygon2D" parent="."]
 color = Color(1, 0.45, 0.2, 1)
@@ -14,4 +28,3 @@ polygon = PackedVector2Array(7, 0, -4, 5, -4, -5)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_enemy_projectile")
-

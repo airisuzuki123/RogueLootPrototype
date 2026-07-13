@@ -2,6 +2,14 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-13 - Revise staged development plan
+
+- Replaced the staged plan with a seven-stage project standard.
+- Moved out-of-run progression behind single-run structure, encounter pacing, elite, event, and Boss work.
+- Updated README to point the next planned development step to single-run structure and level pacing.
+- Validation: ran `git diff --check` before committing; no Godot headless validation was needed because only documentation changed.
+- Push result: first push attempt failed with `curl 52 Empty reply from server`, second attempt timed out; retrying with HTTP/1.1 and a larger post buffer pushed `main` to `origin/main` successfully.
+
 ## 2026-07-12 - Differentiate loot drop visuals
 
 - Changed experience orbs to blue-green round drops marked with `经`.

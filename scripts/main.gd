@@ -4,6 +4,7 @@ const PLAYER_SCENE := preload("res://scenes/player.tscn")
 const ENEMY_SCENE := preload("res://scenes/enemy.tscn")
 const HUD_SCENE := preload("res://scenes/hud.tscn")
 const ENEMY_PROJECTILE_SCENE := preload("res://scenes/enemy_projectile.tscn")
+const CHEST_EVENT_SCENE := preload("res://scenes/chest_event.tscn")
 
 @onready var enemy_spawn_timer: Timer = $EnemySpawnTimer
 @onready var arena_pattern_timer: Timer = $ArenaPatternTimer
@@ -40,6 +41,7 @@ func _ready() -> void:
 	GameManager.run_phase_changed.connect(_on_run_phase_changed)
 	GameManager.run_ended.connect(_on_run_ended)
 	GameManager.encounter_requested.connect(_on_encounter_requested)
+	GameManager.stage_event_requested.connect(_on_stage_event_requested)
 	_update_arena_pattern_interval()
 
 func _process(delta: float) -> void:
@@ -87,6 +89,17 @@ func _spawn_encounter_enemy(encounter: Dictionary) -> void:
 		enemy.set_movement_bounds(_get_arena_rect())
 	add_child(enemy)
 
+func _spawn_stage_event(event: Dictionary) -> void:
+	if player == null or not is_instance_valid(player) or GameManager.is_run_over:
+		return
+	match str(event.get("kind", "")):
+		"chest":
+			var chest := CHEST_EVENT_SCENE.instantiate()
+			if chest.has_method("configure"):
+				chest.configure(event)
+			chest.global_position = _random_stage_event_position()
+			add_child(chest)
+
 func _random_spawn_position_around(center: Vector2, radius: float) -> Vector2:
 	var spawn_rect := _get_spawn_rect()
 	for attempt in range(18):
@@ -113,6 +126,9 @@ func _on_run_phase_changed(_phase: Dictionary) -> void:
 
 func _on_encounter_requested(encounter: Dictionary) -> void:
 	_spawn_encounter_enemy(encounter)
+
+func _on_stage_event_requested(event: Dictionary) -> void:
+	_spawn_stage_event(event)
 
 func _update_spawn_interval() -> void:
 	var phase_interval := GameManager.get_current_phase_spawn_interval()
@@ -395,7 +411,7 @@ func _spawn_arena_projectile(position: Vector2, direction: Vector2, color: Color
 	add_child(projectile)
 
 func _clear_active_combat_nodes() -> void:
-	for group_name in ["enemies", "enemy_projectiles", "player_projectiles"]:
+	for group_name in ["enemies", "enemy_projectiles", "player_projectiles", "stage_events"]:
 		for node in get_tree().get_nodes_in_group(group_name):
 			if is_instance_valid(node):
 				node.queue_free()
@@ -414,6 +430,20 @@ func _get_spawn_rect() -> Rect2:
 func _get_arena_center() -> Vector2:
 	var rect := _get_arena_rect()
 	return rect.position + rect.size * 0.5
+
+func _random_stage_event_position() -> Vector2:
+	var rect := _get_spawn_rect().grow(-64.0)
+	var center := _get_arena_center()
+	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
+		return center
+	for attempt in range(18):
+		var position := Vector2(
+			randf_range(rect.position.x, rect.end.x),
+			randf_range(rect.position.y, rect.end.y)
+		)
+		if player == null or position.distance_to(player.global_position) >= 120.0:
+			return position
+	return center
 
 func _random_position_on_arena_edge(center: Vector2, spawn_rect: Rect2) -> Vector2:
 	var side := randi_range(0, 3)

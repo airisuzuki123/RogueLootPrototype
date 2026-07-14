@@ -23,6 +23,9 @@ signal run_milestone_message_changed(message: String)
 signal encounter_requested(encounter: Dictionary)
 signal encounter_changed(encounter: Dictionary, active: bool)
 signal encounter_completed(encounter: Dictionary)
+signal stage_event_requested(event: Dictionary)
+signal stage_event_changed(event: Dictionary, active: bool)
+signal stage_event_completed(event: Dictionary)
 
 const MAX_INVENTORY_SIZE: int = 36
 const RUN_PHASES: Array[Dictionary] = [
@@ -222,6 +225,51 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 	}
 ]
 
+const STAGE_EVENT_SCHEDULE: Array[Dictionary] = [
+	{
+		"id": "opening_chest",
+		"kind": "chest",
+		"title": "宝箱：清场补给",
+		"trigger_time": 50.0,
+		"objective": "触碰宝箱，获得一份早期构筑补给",
+		"spawn_message": "宝箱事件：清场补给已出现",
+		"complete_message": "宝箱已开启：清场补给",
+		"reward_gold": 10,
+		"reward_experience": 3,
+		"reward_heal": 12,
+		"reward_equipment_count": 1,
+		"reward_level_bonus": 1
+	},
+	{
+		"id": "midrun_chest",
+		"kind": "chest",
+		"title": "宝箱：弹幕间隙",
+		"trigger_time": 142.0,
+		"objective": "在弹幕压力中触碰宝箱，补强当前装备",
+		"spawn_message": "宝箱事件：弹幕间隙已出现",
+		"complete_message": "宝箱已开启：弹幕间隙",
+		"reward_gold": 18,
+		"reward_experience": 5,
+		"reward_heal": 18,
+		"reward_equipment_count": 1,
+		"reward_level_bonus": 2
+	},
+	{
+		"id": "preboss_chest",
+		"kind": "chest",
+		"title": "宝箱：终局整备",
+		"trigger_time": 240.0,
+		"objective": "终局前打开宝箱，获得 Boss 前补给",
+		"spawn_message": "宝箱事件：终局整备已出现",
+		"complete_message": "宝箱已开启：终局整备",
+		"reward_gold": 28,
+		"reward_experience": 7,
+		"reward_heal": 28,
+		"reward_equipment_count": 1,
+		"reward_level_bonus": 3
+	}
+]
+
 var gold: int = 0
 var kills: int = 0
 var grazes: int = 0
@@ -252,6 +300,8 @@ var latest_loot_message: String = ""
 var latest_milestone_message: String = ""
 var triggered_encounter_ids := {}
 var active_encounter: Dictionary = {}
+var triggered_stage_event_ids := {}
+var active_stage_event: Dictionary = {}
 var run_elapsed_time: float = 0.0
 var current_phase_index: int = 0
 var current_phase_kill_start: int = 0
@@ -328,6 +378,8 @@ func reset_run() -> void:
 	latest_milestone_message = ""
 	triggered_encounter_ids.clear()
 	active_encounter.clear()
+	triggered_stage_event_ids.clear()
+	active_stage_event.clear()
 	run_elapsed_time = 0.0
 	current_phase_index = 0
 	current_phase_kill_start = 0
@@ -346,6 +398,7 @@ func reset_run() -> void:
 	loot_message_changed.emit(latest_loot_message)
 	run_milestone_message_changed.emit(latest_milestone_message)
 	encounter_changed.emit(active_encounter, false)
+	stage_event_changed.emit(active_stage_event, false)
 	run_phase_changed.emit(get_current_run_phase())
 	_emit_run_time_changed(true)
 	_emit_phase_objective_changed()
@@ -356,6 +409,7 @@ func update_run_time(delta: float) -> void:
 	run_elapsed_time += delta
 	_update_run_phase()
 	_update_encounter_schedule()
+	_update_stage_event_schedule()
 	if _is_run_duration_complete():
 		run_elapsed_time = _get_total_run_duration()
 		_emit_run_time_changed(true)
@@ -433,6 +487,9 @@ func get_next_run_phase() -> Dictionary:
 func get_active_encounter() -> Dictionary:
 	return active_encounter.duplicate(true)
 
+func get_active_stage_event() -> Dictionary:
+	return active_stage_event.duplicate(true)
+
 func complete_encounter(encounter_id: String) -> void:
 	if active_encounter.is_empty() or str(active_encounter.get("id", "")) != encounter_id:
 		return
@@ -443,6 +500,16 @@ func complete_encounter(encounter_id: String) -> void:
 	encounter_changed.emit(active_encounter, false)
 	if bool(completed_encounter.get("complete_run_on_defeat", false)):
 		complete_run()
+
+func complete_stage_event(event_id: String) -> bool:
+	if active_stage_event.is_empty() or str(active_stage_event.get("id", "")) != event_id:
+		return false
+	var completed_event := active_stage_event.duplicate(true)
+	_apply_stage_event_reward(completed_event)
+	active_stage_event.clear()
+	stage_event_completed.emit(completed_event)
+	stage_event_changed.emit(active_stage_event, false)
+	return true
 
 func register_player(player_node: Node) -> void:
 	player = player_node
@@ -764,12 +831,48 @@ func _start_encounter(encounter: Dictionary) -> void:
 	encounter_changed.emit(active_encounter, true)
 	encounter_requested.emit(active_encounter)
 
+func _update_stage_event_schedule() -> void:
+	if is_run_over or not active_stage_event.is_empty():
+		return
+	for event in STAGE_EVENT_SCHEDULE:
+		var event_id := str(event.get("id", ""))
+		if event_id.is_empty() or triggered_stage_event_ids.has(event_id):
+			continue
+		if run_elapsed_time < float(event.get("trigger_time", 0.0)):
+			continue
+		_start_stage_event(event)
+		return
+
+func _start_stage_event(event: Dictionary) -> void:
+	var event_id := str(event.get("id", ""))
+	if event_id.is_empty():
+		return
+	triggered_stage_event_ids[event_id] = true
+	active_stage_event = event.duplicate(true)
+	var message := str(active_stage_event.get("spawn_message", active_stage_event.get("title", "事件开始")))
+	_set_loot_message(message)
+	_set_milestone_message(message)
+	stage_event_changed.emit(active_stage_event, true)
+	stage_event_requested.emit(active_stage_event)
+
+func _apply_stage_event_reward(event: Dictionary) -> void:
+	var reward_text := _apply_reward_bundle(event)
+	var message := "%s，%s" % [str(event.get("complete_message", "事件完成")), reward_text]
+	_set_loot_message(message)
+	_set_milestone_message(message)
+
 func _apply_encounter_reward(encounter: Dictionary) -> void:
+	var reward_text := _apply_reward_bundle(encounter)
+	var message := "%s，%s" % [str(encounter.get("defeat_message", "遭遇完成")), reward_text]
+	_set_loot_message(message)
+	_set_milestone_message(message)
+
+func _apply_reward_bundle(source: Dictionary) -> String:
 	var reward_parts: Array[String] = []
-	var reward_gold := maxi(0, int(encounter.get("reward_gold", 0)))
-	var reward_experience := maxi(0, int(encounter.get("reward_experience", 0)))
-	var reward_heal := maxi(0, int(encounter.get("reward_heal", 0)))
-	var reward_equipment_count := maxi(0, int(encounter.get("reward_equipment_count", 0)))
+	var reward_gold := maxi(0, int(source.get("reward_gold", 0)))
+	var reward_experience := maxi(0, int(source.get("reward_experience", 0)))
+	var reward_heal := maxi(0, int(source.get("reward_heal", 0)))
+	var reward_equipment_count := maxi(0, int(source.get("reward_equipment_count", 0)))
 	if reward_gold > 0:
 		var gained_gold := add_gold(reward_gold)
 		reward_parts.append("金币 +%d" % gained_gold)
@@ -781,7 +884,7 @@ func _apply_encounter_reward(encounter: Dictionary) -> void:
 		if healed_amount > 0:
 			reward_parts.append("生命 +%d" % healed_amount)
 	if reward_equipment_count > 0:
-		var reward_level := maxi(1, level + get_current_phase_enemy_level_bonus() + int(encounter.get("reward_level_bonus", 0)))
+		var reward_level := maxi(1, level + get_current_phase_enemy_level_bonus() + int(source.get("reward_level_bonus", 0)))
 		var equipment_added := 0
 		for index in range(reward_equipment_count):
 			var equipment := EquipmentFactory.roll_equipment(reward_level)
@@ -792,10 +895,7 @@ func _apply_encounter_reward(encounter: Dictionary) -> void:
 				reward_parts.append("背包已满，折算金币 +%d" % fallback_gold)
 		if equipment_added > 0:
 			reward_parts.append("装备 +%d" % equipment_added)
-	var reward_text := "，".join(reward_parts) if not reward_parts.is_empty() else "无额外奖励"
-	var message := "%s，%s" % [str(encounter.get("defeat_message", "遭遇完成")), reward_text]
-	_set_loot_message(message)
-	_set_milestone_message(message)
+	return "，".join(reward_parts) if not reward_parts.is_empty() else "无额外奖励"
 
 func _get_phase_index_for_time(elapsed_time: float) -> int:
 	var cursor := 0.0

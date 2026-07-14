@@ -177,6 +177,8 @@ func _create_arena_pattern_plan(pattern_id: String) -> Dictionary:
 			}
 		"corner_pinwheel":
 			return {"id": "corner_pinwheel"}
+		"center_pulse":
+			return _create_center_pulse_plan()
 	return {
 		"id": "curtain",
 		"sides": [_create_curtain_side(randi_range(0, 3), 10, 2)]
@@ -190,10 +192,23 @@ func _create_curtain_side(side: int, bullet_count: int, gap_width: int) -> Dicti
 		"gap_index": randi_range(1, maxi(1, bullet_count - gap_width - 1))
 	}
 
+func _create_center_pulse_plan() -> Dictionary:
+	var bullet_count := 16
+	var gap_width := 3
+	return {
+		"id": "center_pulse",
+		"bullet_count": bullet_count,
+		"gap_width": gap_width,
+		"gap_index": randi_range(0, bullet_count - gap_width),
+		"angle_offset": randf() * TAU
+	}
+
 func _fire_arena_pattern_plan(pattern_plan: Dictionary) -> void:
 	match str(pattern_plan.get("id", "")):
 		"corner_pinwheel":
 			_fire_corner_pinwheel()
+		"center_pulse":
+			_fire_center_pulse(pattern_plan)
 		_:
 			var sides: Array = pattern_plan.get("sides", [])
 			for side_index in range(sides.size()):
@@ -209,6 +224,8 @@ func _get_arena_warning_segments(pattern_plan: Dictionary) -> Array[Dictionary]:
 	match str(pattern_plan.get("id", "")):
 		"corner_pinwheel":
 			return _get_corner_pinwheel_warning_segments()
+		"center_pulse":
+			return _get_center_pulse_warning_segments(pattern_plan)
 	var segments: Array[Dictionary] = []
 	var sides: Array = pattern_plan.get("sides", [])
 	for side_index in range(sides.size()):
@@ -259,6 +276,39 @@ func _fire_corner_pinwheel() -> void:
 		for index in range(5):
 			var angle := deg_to_rad((float(index) - 2.0) * 13.0)
 			_spawn_arena_projectile(corner, base_direction.rotated(angle), Color(1.0, 0.36, 0.9, 1.0), 0.78, 0.88)
+
+func _get_center_pulse_warning_segments(pattern_plan: Dictionary) -> Array[Dictionary]:
+	var center := _get_arena_center()
+	var bullet_count := maxi(1, int(pattern_plan.get("bullet_count", 16)))
+	var gap_width := maxi(0, int(pattern_plan.get("gap_width", 3)))
+	var gap_index := int(pattern_plan.get("gap_index", 0))
+	var angle_offset := float(pattern_plan.get("angle_offset", 0.0))
+	var segments: Array[Dictionary] = []
+	for index in range(bullet_count):
+		if index >= gap_index and index < gap_index + gap_width:
+			continue
+		var angle := angle_offset + TAU * float(index) / float(bullet_count)
+		var direction := Vector2.RIGHT.rotated(angle)
+		segments.append({
+			"start": center + direction * 22.0,
+			"end": center + direction * 280.0,
+			"color": Color(1.0, 0.78, 0.28, 1.0),
+			"width": 3.0
+		})
+	return segments
+
+func _fire_center_pulse(pattern_plan: Dictionary) -> void:
+	var center := _get_arena_center()
+	var bullet_count := maxi(1, int(pattern_plan.get("bullet_count", 16)))
+	var gap_width := maxi(0, int(pattern_plan.get("gap_width", 3)))
+	var gap_index := int(pattern_plan.get("gap_index", 0))
+	var angle_offset := float(pattern_plan.get("angle_offset", 0.0))
+	for index in range(bullet_count):
+		if index >= gap_index and index < gap_index + gap_width:
+			continue
+		var angle := angle_offset + TAU * float(index) / float(bullet_count)
+		var direction := Vector2.RIGHT.rotated(angle)
+		_spawn_arena_projectile(center + direction * 22.0, direction, Color(1.0, 0.72, 0.24, 1.0), 0.78, 0.82)
 
 func _get_side_curtain_warning_segments(side: int, bullet_count: int, gap_width: int, gap_index: int) -> Array[Dictionary]:
 	var segments: Array[Dictionary] = []

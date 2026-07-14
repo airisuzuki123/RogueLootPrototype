@@ -85,7 +85,7 @@ const RUN_PHASES: Array[Dictionary] = [
 			"turret": ["ring", "double_ring", "cross"]
 		},
 		"bullet_speed_multiplier": 0.96,
-		"arena_patterns": ["side_curtain", "cross_curtain"],
+		"arena_patterns": ["side_curtain", "cross_curtain", "center_pulse"],
 		"arena_pattern_interval": 10.0,
 		"goal": "观察环形和交叉弹幕缺口，处理远程压力",
 		"kill_target": 26,
@@ -109,7 +109,7 @@ const RUN_PHASES: Array[Dictionary] = [
 			"turret": ["spiral", "double_ring", "pinwheel"]
 		},
 		"bullet_speed_multiplier": 1.02,
-		"arena_patterns": ["cross_curtain", "alternating_curtain"],
+		"arena_patterns": ["cross_curtain", "alternating_curtain", "center_pulse"],
 		"arena_pattern_interval": 9.0,
 		"goal": "预判旋转和双层环弹幕轨迹，保持输出空间",
 		"kill_target": 40,
@@ -133,7 +133,7 @@ const RUN_PHASES: Array[Dictionary] = [
 			"turret": ["flower", "pinwheel", "double_ring"]
 		},
 		"bullet_speed_multiplier": 1.15,
-		"arena_patterns": ["alternating_curtain", "corner_pinwheel"],
+		"arena_patterns": ["alternating_curtain", "corner_pinwheel", "center_pulse"],
 		"arena_pattern_interval": 6.0,
 		"goal": "穿越弹幕墙和花形弹幕，撑过最后一波压力",
 		"kill_target": 60,

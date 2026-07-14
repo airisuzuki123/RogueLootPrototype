@@ -4,6 +4,7 @@ const EquipmentFactory := preload("res://scripts/items/equipment_factory.gd")
 
 var gold_label: Label
 var kills_label: Label
+var graze_label: Label
 var health_label: Label
 var experience_label: Label
 var run_phase_label: Label
@@ -79,6 +80,9 @@ func _build_ui() -> void:
 
 	kills_label = Label.new()
 	stats.add_child(kills_label)
+
+	graze_label = Label.new()
+	stats.add_child(graze_label)
 
 	equipment_label = Label.new()
 	equipment_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -176,6 +180,7 @@ func _build_ui() -> void:
 func _connect_signals() -> void:
 	GameManager.gold_changed.connect(_on_gold_changed)
 	GameManager.enemy_killed.connect(_on_enemy_killed)
+	GameManager.graze_changed.connect(_on_graze_changed)
 	GameManager.health_changed.connect(_on_health_changed)
 	GameManager.experience_changed.connect(_on_experience_changed)
 	GameManager.equipment_changed.connect(_on_equipment_changed)
@@ -192,6 +197,7 @@ func _connect_signals() -> void:
 func _refresh_all() -> void:
 	_on_gold_changed(GameManager.gold)
 	_on_enemy_killed(GameManager.kills)
+	_on_graze_changed(GameManager.grazes)
 	_on_experience_changed(GameManager.experience, GameManager.experience_to_next_level, GameManager.level)
 	_on_run_time_changed(GameManager.get_run_elapsed_seconds(), GameManager.get_current_run_phase(), GameManager.get_current_phase_remaining_seconds())
 	_on_run_phase_objective_changed(
@@ -222,6 +228,9 @@ func _on_gold_changed(total: int) -> void:
 
 func _on_enemy_killed(total: int) -> void:
 	kills_label.text = "击杀：%d" % total
+
+func _on_graze_changed(total: int) -> void:
+	graze_label.text = "擦弹：%d" % total
 
 func _on_health_changed(current: int, maximum: int) -> void:
 	health_label.text = "生命：%d / %d" % [current, maximum]

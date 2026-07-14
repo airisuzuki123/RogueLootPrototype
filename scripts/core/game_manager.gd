@@ -4,6 +4,7 @@ const EquipmentFactory := preload("res://scripts/items/equipment_factory.gd")
 
 signal gold_changed(total: int)
 signal enemy_killed(total: int)
+signal graze_changed(total: int)
 signal health_changed(current: int, maximum: int)
 signal experience_changed(current: int, required: int, level: int)
 signal equipment_changed(equipped_items: Dictionary)
@@ -144,6 +145,7 @@ const RUN_PHASES: Array[Dictionary] = [
 
 var gold: int = 0
 var kills: int = 0
+var grazes: int = 0
 var level: int = 1
 var experience: int = 0
 var experience_to_next_level: int = 5
@@ -223,6 +225,7 @@ const UPGRADE_POOL := [
 func reset_run() -> void:
 	gold = 0
 	kills = 0
+	grazes = 0
 	level = 1
 	experience = 0
 	experience_to_next_level = 5
@@ -250,6 +253,7 @@ func reset_run() -> void:
 	phase_bullet_pattern_counters.clear()
 	gold_changed.emit(gold)
 	enemy_killed.emit(kills)
+	graze_changed.emit(grazes)
 	experience_changed.emit(experience, experience_to_next_level, level)
 	inventory_changed.emit(inventory)
 	inventory_open_changed.emit(is_inventory_open)
@@ -520,6 +524,12 @@ func register_kill() -> void:
 	kills += 1
 	enemy_killed.emit(kills)
 	_update_current_phase_objective()
+
+func register_graze() -> void:
+	if is_run_over:
+		return
+	grazes += 1
+	graze_changed.emit(grazes)
 
 func add_experience(amount: int) -> void:
 	if is_run_over:

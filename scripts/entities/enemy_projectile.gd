@@ -6,9 +6,11 @@ const CombatFeedback := preload("res://scripts/effects/combat_feedback.gd")
 @export var lifetime: float = 3.0
 @export var damage: int = 8
 @export var knockback_force: float = 190.0
+@export var graze_radius: float = 30.0
 
 var direction: Vector2 = Vector2.RIGHT
 var glow_base_scale: Vector2 = Vector2.ONE
+var has_grazed: bool = false
 @onready var visual: Polygon2D = $Visual
 @onready var glow: Polygon2D = $Glow
 @onready var trail: Line2D = $Trail
@@ -67,6 +69,7 @@ func _physics_process(delta: float) -> void:
 		return
 	global_position += direction.normalized() * speed * delta
 	_update_pulse()
+	_try_graze_player()
 	lifetime -= delta
 	if lifetime <= 0.0:
 		queue_free()
@@ -87,6 +90,20 @@ func _update_pulse() -> void:
 		return
 	var pulse: float = 1.0 + sin(Time.get_ticks_msec() * 0.014) * 0.12
 	glow.scale = glow_base_scale * pulse
+
+func _try_graze_player() -> void:
+	if has_grazed or GameManager.player == null or not is_instance_valid(GameManager.player):
+		return
+	var player := GameManager.player as Node2D
+	if player == null:
+		return
+	var distance := global_position.distance_to(player.global_position)
+	if distance > graze_radius or distance < 16.0:
+		return
+	has_grazed = true
+	GameManager.register_graze()
+	CombatFeedback.show_text(get_tree().current_scene, player.global_position, "擦弹", Color(0.55, 0.95, 1.0, 1.0))
+	CombatFeedback.show_burst(get_tree().current_scene, player.global_position, Color(0.45, 0.9, 1.0, 0.55), 0.55)
 
 func _on_body_entered(body: Node) -> void:
 	if body.name != "Player":

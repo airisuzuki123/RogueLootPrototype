@@ -11,6 +11,10 @@ func setup(amount: int, tint: Color = Color.WHITE) -> void:
 	text = str(amount)
 	modulate = tint
 
+func setup_text(content: String, tint: Color = Color.WHITE) -> void:
+	text = content
+	modulate = tint
+
 func _ready() -> void:
 	start_position = global_position
 	velocity = Vector2(randf_range(-18.0, 18.0), -float_distance)
@@ -23,4 +27,3 @@ func _process(delta: float) -> void:
 	scale = Vector2.ONE * lerpf(1.25, 0.85, progress)
 	if elapsed >= lifetime:
 		queue_free()
-

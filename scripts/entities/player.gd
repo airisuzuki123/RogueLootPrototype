@@ -99,6 +99,13 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"heal":
 			health = min(max_health, health + 40)
 			GameManager.update_player_health(health, max_health)
+		"strong_heal":
+			health = min(max_health, health + 70)
+			GameManager.update_player_health(health, max_health)
+		"recovery_training":
+			max_health += 12
+			health = min(max_health, health + 45)
+			GameManager.update_player_health(health, max_health)
 		"multishot":
 			projectile_count += 1
 		"form_focused":

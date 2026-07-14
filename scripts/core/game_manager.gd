@@ -178,6 +178,16 @@ const UPGRADE_POOL := [
 		"description": "回复 40 生命"
 	},
 	{
+		"id": "strong_heal",
+		"title": "紧急治疗",
+		"description": "回复 70 生命"
+	},
+	{
+		"id": "recovery_training",
+		"title": "复苏训练",
+		"description": "最大生命 +12，并回复 45 生命"
+	},
+	{
 		"id": "multishot",
 		"title": "分裂射击",
 		"description": "每次攻击投射物 +1"

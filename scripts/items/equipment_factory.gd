@@ -30,11 +30,11 @@ const AFFIXES := [
 ]
 
 const SLOT_AFFIXES := {
-	"weapon": ["damage", "attack_speed", "critical_chance", "projectile_count", "pierce", "explosion_radius", "life_steal"],
-	"helmet": ["max_health", "critical_chance", "life_steal"],
+	"weapon": ["damage", "attack_speed", "critical_chance", "projectile_count", "pierce", "explosion_radius"],
+	"helmet": ["max_health", "critical_chance"],
 	"armor": ["max_health", "move_speed", "gold_bonus"],
 	"boots": ["move_speed", "attack_speed", "gold_bonus"],
-	"necklace": ["critical_chance", "life_steal", "explosion_radius", "gold_bonus"],
+	"necklace": ["critical_chance", "explosion_radius", "gold_bonus"],
 	"ring": ["attack_speed", "projectile_count", "pierce", "gold_bonus"]
 }
 

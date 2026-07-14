@@ -2,6 +2,18 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-14 - Stage 3 bullet-hell run closeout
+
+- Fixed the staged plan at eight stages and continued from stage 3 without moving into stage 4.
+- Reoriented stage 3 toward bullet-hell monster attacks, closed-arena movement, readable bullet patterns, and dodge-focused pressure.
+- Added bullet enemy patterns, bullet-focused enemy types, arena bounds, arena warning lines, and arena patterns including curtains, corner pinwheels, and center pulses.
+- Reduced loot clutter by removing experience orbs, granting experience and gold directly, and keeping ground drops focused on equipment.
+- Removed life-steal from new equipment affix rolls while keeping legacy compatibility, and added a small set of recovery upgrade choices.
+- Improved player and enemy projectile readability with glow, trails, hit-core visibility, graze feedback, and cleaner settlement behavior.
+- Tuned phase bullet pattern rotation, enemy weights, spawn acceleration, arena pattern pacing, and stage 3 documentation to a final-acceptance state.
+- Validation: ran `git diff --check`; Godot 4.6.1 headless crashed inside the Codex sandbox with the known signal 11 environment issue, then passed outside the sandbox with no script errors.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-13 - Revise staged development plan
 
 - Replaced the staged plan with a seven-stage project standard.

@@ -44,6 +44,10 @@ var selected_equipped_slot_id: String = ""
 var equipped_items: Dictionary = {}
 var upgrade_panel: PanelContainer
 var upgrade_list: VBoxContainer
+var shop_panel: PanelContainer
+var shop_title_label: Label
+var shop_offer_list: VBoxContainer
+var shop_offers: Array = []
 var game_over_label: Label
 var milestone_tween: Tween
 
@@ -169,6 +173,30 @@ func _build_ui() -> void:
 	title.text = "升级：选择一个强化"
 	upgrade_list.add_child(title)
 
+	shop_panel = PanelContainer.new()
+	shop_panel.visible = false
+	shop_panel.position = Vector2(360, 135)
+	shop_panel.custom_minimum_size = Vector2(560, 340)
+	root.add_child(shop_panel)
+
+	var shop_root := VBoxContainer.new()
+	shop_root.add_theme_constant_override("separation", 10)
+	shop_panel.add_child(shop_root)
+
+	shop_title_label = Label.new()
+	shop_title_label.text = "商店"
+	shop_root.add_child(shop_title_label)
+
+	shop_offer_list = VBoxContainer.new()
+	shop_offer_list.add_theme_constant_override("separation", 8)
+	shop_root.add_child(shop_offer_list)
+
+	var shop_close_button := Button.new()
+	shop_close_button.text = "离开商店"
+	shop_close_button.custom_minimum_size = Vector2(160, 40)
+	shop_close_button.pressed.connect(_on_shop_close_pressed)
+	shop_root.add_child(shop_close_button)
+
 	game_over_label = Label.new()
 	game_over_label.visible = false
 	game_over_label.position = Vector2(440, 320)
@@ -205,6 +233,7 @@ func _connect_signals() -> void:
 	GameManager.run_milestone_message_changed.connect(_on_run_milestone_message_changed)
 	GameManager.encounter_changed.connect(_on_encounter_changed)
 	GameManager.stage_event_changed.connect(_on_stage_event_changed)
+	GameManager.shop_open_changed.connect(_on_shop_open_changed)
 
 func _refresh_all() -> void:
 	_on_gold_changed(GameManager.gold)
@@ -233,6 +262,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	var key_event: InputEventKey = event as InputEventKey
 	if key_event.keycode == KEY_B:
 		GameManager.toggle_inventory_open()
+	elif key_event.keycode == KEY_ESCAPE and GameManager.is_shop_open:
+		GameManager.close_shop_event()
 	elif key_event.keycode == KEY_ESCAPE and GameManager.is_inventory_open:
 		if detail_modal_overlay != null and detail_modal_overlay.visible:
 			detail_modal_overlay.visible = false
@@ -376,6 +407,8 @@ func _on_upgrade_button_pressed(index: int) -> void:
 
 func _on_run_ended(kills: int, gold: int) -> void:
 	inventory_panel.visible = false
+	if shop_panel != null:
+		shop_panel.visible = false
 	game_over_label.visible = true
 	var title := "试炼完成" if GameManager.is_run_completed else "本局结束"
 	game_over_label.text = "%s\n时间：%s\n击杀：%d\n金币：%d" % [
@@ -384,6 +417,44 @@ func _on_run_ended(kills: int, gold: int) -> void:
 		kills,
 		gold
 	]
+
+func _on_shop_open_changed(is_open: bool, event: Dictionary, offers: Array) -> void:
+	if shop_panel == null:
+		return
+	shop_offers = offers.duplicate(true)
+	shop_panel.visible = is_open
+	if not is_open:
+		return
+	shop_title_label.text = "%s\n%s" % [
+		str(event.get("title", "商店")),
+		str(event.get("objective", "选择一项补给"))
+	]
+	_refresh_shop_panel()
+
+func _refresh_shop_panel() -> void:
+	for child in shop_offer_list.get_children():
+		child.queue_free()
+	for index in range(shop_offers.size()):
+		var offer: Dictionary = shop_offers[index]
+		var button := Button.new()
+		var cost := maxi(0, int(offer.get("cost", 0)))
+		var sold := bool(offer.get("sold", false))
+		button.text = "%s%s\n价格：%d 金币\n%s" % [
+			str(offer.get("title", "商品")),
+			"（已购买）" if sold else "",
+			cost,
+			_format_shop_offer_reward(offer)
+		]
+		button.custom_minimum_size = Vector2(520, 68)
+		button.disabled = sold or GameManager.gold < cost
+		button.pressed.connect(_on_shop_offer_pressed.bind(index))
+		shop_offer_list.add_child(button)
+
+func _on_shop_offer_pressed(index: int) -> void:
+	GameManager.buy_shop_offer(index)
+
+func _on_shop_close_pressed() -> void:
+	GameManager.close_shop_event()
 
 func _build_inventory_panel(root: Control) -> void:
 	inventory_panel = PanelContainer.new()
@@ -857,4 +928,22 @@ func _format_stage_event_reward(event: Dictionary) -> String:
 		parts.append("装备 +%d" % reward_equipment_count)
 	if parts.is_empty():
 		return "无"
+	return "，".join(parts)
+
+func _format_shop_offer_reward(offer: Dictionary) -> String:
+	var parts: Array[String] = []
+	var description := str(offer.get("description", ""))
+	if not description.is_empty():
+		parts.append(description)
+	var reward_experience := maxi(0, int(offer.get("reward_experience", 0)))
+	var reward_heal := maxi(0, int(offer.get("reward_heal", 0)))
+	var reward_equipment_count := maxi(0, int(offer.get("reward_equipment_count", 0)))
+	if reward_experience > 0:
+		parts.append("经验 +%d" % reward_experience)
+	if reward_heal > 0:
+		parts.append("生命 +%d" % reward_heal)
+	if reward_equipment_count > 0:
+		parts.append("装备 +%d" % reward_equipment_count)
+	if parts.is_empty():
+		return "无直接奖励"
 	return "，".join(parts)

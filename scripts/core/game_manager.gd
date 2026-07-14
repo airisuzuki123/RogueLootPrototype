@@ -26,6 +26,7 @@ signal encounter_completed(encounter: Dictionary)
 signal stage_event_requested(event: Dictionary)
 signal stage_event_changed(event: Dictionary, active: bool)
 signal stage_event_completed(event: Dictionary)
+signal shop_open_changed(is_open: bool, event: Dictionary, offers: Array)
 
 const MAX_INVENTORY_SIZE: int = 36
 const RUN_PHASES: Array[Dictionary] = [
@@ -255,6 +256,39 @@ const STAGE_EVENT_SCHEDULE: Array[Dictionary] = [
 		"reward_level_bonus": 2
 	},
 	{
+		"id": "midrun_shop",
+		"kind": "shop",
+		"title": "商店：临时补给站",
+		"trigger_time": 198.0,
+		"objective": "触碰商店，用金币购买一项补给",
+		"spawn_message": "商店事件：临时补给站已出现",
+		"complete_message": "商店已离开：临时补给站",
+		"offers": [
+			{
+				"id": "shop_heal",
+				"title": "应急治疗",
+				"description": "恢复 45 生命",
+				"cost": 18,
+				"reward_heal": 45
+			},
+			{
+				"id": "shop_training",
+				"title": "战斗训练",
+				"description": "获得 8 经验",
+				"cost": 22,
+				"reward_experience": 8
+			},
+			{
+				"id": "shop_equipment",
+				"title": "鉴定装备",
+				"description": "获得 1 件高一级装备",
+				"cost": 32,
+				"reward_equipment_count": 1,
+				"reward_level_bonus": 2
+			}
+		]
+	},
+	{
 		"id": "preboss_chest",
 		"kind": "chest",
 		"title": "宝箱：终局整备",
@@ -284,9 +318,12 @@ var is_run_completed: bool = false
 var is_upgrade_pending: bool = false
 var is_equipment_choice_pending: bool = false
 var is_inventory_open: bool = false
+var is_shop_open: bool = false
 var pending_upgrade_choices: Array = []
 var pending_equipment_choice: Dictionary = {}
 var pending_equipment_salvage_value: int = 0
+var active_shop_event: Dictionary = {}
+var shop_offers: Array[Dictionary] = []
 var inventory: Array[Dictionary] = []
 var equipped_items := {
 	"weapon": {},
@@ -369,9 +406,12 @@ func reset_run() -> void:
 	is_upgrade_pending = false
 	is_equipment_choice_pending = false
 	is_inventory_open = false
+	is_shop_open = false
 	pending_upgrade_choices.clear()
 	pending_equipment_choice.clear()
 	pending_equipment_salvage_value = 0
+	active_shop_event.clear()
+	shop_offers.clear()
 	inventory.clear()
 	_reset_equipped_items()
 	latest_loot_message = ""
@@ -394,6 +434,7 @@ func reset_run() -> void:
 	experience_changed.emit(experience, experience_to_next_level, level)
 	inventory_changed.emit(inventory)
 	inventory_open_changed.emit(is_inventory_open)
+	shop_open_changed.emit(is_shop_open, active_shop_event, shop_offers)
 	equipment_changed.emit(equipped_items)
 	loot_message_changed.emit(latest_loot_message)
 	run_milestone_message_changed.emit(latest_milestone_message)
@@ -511,6 +552,33 @@ func complete_stage_event(event_id: String) -> bool:
 	stage_event_changed.emit(active_stage_event, false)
 	return true
 
+func open_shop_event(event_id: String) -> bool:
+	if is_run_over or is_shop_open:
+		return false
+	if active_stage_event.is_empty() or str(active_stage_event.get("id", "")) != event_id:
+		return false
+	active_shop_event = active_stage_event.duplicate(true)
+	shop_offers = _build_shop_offers(active_shop_event)
+	is_shop_open = true
+	shop_open_changed.emit(is_shop_open, active_shop_event, shop_offers)
+	return true
+
+func close_shop_event() -> void:
+	if not is_shop_open:
+		return
+	var completed_event := active_shop_event.duplicate(true)
+	is_shop_open = false
+	active_shop_event.clear()
+	shop_offers.clear()
+	if not completed_event.is_empty() and str(active_stage_event.get("id", "")) == str(completed_event.get("id", "")):
+		active_stage_event.clear()
+		stage_event_completed.emit(completed_event)
+		stage_event_changed.emit(active_stage_event, false)
+		var message := str(completed_event.get("complete_message", "商店已关闭"))
+		_set_loot_message(message)
+		_set_milestone_message(message)
+	shop_open_changed.emit(is_shop_open, active_shop_event, shop_offers)
+
 func register_player(player_node: Node) -> void:
 	player = player_node
 	if player.has_method("sync_health_state"):
@@ -535,6 +603,36 @@ func add_gold(amount: int, apply_bonus: bool = true) -> int:
 	_set_loot_message("金币 +%d" % final_amount)
 	return final_amount
 
+func spend_gold(amount: int) -> bool:
+	if is_run_over:
+		return false
+	var cost := maxi(0, amount)
+	if gold < cost:
+		_set_loot_message("金币不足，需要 %d" % cost)
+		return false
+	gold -= cost
+	gold_changed.emit(gold)
+	return true
+
+func buy_shop_offer(offer_index: int) -> bool:
+	if not is_shop_open or offer_index < 0 or offer_index >= shop_offers.size():
+		return false
+	var offer: Dictionary = shop_offers[offer_index]
+	if bool(offer.get("sold", false)):
+		_set_loot_message("该商品已购买")
+		return false
+	var cost := maxi(0, int(offer.get("cost", 0)))
+	if not spend_gold(cost):
+		return false
+	var reward_text := _apply_reward_bundle(offer)
+	offer["sold"] = true
+	shop_offers[offer_index] = offer
+	var message := "购买：%s，花费 %d 金币，%s" % [str(offer.get("title", "商品")), cost, reward_text]
+	_set_loot_message(message)
+	_set_milestone_message(message)
+	shop_open_changed.emit(is_shop_open, active_shop_event, shop_offers)
+	return true
+
 func pickup_equipment(equipment: Dictionary) -> bool:
 	if is_run_over or equipment.is_empty():
 		return false
@@ -548,7 +646,7 @@ func pickup_equipment(equipment: Dictionary) -> bool:
 	return true
 
 func toggle_inventory_open() -> void:
-	if is_run_over or is_upgrade_pending:
+	if is_run_over or is_upgrade_pending or is_shop_open:
 		return
 	set_inventory_open(not is_inventory_open)
 
@@ -556,6 +654,8 @@ func set_inventory_open(open: bool) -> void:
 	if is_run_over:
 		open = false
 	if is_upgrade_pending and open:
+		return
+	if is_shop_open and open:
 		return
 	if is_inventory_open == open:
 		return
@@ -725,7 +825,7 @@ func apply_upgrade(choice_index: int) -> void:
 		player.apply_upgrade(upgrade["id"])
 
 func is_gameplay_paused() -> bool:
-	return is_upgrade_pending or is_equipment_choice_pending or is_inventory_open
+	return is_upgrade_pending or is_equipment_choice_pending or is_inventory_open or is_shop_open
 
 func end_run(completed: bool = false) -> void:
 	if is_run_over:
@@ -733,6 +833,7 @@ func end_run(completed: bool = false) -> void:
 	is_run_over = true
 	is_run_completed = completed
 	set_inventory_open(false)
+	close_shop_event()
 	if completed:
 		_set_milestone_message("试炼完成")
 	run_ended.emit(kills, gold)
@@ -854,6 +955,15 @@ func _start_stage_event(event: Dictionary) -> void:
 	_set_milestone_message(message)
 	stage_event_changed.emit(active_stage_event, true)
 	stage_event_requested.emit(active_stage_event)
+
+func _build_shop_offers(event: Dictionary) -> Array[Dictionary]:
+	var offers: Array[Dictionary] = []
+	for offer in event.get("offers", []):
+		var offer_data: Dictionary = offer
+		offer_data = offer_data.duplicate(true)
+		offer_data["sold"] = false
+		offers.append(offer_data)
+	return offers
 
 func _apply_stage_event_reward(event: Dictionary) -> void:
 	var reward_text := _apply_reward_bundle(event)

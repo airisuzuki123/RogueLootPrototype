@@ -21,6 +21,7 @@ var glow_base_scale: Vector2 = Vector2.ONE
 @onready var trail_core: Line2D = $TrailCore
 
 func _ready() -> void:
+	add_to_group("player_projectiles")
 	body_entered.connect(_on_body_entered)
 	_configure_visuals()
 	_update_visual_rotation()

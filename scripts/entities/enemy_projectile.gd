@@ -18,6 +18,7 @@ var has_grazed: bool = false
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
 func _ready() -> void:
+	add_to_group("enemy_projectiles")
 	body_entered.connect(_on_body_entered)
 	_update_visual_rotation()
 
@@ -101,9 +102,9 @@ func _try_graze_player() -> void:
 	if distance > graze_radius or distance < 16.0:
 		return
 	has_grazed = true
-	GameManager.register_graze()
-	CombatFeedback.show_text(get_tree().current_scene, player.global_position, "擦弹", Color(0.55, 0.95, 1.0, 1.0))
-	CombatFeedback.show_burst(get_tree().current_scene, player.global_position, Color(0.45, 0.9, 1.0, 0.55), 0.55)
+	if GameManager.register_graze():
+		CombatFeedback.show_text(get_tree().current_scene, player.global_position, "擦弹", Color(0.55, 0.95, 1.0, 1.0))
+		CombatFeedback.show_burst(get_tree().current_scene, player.global_position, Color(0.45, 0.9, 1.0, 0.55), 0.55)
 
 func _on_body_entered(body: Node) -> void:
 	if body.name != "Player":

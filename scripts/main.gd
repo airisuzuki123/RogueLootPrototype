@@ -13,12 +13,13 @@ const ENEMY_PROJECTILE_SCENE := preload("res://scenes/enemy_projectile.tscn")
 
 @export var spawn_radius: float = 460.0
 @export var minimum_spawn_radius: float = 360.0
-@export var spawn_interval_reduction_per_level: float = 0.04
-@export var minimum_spawn_interval: float = 0.55
+@export var spawn_interval_reduction_per_level: float = 0.025
+@export var minimum_spawn_interval: float = 0.62
 @export var arena_warning_duration: float = 0.75
 
 var player: CharacterBody2D
 var pending_arena_pattern: Dictionary = {}
+var arena_pattern_index: int = 0
 var enemy_spawn_table: Array[Dictionary] = [
 	{"type": "grunt", "weight": 36, "min_level": 1},
 	{"type": "runner", "weight": 16, "min_level": 1},
@@ -86,10 +87,13 @@ func _on_run_ended(_kills: int, _gold: int) -> void:
 	enemy_spawn_timer.stop()
 	arena_pattern_timer.stop()
 	arena_warning_timer.stop()
+	pending_arena_pattern.clear()
 	if arena_warning.has_method("clear_warning"):
 		arena_warning.clear_warning()
+	_clear_active_combat_nodes()
 
 func _on_run_phase_changed(_phase: Dictionary) -> void:
+	arena_pattern_index = 0
 	_update_spawn_interval()
 	_update_arena_pattern_interval()
 
@@ -136,7 +140,9 @@ func _prepare_arena_pattern() -> void:
 	var patterns: Array = phase.get("arena_patterns", [])
 	if patterns.is_empty():
 		return
-	pending_arena_pattern = _create_arena_pattern_plan(str(patterns.pick_random()))
+	var pattern_id := str(patterns[arena_pattern_index % patterns.size()])
+	arena_pattern_index += 1
+	pending_arena_pattern = _create_arena_pattern_plan(pattern_id)
 	if pending_arena_pattern.is_empty():
 		return
 	if arena_warning.has_method("show_warning"):
@@ -370,6 +376,12 @@ func _spawn_arena_projectile(position: Vector2, direction: Vector2, color: Color
 		projectile.damage = 7
 	projectile.lifetime = 5.0
 	add_child(projectile)
+
+func _clear_active_combat_nodes() -> void:
+	for group_name in ["enemies", "enemy_projectiles", "player_projectiles"]:
+		for node in get_tree().get_nodes_in_group(group_name):
+			if is_instance_valid(node):
+				node.queue_free()
 
 func _get_arena_rect() -> Rect2:
 	if arena_bounds != null and arena_bounds.has_method("get_arena_rect"):

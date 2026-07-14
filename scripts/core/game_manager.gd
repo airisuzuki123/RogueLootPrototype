@@ -2,6 +2,8 @@ extends Node
 
 const EquipmentFactory := preload("res://scripts/items/equipment_factory.gd")
 
+const GRAZE_FEEDBACK_INTERVAL_MSEC: int = 220
+
 signal gold_changed(total: int)
 signal enemy_killed(total: int)
 signal graze_changed(total: int)
@@ -178,6 +180,7 @@ var current_phase_objective_completed: bool = false
 var current_phase_warning_sent: bool = false
 var latest_run_time_second: int = -1
 var phase_bullet_pattern_counters := {}
+var latest_graze_feedback_msec: int = -100000
 
 const UPGRADE_POOL := [
 	{
@@ -251,6 +254,7 @@ func reset_run() -> void:
 	current_phase_warning_sent = false
 	latest_run_time_second = -1
 	phase_bullet_pattern_counters.clear()
+	latest_graze_feedback_msec = -100000
 	gold_changed.emit(gold)
 	enemy_killed.emit(kills)
 	graze_changed.emit(grazes)
@@ -525,11 +529,16 @@ func register_kill() -> void:
 	enemy_killed.emit(kills)
 	_update_current_phase_objective()
 
-func register_graze() -> void:
+func register_graze() -> bool:
 	if is_run_over:
-		return
+		return false
 	grazes += 1
 	graze_changed.emit(grazes)
+	var now_msec := Time.get_ticks_msec()
+	if now_msec - latest_graze_feedback_msec < GRAZE_FEEDBACK_INTERVAL_MSEC:
+		return false
+	latest_graze_feedback_msec = now_msec
+	return true
 
 func add_experience(amount: int) -> void:
 	if is_run_over:

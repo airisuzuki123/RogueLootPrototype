@@ -248,12 +248,7 @@ func _update_strafe(delta: float) -> void:
 	strafe_direction *= -1.0
 
 func _select_bullet_pattern() -> String:
-	match enemy_type:
-		"weaver":
-			return ["fan", "cross", "aimed_burst", "wall", "sweep"].pick_random()
-		"turret":
-			return ["ring", "double_ring", "flower", "spiral", "pinwheel"].pick_random()
-	return GameManager.get_current_phase_bullet_pattern()
+	return GameManager.get_current_phase_bullet_pattern_for_enemy(enemy_type)
 
 func _fire_aimed_pattern(direction: Vector2) -> void:
 	_spawn_enemy_projectile(direction, Vector2.ZERO, Color(1.0, 0.48, 0.22, 1.0), 1.0)

@@ -114,12 +114,17 @@ func _roll_enemy_type() -> String:
 	for entry in enemy_spawn_table:
 		if effective_level < int(entry["min_level"]):
 			continue
-		available.append(entry)
-		total_weight += int(entry["weight"]) + GameManager.get_current_phase_enemy_weight_bonus(str(entry["type"]))
+		var entry_weight := maxi(0, int(entry["weight"]) + GameManager.get_current_phase_enemy_weight_bonus(str(entry["type"])))
+		if entry_weight <= 0:
+			continue
+		var weighted_entry := entry.duplicate(true)
+		weighted_entry["roll_weight"] = entry_weight
+		available.append(weighted_entry)
+		total_weight += entry_weight
 	var roll := randi_range(1, max(1, total_weight))
 	var cursor := 0
 	for entry in available:
-		cursor += int(entry["weight"]) + GameManager.get_current_phase_enemy_weight_bonus(str(entry["type"]))
+		cursor += int(entry.get("roll_weight", entry["weight"]))
 		if roll <= cursor:
 			return str(entry["type"])
 	return "grunt"

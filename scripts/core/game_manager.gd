@@ -27,9 +27,14 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 1.25,
 		"spawn_count": 1,
 		"enemy_level_bonus": 0,
-		"enemy_weight_bonus": {"ranged": 10},
+		"enemy_weight_bonus": {"grunt": -8, "runner": -8, "ranged": 18},
 		"bullet_pattern": "aimed",
 		"bullet_patterns": ["aimed", "aimed_burst"],
+		"enemy_bullet_patterns": {
+			"ranged": ["aimed", "aimed_burst"],
+			"weaver": ["aimed_burst", "fan"],
+			"turret": ["ring"]
+		},
 		"bullet_speed_multiplier": 0.88,
 		"arena_patterns": [],
 		"arena_pattern_interval": 0.0,
@@ -46,9 +51,14 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 1.05,
 		"spawn_count": 1,
 		"enemy_level_bonus": 0,
-		"enemy_weight_bonus": {"runner": 6, "ranged": 24, "weaver": 12},
+		"enemy_weight_bonus": {"grunt": -14, "tank": -8, "ranged": 28, "weaver": 18},
 		"bullet_pattern": "fan",
 		"bullet_patterns": ["fan", "aimed_burst"],
+		"enemy_bullet_patterns": {
+			"ranged": ["fan", "aimed_burst"],
+			"weaver": ["fan", "sweep", "fan"],
+			"turret": ["ring", "cross"]
+		},
 		"bullet_speed_multiplier": 0.95,
 		"arena_patterns": ["side_curtain"],
 		"arena_pattern_interval": 9.0,
@@ -65,9 +75,14 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 1.00,
 		"spawn_count": 1,
 		"enemy_level_bonus": 1,
-		"enemy_weight_bonus": {"tank": 6, "ranged": 22, "weaver": 12, "turret": 8},
+		"enemy_weight_bonus": {"grunt": -18, "runner": -8, "tank": -2, "ranged": 26, "weaver": 18, "turret": 12},
 		"bullet_pattern": "ring",
 		"bullet_patterns": ["ring", "cross", "sweep"],
+		"enemy_bullet_patterns": {
+			"ranged": ["ring", "cross", "ring"],
+			"weaver": ["cross", "sweep", "cross"],
+			"turret": ["ring", "double_ring", "cross"]
+		},
 		"bullet_speed_multiplier": 0.96,
 		"arena_patterns": ["side_curtain", "cross_curtain"],
 		"arena_pattern_interval": 10.0,
@@ -84,9 +99,14 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.88,
 		"spawn_count": 1,
 		"enemy_level_bonus": 1,
-		"enemy_weight_bonus": {"runner": 6, "tank": 6, "ranged": 24, "weaver": 14, "turret": 14},
+		"enemy_weight_bonus": {"grunt": -24, "runner": -6, "tank": -4, "ranged": 26, "weaver": 20, "turret": 18},
 		"bullet_pattern": "spiral",
 		"bullet_patterns": ["spiral", "fan", "double_ring", "sweep"],
+		"enemy_bullet_patterns": {
+			"ranged": ["spiral", "fan", "spiral"],
+			"weaver": ["sweep", "fan", "sweep"],
+			"turret": ["spiral", "double_ring", "pinwheel"]
+		},
 		"bullet_speed_multiplier": 1.02,
 		"arena_patterns": ["cross_curtain", "alternating_curtain"],
 		"arena_pattern_interval": 9.0,
@@ -103,9 +123,14 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.65,
 		"spawn_count": 2,
 		"enemy_level_bonus": 2,
-		"enemy_weight_bonus": {"runner": 8, "tank": 8, "ranged": 30, "weaver": 22, "turret": 24},
+		"enemy_weight_bonus": {"grunt": -30, "runner": -8, "tank": -2, "ranged": 32, "weaver": 24, "turret": 26},
 		"bullet_pattern": "wall",
 		"bullet_patterns": ["wall", "spiral", "flower", "pinwheel"],
+		"enemy_bullet_patterns": {
+			"ranged": ["wall", "spiral", "wall"],
+			"weaver": ["wall", "sweep", "fan"],
+			"turret": ["flower", "pinwheel", "double_ring"]
+		},
 		"bullet_speed_multiplier": 1.15,
 		"arena_patterns": ["alternating_curtain", "corner_pinwheel"],
 		"arena_pattern_interval": 6.0,
@@ -150,6 +175,7 @@ var current_phase_kill_start: int = 0
 var current_phase_objective_completed: bool = false
 var current_phase_warning_sent: bool = false
 var latest_run_time_second: int = -1
+var phase_bullet_pattern_counters := {}
 
 const UPGRADE_POOL := [
 	{
@@ -221,6 +247,7 @@ func reset_run() -> void:
 	current_phase_objective_completed = false
 	current_phase_warning_sent = false
 	latest_run_time_second = -1
+	phase_bullet_pattern_counters.clear()
 	gold_changed.emit(gold)
 	enemy_killed.emit(kills)
 	experience_changed.emit(experience, experience_to_next_level, level)
@@ -262,14 +289,26 @@ func get_current_phase_enemy_level_bonus() -> int:
 
 func get_current_phase_enemy_weight_bonus(enemy_type: String) -> int:
 	var weight_bonus: Dictionary = get_current_run_phase().get("enemy_weight_bonus", {})
-	return maxi(0, int(weight_bonus.get(enemy_type, 0)))
+	return int(weight_bonus.get(enemy_type, 0))
 
 func get_current_phase_bullet_pattern() -> String:
+	return get_current_phase_bullet_pattern_for_enemy("")
+
+func get_current_phase_bullet_pattern_for_enemy(enemy_type: String) -> String:
 	var phase := get_current_run_phase()
-	var patterns: Array = phase.get("bullet_patterns", [])
+	var patterns: Array = []
+	var enemy_patterns: Dictionary = phase.get("enemy_bullet_patterns", {})
+	if enemy_patterns.has(enemy_type):
+		patterns = enemy_patterns[enemy_type]
+	if patterns.is_empty():
+		patterns = phase.get("bullet_patterns", [])
 	if patterns.is_empty():
 		return str(phase.get("bullet_pattern", "aimed"))
-	return str(patterns.pick_random())
+	var phase_id := str(phase.get("id", "phase"))
+	var counter_key := "%s:%s" % [phase_id, enemy_type if not enemy_type.is_empty() else "default"]
+	var counter := int(phase_bullet_pattern_counters.get(counter_key, 0))
+	phase_bullet_pattern_counters[counter_key] = counter + 1
+	return str(patterns[counter % patterns.size()])
 
 func get_current_phase_bullet_speed_multiplier() -> float:
 	return maxf(0.2, float(get_current_run_phase().get("bullet_speed_multiplier", 1.0)))
@@ -526,6 +565,7 @@ func _update_run_phase() -> void:
 	current_phase_kill_start = kills
 	current_phase_objective_completed = false
 	current_phase_warning_sent = false
+	phase_bullet_pattern_counters.clear()
 	var phase := get_current_run_phase()
 	run_phase_changed.emit(phase)
 	var message := "进入阶段：%s - %s" % [str(phase.get("name", "未知阶段")), str(phase.get("goal", ""))]

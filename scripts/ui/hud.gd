@@ -9,6 +9,7 @@ var health_label: Label
 var experience_label: Label
 var run_phase_label: Label
 var phase_objective_label: Label
+var encounter_label: Label
 var equipment_label: Label
 var loot_message_label: Label
 var hint_label: Label
@@ -74,6 +75,10 @@ func _build_ui() -> void:
 	phase_objective_label = Label.new()
 	phase_objective_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	stats.add_child(phase_objective_label)
+
+	encounter_label = Label.new()
+	encounter_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	stats.add_child(encounter_label)
 
 	gold_label = Label.new()
 	stats.add_child(gold_label)
@@ -193,6 +198,7 @@ func _connect_signals() -> void:
 	GameManager.run_time_changed.connect(_on_run_time_changed)
 	GameManager.run_phase_objective_changed.connect(_on_run_phase_objective_changed)
 	GameManager.run_milestone_message_changed.connect(_on_run_milestone_message_changed)
+	GameManager.encounter_changed.connect(_on_encounter_changed)
 
 func _refresh_all() -> void:
 	_on_gold_changed(GameManager.gold)
@@ -206,6 +212,8 @@ func _refresh_all() -> void:
 		GameManager.get_current_phase_objective_target(),
 		GameManager.is_current_phase_objective_completed()
 	)
+	var active_encounter := GameManager.get_active_encounter()
+	_on_encounter_changed(active_encounter, not active_encounter.is_empty())
 	_on_health_changed(GameManager.player_health, GameManager.player_max_health)
 	_on_equipment_changed(GameManager.equipped_items)
 	_on_loot_message_changed(GameManager.latest_loot_message)
@@ -260,6 +268,18 @@ func _on_run_phase_objective_changed(phase: Dictionary, progress: int, target: i
 		target,
 		status_text,
 		_format_phase_reward(phase)
+	]
+
+func _on_encounter_changed(encounter: Dictionary, active: bool) -> void:
+	if encounter_label == null:
+		return
+	if not active or encounter.is_empty():
+		encounter_label.text = ""
+		return
+	encounter_label.text = "遭遇：%s\n目标：%s\n奖励：%s" % [
+		str(encounter.get("title", "未知遭遇")),
+		str(encounter.get("objective", "击败特殊敌人")),
+		_format_encounter_reward(encounter)
 	]
 
 func _on_run_milestone_message_changed(message: String) -> void:
@@ -779,6 +799,24 @@ func _format_phase_reward(phase: Dictionary) -> String:
 		parts.append("经验 +%d" % reward_experience)
 	if reward_heal > 0:
 		parts.append("生命 +%d" % reward_heal)
+	if parts.is_empty():
+		return "无"
+	return "，".join(parts)
+
+func _format_encounter_reward(encounter: Dictionary) -> String:
+	var parts: Array[String] = []
+	var reward_gold := maxi(0, int(encounter.get("reward_gold", 0)))
+	var reward_experience := maxi(0, int(encounter.get("reward_experience", 0)))
+	var reward_heal := maxi(0, int(encounter.get("reward_heal", 0)))
+	var reward_equipment_count := maxi(0, int(encounter.get("reward_equipment_count", 0)))
+	if reward_gold > 0:
+		parts.append("金币 +%d" % reward_gold)
+	if reward_experience > 0:
+		parts.append("经验 +%d" % reward_experience)
+	if reward_heal > 0:
+		parts.append("生命 +%d" % reward_heal)
+	if reward_equipment_count > 0:
+		parts.append("装备 +%d" % reward_equipment_count)
 	if parts.is_empty():
 		return "无"
 	return "，".join(parts)

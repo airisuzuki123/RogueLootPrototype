@@ -20,6 +20,9 @@ signal run_time_changed(elapsed_seconds: int, phase: Dictionary, remaining_secon
 signal run_phase_changed(phase: Dictionary)
 signal run_phase_objective_changed(phase: Dictionary, progress: int, target: int, completed: bool)
 signal run_milestone_message_changed(message: String)
+signal encounter_requested(encounter: Dictionary)
+signal encounter_changed(encounter: Dictionary, active: bool)
+signal encounter_completed(encounter: Dictionary)
 
 const MAX_INVENTORY_SIZE: int = 36
 const RUN_PHASES: Array[Dictionary] = [
@@ -145,6 +148,80 @@ const RUN_PHASES: Array[Dictionary] = [
 	}
 ]
 
+const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
+	{
+		"id": "elite_weaver",
+		"kind": "elite",
+		"title": "精英：织弹追猎者",
+		"trigger_time": 82.0,
+		"enemy_type": "weaver",
+		"objective": "击败精英，穿过连续扇形扫射",
+		"spawn_message": "精英遭遇：织弹追猎者正在入场",
+		"defeat_message": "精英已击败：织弹追猎者",
+		"health_multiplier": 3.2,
+		"touch_damage_multiplier": 1.2,
+		"move_speed_multiplier": 1.08,
+		"attack_interval_multiplier": 0.82,
+		"projectile_speed_multiplier": 1.05,
+		"visual_scale": 1.45,
+		"color": Color(0.95, 0.48, 1.0, 1.0),
+		"bullet_patterns": ["fan", "sweep", "cross"],
+		"reward_gold": 18,
+		"reward_experience": 6,
+		"reward_heal": 18,
+		"reward_equipment_count": 1,
+		"reward_level_bonus": 1
+	},
+	{
+		"id": "elite_turret",
+		"kind": "elite",
+		"title": "精英：环阵炮台",
+		"trigger_time": 176.0,
+		"enemy_type": "turret",
+		"objective": "击败精英，观察环形与交叉弹幕缺口",
+		"spawn_message": "精英遭遇：环阵炮台锁定战场",
+		"defeat_message": "精英已击败：环阵炮台",
+		"health_multiplier": 4.0,
+		"touch_damage_multiplier": 1.25,
+		"move_speed_multiplier": 0.88,
+		"attack_interval_multiplier": 0.78,
+		"projectile_speed_multiplier": 1.08,
+		"visual_scale": 1.65,
+		"color": Color(1.0, 0.36, 0.68, 1.0),
+		"bullet_patterns": ["ring", "double_ring", "pinwheel"],
+		"reward_gold": 26,
+		"reward_experience": 8,
+		"reward_heal": 22,
+		"reward_equipment_count": 1,
+		"reward_level_bonus": 2
+	},
+	{
+		"id": "boss_prism_core",
+		"kind": "boss",
+		"title": "Boss：棱镜核心",
+		"trigger_time": 272.0,
+		"enemy_type": "turret",
+		"objective": "击败 Boss，处理墙幕、花形弹幕和旋转缺口",
+		"spawn_message": "Boss 遭遇：棱镜核心展开",
+		"defeat_message": "Boss 已击败：棱镜核心",
+		"health_multiplier": 8.5,
+		"health_bonus": 120,
+		"touch_damage_multiplier": 1.45,
+		"move_speed_multiplier": 0.72,
+		"attack_interval_multiplier": 0.62,
+		"projectile_speed_multiplier": 1.12,
+		"visual_scale": 2.35,
+		"color": Color(1.0, 0.86, 0.26, 1.0),
+		"bullet_patterns": ["wall", "flower", "pinwheel", "double_ring"],
+		"reward_gold": 60,
+		"reward_experience": 14,
+		"reward_heal": 35,
+		"reward_equipment_count": 2,
+		"reward_level_bonus": 3,
+		"complete_run_on_defeat": true
+	}
+]
+
 var gold: int = 0
 var kills: int = 0
 var grazes: int = 0
@@ -173,6 +250,8 @@ var equipped_items := {
 }
 var latest_loot_message: String = ""
 var latest_milestone_message: String = ""
+var triggered_encounter_ids := {}
+var active_encounter: Dictionary = {}
 var run_elapsed_time: float = 0.0
 var current_phase_index: int = 0
 var current_phase_kill_start: int = 0
@@ -247,6 +326,8 @@ func reset_run() -> void:
 	_reset_equipped_items()
 	latest_loot_message = ""
 	latest_milestone_message = ""
+	triggered_encounter_ids.clear()
+	active_encounter.clear()
 	run_elapsed_time = 0.0
 	current_phase_index = 0
 	current_phase_kill_start = 0
@@ -264,6 +345,7 @@ func reset_run() -> void:
 	equipment_changed.emit(equipped_items)
 	loot_message_changed.emit(latest_loot_message)
 	run_milestone_message_changed.emit(latest_milestone_message)
+	encounter_changed.emit(active_encounter, false)
 	run_phase_changed.emit(get_current_run_phase())
 	_emit_run_time_changed(true)
 	_emit_phase_objective_changed()
@@ -273,6 +355,7 @@ func update_run_time(delta: float) -> void:
 		return
 	run_elapsed_time += delta
 	_update_run_phase()
+	_update_encounter_schedule()
 	if _is_run_duration_complete():
 		run_elapsed_time = _get_total_run_duration()
 		_emit_run_time_changed(true)
@@ -346,6 +429,20 @@ func get_next_run_phase() -> Dictionary:
 	if next_index < 0 or next_index >= RUN_PHASES.size():
 		return {}
 	return RUN_PHASES[next_index].duplicate(true)
+
+func get_active_encounter() -> Dictionary:
+	return active_encounter.duplicate(true)
+
+func complete_encounter(encounter_id: String) -> void:
+	if active_encounter.is_empty() or str(active_encounter.get("id", "")) != encounter_id:
+		return
+	var completed_encounter := active_encounter.duplicate(true)
+	_apply_encounter_reward(completed_encounter)
+	active_encounter.clear()
+	encounter_completed.emit(completed_encounter)
+	encounter_changed.emit(active_encounter, false)
+	if bool(completed_encounter.get("complete_run_on_defeat", false)):
+		complete_run()
 
 func register_player(player_node: Node) -> void:
 	player = player_node
@@ -643,6 +740,63 @@ func _update_phase_warning() -> void:
 		message = "%d 秒后进入：%s" % [remaining_seconds, str(next_phase.get("name", "下一阶段"))]
 	_set_milestone_message(message)
 
+func _update_encounter_schedule() -> void:
+	if is_run_over or not active_encounter.is_empty():
+		return
+	for encounter in ENCOUNTER_SCHEDULE:
+		var encounter_id := str(encounter.get("id", ""))
+		if encounter_id.is_empty() or triggered_encounter_ids.has(encounter_id):
+			continue
+		if run_elapsed_time < float(encounter.get("trigger_time", 0.0)):
+			continue
+		_start_encounter(encounter)
+		return
+
+func _start_encounter(encounter: Dictionary) -> void:
+	var encounter_id := str(encounter.get("id", ""))
+	if encounter_id.is_empty():
+		return
+	triggered_encounter_ids[encounter_id] = true
+	active_encounter = encounter.duplicate(true)
+	var message := str(active_encounter.get("spawn_message", active_encounter.get("title", "遭遇开始")))
+	_set_loot_message(message)
+	_set_milestone_message(message)
+	encounter_changed.emit(active_encounter, true)
+	encounter_requested.emit(active_encounter)
+
+func _apply_encounter_reward(encounter: Dictionary) -> void:
+	var reward_parts: Array[String] = []
+	var reward_gold := maxi(0, int(encounter.get("reward_gold", 0)))
+	var reward_experience := maxi(0, int(encounter.get("reward_experience", 0)))
+	var reward_heal := maxi(0, int(encounter.get("reward_heal", 0)))
+	var reward_equipment_count := maxi(0, int(encounter.get("reward_equipment_count", 0)))
+	if reward_gold > 0:
+		var gained_gold := add_gold(reward_gold)
+		reward_parts.append("金币 +%d" % gained_gold)
+	if reward_experience > 0:
+		add_experience(reward_experience)
+		reward_parts.append("经验 +%d" % reward_experience)
+	if reward_heal > 0 and player != null and player.has_method("heal_fixed_amount"):
+		var healed_amount := int(player.heal_fixed_amount(reward_heal))
+		if healed_amount > 0:
+			reward_parts.append("生命 +%d" % healed_amount)
+	if reward_equipment_count > 0:
+		var reward_level := maxi(1, level + get_current_phase_enemy_level_bonus() + int(encounter.get("reward_level_bonus", 0)))
+		var equipment_added := 0
+		for index in range(reward_equipment_count):
+			var equipment := EquipmentFactory.roll_equipment(reward_level)
+			if pickup_equipment(equipment):
+				equipment_added += 1
+			else:
+				var fallback_gold := add_gold(EquipmentFactory.get_salvage_value(equipment))
+				reward_parts.append("背包已满，折算金币 +%d" % fallback_gold)
+		if equipment_added > 0:
+			reward_parts.append("装备 +%d" % equipment_added)
+	var reward_text := "，".join(reward_parts) if not reward_parts.is_empty() else "无额外奖励"
+	var message := "%s，%s" % [str(encounter.get("defeat_message", "遭遇完成")), reward_text]
+	_set_loot_message(message)
+	_set_milestone_message(message)
+
 func _get_phase_index_for_time(elapsed_time: float) -> int:
 	var cursor := 0.0
 	for index in range(RUN_PHASES.size()):
@@ -655,6 +809,8 @@ func _get_phase_index_for_time(elapsed_time: float) -> int:
 	return maxi(0, RUN_PHASES.size() - 1)
 
 func _is_run_duration_complete() -> bool:
+	if not active_encounter.is_empty() and str(active_encounter.get("kind", "")) == "boss":
+		return false
 	var total_duration := _get_total_run_duration()
 	return total_duration >= 0.0 and run_elapsed_time >= total_duration
 

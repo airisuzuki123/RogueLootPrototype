@@ -39,6 +39,7 @@ func _ready() -> void:
 	arena_warning_timer.timeout.connect(_fire_pending_arena_pattern)
 	GameManager.run_phase_changed.connect(_on_run_phase_changed)
 	GameManager.run_ended.connect(_on_run_ended)
+	GameManager.encounter_requested.connect(_on_encounter_requested)
 	_update_arena_pattern_interval()
 
 func _process(delta: float) -> void:
@@ -73,6 +74,19 @@ func _spawn_single_enemy() -> void:
 		enemy.set_movement_bounds(_get_arena_rect())
 	add_child(enemy)
 
+func _spawn_encounter_enemy(encounter: Dictionary) -> void:
+	if player == null or not is_instance_valid(player) or GameManager.is_run_over:
+		return
+	var enemy := ENEMY_SCENE.instantiate()
+	enemy.configure(str(encounter.get("enemy_type", "turret")))
+	if enemy.has_method("configure_encounter"):
+		enemy.configure_encounter(encounter)
+	enemy.target = player
+	enemy.global_position = _random_position_on_arena_edge(player.global_position, _get_spawn_rect())
+	if enemy.has_method("set_movement_bounds"):
+		enemy.set_movement_bounds(_get_arena_rect())
+	add_child(enemy)
+
 func _random_spawn_position_around(center: Vector2, radius: float) -> Vector2:
 	var spawn_rect := _get_spawn_rect()
 	for attempt in range(18):
@@ -96,6 +110,9 @@ func _on_run_phase_changed(_phase: Dictionary) -> void:
 	arena_pattern_index = 0
 	_update_spawn_interval()
 	_update_arena_pattern_interval()
+
+func _on_encounter_requested(encounter: Dictionary) -> void:
+	_spawn_encounter_enemy(encounter)
 
 func _update_spawn_interval() -> void:
 	var phase_interval := GameManager.get_current_phase_spawn_interval()

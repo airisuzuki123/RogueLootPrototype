@@ -27,14 +27,22 @@ var spiral_angle: float = 0.0
 var sweep_angle: float = 0.0
 var strafe_direction: float = 1.0
 var strafe_timer: float = 0.0
+var encounter_config: Dictionary = {}
+var encounter_id: String = ""
+var is_encounter_enemy: bool = false
+var force_health_bar_visible: bool = false
+var encounter_pattern_counter: int = 0
 @onready var visual: Polygon2D = $Visual
 @onready var health_bar: ProgressBar = $HealthBar
 
 func _ready() -> void:
 	_apply_enemy_type(enemy_type)
+	_apply_encounter_config()
 	health = max_health
 	_update_health_bar(false)
 	add_to_group("enemies")
+	if is_encounter_enemy:
+		add_to_group("encounter_enemies")
 
 func _physics_process(delta: float) -> void:
 	if GameManager.is_run_over or GameManager.is_gameplay_paused():
@@ -73,6 +81,10 @@ func _die() -> void:
 	GameManager.register_kill()
 	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1, 0.35, 0.25, 0.95), 1.6)
 	GameManager.add_experience(experience_reward)
+	if is_encounter_enemy:
+		GameManager.complete_encounter(encounter_id)
+		queue_free()
+		return
 	if randf() <= loot_chance:
 		_drop_loot_or_gold()
 	queue_free()
@@ -138,10 +150,21 @@ func _flash_on_hit() -> void:
 func _update_health_bar(show_when_damaged: bool) -> void:
 	health_bar.max_value = max_health
 	health_bar.value = clampi(health, 0, max_health)
-	health_bar.visible = show_when_damaged and health > 0 and health < max_health
+	health_bar.visible = (force_health_bar_visible or show_when_damaged) and health > 0
 
 func configure(type_id: String) -> void:
 	enemy_type = type_id
+
+func configure_encounter(encounter: Dictionary) -> void:
+	encounter_config = encounter.duplicate(true)
+	encounter_id = str(encounter_config.get("id", ""))
+	is_encounter_enemy = not encounter_id.is_empty()
+	force_health_bar_visible = is_encounter_enemy
+	if is_inside_tree():
+		_apply_enemy_type(enemy_type)
+		_apply_encounter_config()
+		health = max_health
+		_update_health_bar(false)
 
 func set_movement_bounds(bounds: Rect2) -> void:
 	movement_bounds = bounds
@@ -207,6 +230,25 @@ func _apply_enemy_type(type_id: String) -> void:
 			visual.color = Color(1, 0.25, 0.25, 1)
 			visual.scale = Vector2.ONE
 
+func _apply_encounter_config() -> void:
+	if encounter_config.is_empty():
+		return
+	encounter_id = str(encounter_config.get("id", ""))
+	is_encounter_enemy = not encounter_id.is_empty()
+	force_health_bar_visible = is_encounter_enemy
+	max_health = maxi(1, int(round(float(max_health) * float(encounter_config.get("health_multiplier", 1.0)))) + int(encounter_config.get("health_bonus", 0)))
+	touch_damage = maxi(1, int(round(float(touch_damage) * float(encounter_config.get("touch_damage_multiplier", 1.0)))) + int(encounter_config.get("touch_damage_bonus", 0)))
+	move_speed *= float(encounter_config.get("move_speed_multiplier", 1.0))
+	attack_interval = maxf(0.18, attack_interval * float(encounter_config.get("attack_interval_multiplier", 1.0)))
+	projectile_speed *= float(encounter_config.get("projectile_speed_multiplier", 1.0))
+	ranged_attack_range += float(encounter_config.get("ranged_attack_range_bonus", 0.0))
+	ranged_keep_distance += float(encounter_config.get("ranged_keep_distance_bonus", 0.0))
+	experience_reward += maxi(0, int(encounter_config.get("extra_experience_reward", 0)))
+	loot_chance = 0.0
+	visual.scale *= float(encounter_config.get("visual_scale", 1.0))
+	visual.color = encounter_config.get("color", visual.color)
+	z_index = 2
+
 func _get_desired_velocity(direction: Vector2, distance: float) -> Vector2:
 	if not _is_bullet_enemy():
 		return direction * move_speed
@@ -248,6 +290,11 @@ func _update_strafe(delta: float) -> void:
 	strafe_direction *= -1.0
 
 func _select_bullet_pattern() -> String:
+	var encounter_patterns: Array = encounter_config.get("bullet_patterns", [])
+	if not encounter_patterns.is_empty():
+		var pattern := str(encounter_patterns[encounter_pattern_counter % encounter_patterns.size()])
+		encounter_pattern_counter += 1
+		return pattern
 	return GameManager.get_current_phase_bullet_pattern_for_enemy(enemy_type)
 
 func _fire_aimed_pattern(direction: Vector2) -> void:

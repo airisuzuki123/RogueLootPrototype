@@ -181,7 +181,28 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 		"reward_experience": 6,
 		"reward_heal": 18,
 		"reward_equipment_count": 1,
-		"reward_level_bonus": 1
+		"reward_level_bonus": 1,
+		"variants": [
+			{
+				"id": "elite_arc_weaver",
+				"title": "精英：弧光织手",
+				"objective": "击败精英，处理交叉弹幕和扫射追压",
+				"spawn_message": "精英遭遇：弧光织手切入战场",
+				"defeat_message": "精英已击败：弧光织手",
+				"health_multiplier": 3.45,
+				"attack_interval_multiplier": 0.78,
+				"projectile_speed_multiplier": 1.08,
+				"color": Color(0.50, 0.72, 1.0, 1.0),
+				"bullet_patterns": ["cross", "sweep", "aimed_burst"],
+				"reward_gold": 16,
+				"reward_experience": 7,
+				"reward_heal": 12,
+				"reward_graze_shield": 14,
+				"reward_graze_shield_duration": 3.0,
+				"reward_equipment_count": 1,
+				"reward_level_bonus": 1
+			}
+		]
 	},
 	{
 		"id": "elite_turret",
@@ -204,7 +225,27 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 		"reward_experience": 8,
 		"reward_heal": 22,
 		"reward_equipment_count": 1,
-		"reward_level_bonus": 2
+		"reward_level_bonus": 2,
+		"variants": [
+			{
+				"id": "elite_wall_turret",
+				"title": "精英：折幕炮台",
+				"objective": "击败精英，穿过弹幕墙和环形缺口",
+				"spawn_message": "精英遭遇：折幕炮台封锁路线",
+				"defeat_message": "精英已击败：折幕炮台",
+				"health_multiplier": 4.25,
+				"attack_interval_multiplier": 0.82,
+				"projectile_speed_multiplier": 1.05,
+				"color": Color(0.42, 1.0, 0.72, 1.0),
+				"bullet_patterns": ["wall", "ring", "pinwheel"],
+				"reward_gold": 22,
+				"reward_experience": 8,
+				"reward_heal": 18,
+				"reward_clear_projectiles": true,
+				"reward_equipment_count": 1,
+				"reward_level_bonus": 2
+			}
+		]
 	},
 	{
 		"id": "boss_prism_core",
@@ -268,7 +309,23 @@ const STAGE_EVENT_SCHEDULE: Array[Dictionary] = [
 		"reward_experience": 3,
 		"reward_heal": 12,
 		"reward_equipment_count": 1,
-		"reward_level_bonus": 1
+		"reward_level_bonus": 1,
+		"variants": [
+			{
+				"id": "opening_cache",
+				"title": "宝箱：巡路者藏匿",
+				"objective": "触碰宝箱，获得移动与生存补给",
+				"spawn_message": "宝箱事件：巡路者藏匿已出现",
+				"complete_message": "宝箱已开启：巡路者藏匿",
+				"reward_gold": 6,
+				"reward_experience": 2,
+				"reward_heal": 8,
+				"reward_graze_shield": 12,
+				"reward_graze_shield_duration": 3.0,
+				"reward_equipment_count": 1,
+				"reward_level_bonus": 1
+			}
+		]
 	},
 	{
 		"id": "midrun_chest",
@@ -282,7 +339,22 @@ const STAGE_EVENT_SCHEDULE: Array[Dictionary] = [
 		"reward_experience": 5,
 		"reward_heal": 18,
 		"reward_equipment_count": 1,
-		"reward_level_bonus": 2
+		"reward_level_bonus": 2,
+		"variants": [
+			{
+				"id": "midrun_cache",
+				"title": "宝箱：裂隙储备",
+				"objective": "触碰宝箱，清理周围弹幕并获得装备补强",
+				"spawn_message": "宝箱事件：裂隙储备已出现",
+				"complete_message": "宝箱已开启：裂隙储备",
+				"reward_gold": 14,
+				"reward_experience": 4,
+				"reward_heal": 12,
+				"reward_clear_projectiles": true,
+				"reward_equipment_count": 1,
+				"reward_level_bonus": 2
+			}
+		]
 	},
 	{
 		"id": "volatile_shrine",
@@ -314,6 +386,41 @@ const STAGE_EVENT_SCHEDULE: Array[Dictionary] = [
 				"description": "获得少量金币和生命恢复",
 				"reward_gold": 10,
 				"reward_heal": 18
+			}
+		],
+		"variants": [
+			{
+				"id": "volatile_mirror",
+				"title": "随机事件：裂隙镜面",
+				"objective": "触碰镜面，在战斗收益和生存补给中选择一项",
+				"spawn_message": "随机事件：裂隙镜面已出现",
+				"complete_message": "随机事件已结束：裂隙镜面",
+				"choices": [
+					{
+						"id": "mirror_focus",
+						"title": "凝视裂光",
+						"description": "承受 14 伤害，获得经验并清除场上敌弹",
+						"penalty_damage": 14,
+						"reward_experience": 8,
+						"reward_clear_projectiles": true
+					},
+					{
+						"id": "mirror_guard",
+						"title": "折射护壁",
+						"description": "获得短暂护盾和少量生命恢复",
+						"reward_heal": 10,
+						"reward_graze_shield": 18,
+						"reward_graze_shield_duration": 4.0
+					},
+					{
+						"id": "mirror_trade",
+						"title": "投入金币",
+						"description": "花费 16 金币，获得一件装备",
+						"cost_gold": 16,
+						"reward_equipment_count": 1,
+						"reward_level_bonus": 2
+					}
+				]
 			}
 		]
 	},
@@ -348,6 +455,42 @@ const STAGE_EVENT_SCHEDULE: Array[Dictionary] = [
 				"reward_equipment_count": 1,
 				"reward_level_bonus": 2
 			}
+		],
+		"variants": [
+			{
+				"id": "shield_vendor",
+				"title": "商店：护盾工坊",
+				"objective": "触碰商店，用金币购买护盾、清弹或装备整备",
+				"spawn_message": "商店事件：护盾工坊已出现",
+				"complete_message": "商店已离开：护盾工坊",
+				"offers": [
+					{
+						"id": "shop_shield",
+						"title": "护盾电容",
+						"description": "获得 22 点短暂护盾",
+						"cost": 20,
+						"reward_graze_shield": 22,
+						"reward_graze_shield_duration": 4.0
+					},
+					{
+						"id": "shop_clear",
+						"title": "清场符标",
+						"description": "清除场上敌方弹体，并恢复少量生命",
+						"cost": 24,
+						"reward_heal": 12,
+						"reward_clear_projectiles": true
+					},
+					{
+						"id": "shop_boss_prep",
+						"title": "Boss 前整备",
+						"description": "获得装备和少量经验",
+						"cost": 36,
+						"reward_experience": 5,
+						"reward_equipment_count": 1,
+						"reward_level_bonus": 3
+					}
+				]
+			}
 		]
 	},
 	{
@@ -362,7 +505,23 @@ const STAGE_EVENT_SCHEDULE: Array[Dictionary] = [
 		"reward_experience": 7,
 		"reward_heal": 28,
 		"reward_equipment_count": 1,
-		"reward_level_bonus": 3
+		"reward_level_bonus": 3,
+		"variants": [
+			{
+				"id": "preboss_focus_cache",
+				"title": "宝箱：折光整备",
+				"objective": "Boss 前打开宝箱，获得护盾和装备补给",
+				"spawn_message": "宝箱事件：折光整备已出现",
+				"complete_message": "宝箱已开启：折光整备",
+				"reward_gold": 20,
+				"reward_experience": 5,
+				"reward_heal": 18,
+				"reward_graze_shield": 20,
+				"reward_graze_shield_duration": 4.0,
+				"reward_equipment_count": 1,
+				"reward_level_bonus": 3
+			}
+		]
 	}
 ]
 
@@ -1089,7 +1248,7 @@ func _start_encounter(encounter: Dictionary) -> void:
 		return
 	triggered_encounter_ids[encounter_id] = true
 	last_special_node_time = run_elapsed_time
-	active_encounter = encounter.duplicate(true)
+	active_encounter = _resolve_scheduled_entry(encounter)
 	var message := str(active_encounter.get("spawn_message", active_encounter.get("title", "遭遇开始")))
 	_set_loot_message(message)
 	_set_milestone_message(message)
@@ -1119,12 +1278,24 @@ func _start_stage_event(event: Dictionary) -> void:
 		return
 	triggered_stage_event_ids[event_id] = true
 	last_special_node_time = run_elapsed_time
-	active_stage_event = event.duplicate(true)
+	active_stage_event = _resolve_scheduled_entry(event)
 	var message := str(active_stage_event.get("spawn_message", active_stage_event.get("title", "事件开始")))
 	_set_loot_message(message)
 	_set_milestone_message(message)
 	stage_event_changed.emit(active_stage_event, true)
 	stage_event_requested.emit(active_stage_event)
+
+func _resolve_scheduled_entry(entry: Dictionary) -> Dictionary:
+	var resolved := entry.duplicate(true)
+	var variants: Array = entry.get("variants", [])
+	if not variants.is_empty():
+		var roll := randi_range(0, variants.size())
+		if roll > 0:
+			var variant: Dictionary = variants[roll - 1]
+			for key in variant.keys():
+				resolved[key] = variant[key]
+	resolved.erase("variants")
+	return resolved
 
 func _can_start_special_node() -> bool:
 	if is_gameplay_paused():
@@ -1201,6 +1372,7 @@ func _apply_reward_bundle(source: Dictionary) -> String:
 	var reward_experience := maxi(0, int(source.get("reward_experience", 0)))
 	var reward_heal := maxi(0, int(source.get("reward_heal", 0)))
 	var reward_equipment_count := maxi(0, int(source.get("reward_equipment_count", 0)))
+	var reward_graze_shield := maxi(0, int(source.get("reward_graze_shield", 0)))
 	if reward_gold > 0:
 		var gained_gold := add_gold(reward_gold)
 		reward_parts.append("金币 +%d" % gained_gold)
@@ -1211,6 +1383,13 @@ func _apply_reward_bundle(source: Dictionary) -> String:
 		var healed_amount := int(player.heal_fixed_amount(reward_heal))
 		if healed_amount > 0:
 			reward_parts.append("生命 +%d" % healed_amount)
+	if reward_graze_shield > 0 and player != null and player.has_method("apply_graze_shield"):
+		var shield_duration := maxf(0.1, float(source.get("reward_graze_shield_duration", GRAZE_REWARD_SHIELD_DURATION)))
+		player.apply_graze_shield(reward_graze_shield, shield_duration)
+		reward_parts.append("护盾 +%d" % reward_graze_shield)
+	if bool(source.get("reward_clear_projectiles", false)):
+		var cleared_projectiles := _clear_enemy_projectiles()
+		reward_parts.append("清除敌弹 %d" % cleared_projectiles)
 	if reward_equipment_count > 0:
 		var reward_level := maxi(1, level + get_current_phase_enemy_level_bonus() + int(source.get("reward_level_bonus", 0)))
 		var equipment_added := 0
@@ -1224,6 +1403,15 @@ func _apply_reward_bundle(source: Dictionary) -> String:
 		if equipment_added > 0:
 			reward_parts.append("装备 +%d" % equipment_added)
 	return "，".join(reward_parts) if not reward_parts.is_empty() else "无额外奖励"
+
+func _clear_enemy_projectiles() -> int:
+	var cleared_count := 0
+	for projectile in get_tree().get_nodes_in_group("enemy_projectiles"):
+		if projectile == null or not is_instance_valid(projectile):
+			continue
+		projectile.queue_free()
+		cleared_count += 1
+	return cleared_count
 
 func _get_phase_index_for_time(elapsed_time: float) -> int:
 	var cursor := 0.0

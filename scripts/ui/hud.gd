@@ -962,55 +962,17 @@ func _format_phase_reward(phase: Dictionary) -> String:
 	return "，".join(parts)
 
 func _format_encounter_reward(encounter: Dictionary) -> String:
-	var parts: Array[String] = []
-	var reward_gold := maxi(0, int(encounter.get("reward_gold", 0)))
-	var reward_experience := maxi(0, int(encounter.get("reward_experience", 0)))
-	var reward_heal := maxi(0, int(encounter.get("reward_heal", 0)))
-	var reward_equipment_count := maxi(0, int(encounter.get("reward_equipment_count", 0)))
-	if reward_gold > 0:
-		parts.append("金币 +%d" % reward_gold)
-	if reward_experience > 0:
-		parts.append("经验 +%d" % reward_experience)
-	if reward_heal > 0:
-		parts.append("生命 +%d" % reward_heal)
-	if reward_equipment_count > 0:
-		parts.append("装备 +%d" % reward_equipment_count)
-	if parts.is_empty():
-		return "无"
-	return "，".join(parts)
+	return _format_reward_parts(encounter, "无")
 
 func _format_stage_event_reward(event: Dictionary) -> String:
-	var parts: Array[String] = []
-	var reward_gold := maxi(0, int(event.get("reward_gold", 0)))
-	var reward_experience := maxi(0, int(event.get("reward_experience", 0)))
-	var reward_heal := maxi(0, int(event.get("reward_heal", 0)))
-	var reward_equipment_count := maxi(0, int(event.get("reward_equipment_count", 0)))
-	if reward_gold > 0:
-		parts.append("金币 +%d" % reward_gold)
-	if reward_experience > 0:
-		parts.append("经验 +%d" % reward_experience)
-	if reward_heal > 0:
-		parts.append("生命 +%d" % reward_heal)
-	if reward_equipment_count > 0:
-		parts.append("装备 +%d" % reward_equipment_count)
-	if parts.is_empty():
-		return "无"
-	return "，".join(parts)
+	return _format_reward_parts(event, "无")
 
 func _format_shop_offer_reward(offer: Dictionary) -> String:
 	var parts: Array[String] = []
 	var description := str(offer.get("description", ""))
 	if not description.is_empty():
 		parts.append(description)
-	var reward_experience := maxi(0, int(offer.get("reward_experience", 0)))
-	var reward_heal := maxi(0, int(offer.get("reward_heal", 0)))
-	var reward_equipment_count := maxi(0, int(offer.get("reward_equipment_count", 0)))
-	if reward_experience > 0:
-		parts.append("经验 +%d" % reward_experience)
-	if reward_heal > 0:
-		parts.append("生命 +%d" % reward_heal)
-	if reward_equipment_count > 0:
-		parts.append("装备 +%d" % reward_equipment_count)
+	parts.append_array(_build_reward_parts(offer))
 	if parts.is_empty():
 		return "无直接奖励"
 	return "，".join(parts)
@@ -1021,20 +983,36 @@ func _format_event_choice_result(choice: Dictionary) -> String:
 	if not description.is_empty():
 		parts.append(description)
 	var penalty_damage := maxi(0, int(choice.get("penalty_damage", 0)))
-	var reward_gold := maxi(0, int(choice.get("reward_gold", 0)))
-	var reward_experience := maxi(0, int(choice.get("reward_experience", 0)))
-	var reward_heal := maxi(0, int(choice.get("reward_heal", 0)))
-	var reward_equipment_count := maxi(0, int(choice.get("reward_equipment_count", 0)))
 	if penalty_damage > 0:
 		parts.append("生命 -%d" % penalty_damage)
+	parts.append_array(_build_reward_parts(choice))
+	if parts.is_empty():
+		return "无直接结果"
+	return "，".join(parts)
+
+func _format_reward_parts(source: Dictionary, empty_text: String) -> String:
+	var parts := _build_reward_parts(source)
+	if parts.is_empty():
+		return empty_text
+	return "，".join(parts)
+
+func _build_reward_parts(source: Dictionary) -> Array[String]:
+	var parts: Array[String] = []
+	var reward_gold := maxi(0, int(source.get("reward_gold", 0)))
+	var reward_experience := maxi(0, int(source.get("reward_experience", 0)))
+	var reward_heal := maxi(0, int(source.get("reward_heal", 0)))
+	var reward_graze_shield := maxi(0, int(source.get("reward_graze_shield", 0)))
+	var reward_equipment_count := maxi(0, int(source.get("reward_equipment_count", 0)))
 	if reward_gold > 0:
 		parts.append("金币 +%d" % reward_gold)
 	if reward_experience > 0:
 		parts.append("经验 +%d" % reward_experience)
 	if reward_heal > 0:
 		parts.append("生命 +%d" % reward_heal)
+	if reward_graze_shield > 0:
+		parts.append("护盾 +%d" % reward_graze_shield)
+	if bool(source.get("reward_clear_projectiles", false)):
+		parts.append("清除敌弹")
 	if reward_equipment_count > 0:
 		parts.append("装备 +%d" % reward_equipment_count)
-	if parts.is_empty():
-		return "无直接结果"
-	return "，".join(parts)
+	return parts

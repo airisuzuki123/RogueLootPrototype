@@ -6,6 +6,7 @@ const HUD_SCENE := preload("res://scenes/hud.tscn")
 const ENEMY_PROJECTILE_SCENE := preload("res://scenes/enemy_projectile.tscn")
 const CHEST_EVENT_SCENE := preload("res://scenes/chest_event.tscn")
 const SHOP_EVENT_SCENE := preload("res://scenes/shop_event.tscn")
+const CHOICE_EVENT_SCENE := preload("res://scenes/choice_event.tscn")
 
 @onready var enemy_spawn_timer: Timer = $EnemySpawnTimer
 @onready var arena_pattern_timer: Timer = $ArenaPatternTimer
@@ -106,6 +107,12 @@ func _spawn_stage_event(event: Dictionary) -> void:
 				shop.configure(event)
 			shop.global_position = _random_stage_event_position()
 			add_child(shop)
+		"choice":
+			var choice_event := CHOICE_EVENT_SCENE.instantiate()
+			if choice_event.has_method("configure"):
+				choice_event.configure(event)
+			choice_event.global_position = _random_stage_event_position()
+			add_child(choice_event)
 
 func _random_spawn_position_around(center: Vector2, radius: float) -> Vector2:
 	var spawn_rect := _get_spawn_rect()

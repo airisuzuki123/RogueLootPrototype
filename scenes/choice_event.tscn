@@ -1,0 +1,26 @@
+[gd_scene load_steps=3 format=3 uid="uid://choice_event_scene"]
+
+[ext_resource type="Script" path="res://scripts/items/choice_event.gd" id="1_choice_event"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_choice_event"]
+radius = 22.0
+
+[node name="ChoiceEvent" type="Area2D"]
+script = ExtResource("1_choice_event")
+
+[node name="Visual" type="Polygon2D" parent="."]
+color = Color(0.7, 0.34, 1, 1)
+polygon = PackedVector2Array(0, -22, 18, -8, 14, 16, 0, 22, -14, 16, -18, -8)
+
+[node name="MarkerLabel" type="Label" parent="."]
+offset_left = -14.0
+offset_top = -12.0
+offset_right = 14.0
+offset_bottom = 12.0
+text = "?"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 18
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_choice_event")

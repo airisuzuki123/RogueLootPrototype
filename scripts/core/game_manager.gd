@@ -27,6 +27,7 @@ signal stage_event_requested(event: Dictionary)
 signal stage_event_changed(event: Dictionary, active: bool)
 signal stage_event_completed(event: Dictionary)
 signal shop_open_changed(is_open: bool, event: Dictionary, offers: Array)
+signal event_choice_open_changed(is_open: bool, event: Dictionary, choices: Array)
 
 const MAX_INVENTORY_SIZE: int = 36
 const RUN_PHASES: Array[Dictionary] = [
@@ -256,6 +257,39 @@ const STAGE_EVENT_SCHEDULE: Array[Dictionary] = [
 		"reward_level_bonus": 2
 	},
 	{
+		"id": "volatile_shrine",
+		"kind": "choice",
+		"title": "随机事件：不稳定圣坛",
+		"trigger_time": 166.0,
+		"objective": "触碰圣坛，在风险和奖励中选择一项",
+		"spawn_message": "随机事件：不稳定圣坛已出现",
+		"complete_message": "随机事件已结束：不稳定圣坛",
+		"choices": [
+			{
+				"id": "shrine_power",
+				"title": "汲取能量",
+				"description": "承受 18 伤害，获得大量经验",
+				"penalty_damage": 18,
+				"reward_experience": 10
+			},
+			{
+				"id": "shrine_equipment",
+				"title": "献上金币",
+				"description": "花费 20 金币，获得一件更高等级装备",
+				"cost_gold": 20,
+				"reward_equipment_count": 1,
+				"reward_level_bonus": 3
+			},
+			{
+				"id": "shrine_safe",
+				"title": "稳妥补给",
+				"description": "获得少量金币和生命恢复",
+				"reward_gold": 10,
+				"reward_heal": 18
+			}
+		]
+	},
+	{
 		"id": "midrun_shop",
 		"kind": "shop",
 		"title": "商店：临时补给站",
@@ -319,11 +353,14 @@ var is_upgrade_pending: bool = false
 var is_equipment_choice_pending: bool = false
 var is_inventory_open: bool = false
 var is_shop_open: bool = false
+var is_event_choice_open: bool = false
 var pending_upgrade_choices: Array = []
 var pending_equipment_choice: Dictionary = {}
 var pending_equipment_salvage_value: int = 0
 var active_shop_event: Dictionary = {}
 var shop_offers: Array[Dictionary] = []
+var active_choice_event: Dictionary = {}
+var event_choices: Array[Dictionary] = []
 var inventory: Array[Dictionary] = []
 var equipped_items := {
 	"weapon": {},
@@ -407,11 +444,14 @@ func reset_run() -> void:
 	is_equipment_choice_pending = false
 	is_inventory_open = false
 	is_shop_open = false
+	is_event_choice_open = false
 	pending_upgrade_choices.clear()
 	pending_equipment_choice.clear()
 	pending_equipment_salvage_value = 0
 	active_shop_event.clear()
 	shop_offers.clear()
+	active_choice_event.clear()
+	event_choices.clear()
 	inventory.clear()
 	_reset_equipped_items()
 	latest_loot_message = ""
@@ -435,6 +475,7 @@ func reset_run() -> void:
 	inventory_changed.emit(inventory)
 	inventory_open_changed.emit(is_inventory_open)
 	shop_open_changed.emit(is_shop_open, active_shop_event, shop_offers)
+	event_choice_open_changed.emit(is_event_choice_open, active_choice_event, event_choices)
 	equipment_changed.emit(equipped_items)
 	loot_message_changed.emit(latest_loot_message)
 	run_milestone_message_changed.emit(latest_milestone_message)
@@ -579,6 +620,53 @@ func close_shop_event() -> void:
 		_set_milestone_message(message)
 	shop_open_changed.emit(is_shop_open, active_shop_event, shop_offers)
 
+func open_choice_event(event_id: String) -> bool:
+	if is_run_over or is_event_choice_open:
+		return false
+	if active_stage_event.is_empty() or str(active_stage_event.get("id", "")) != event_id:
+		return false
+	active_choice_event = active_stage_event.duplicate(true)
+	event_choices = _build_event_choices(active_choice_event)
+	is_event_choice_open = true
+	event_choice_open_changed.emit(is_event_choice_open, active_choice_event, event_choices)
+	return true
+
+func close_choice_event() -> void:
+	if not is_event_choice_open:
+		return
+	var completed_event := active_choice_event.duplicate(true)
+	is_event_choice_open = false
+	active_choice_event.clear()
+	event_choices.clear()
+	_complete_open_stage_event(completed_event)
+	event_choice_open_changed.emit(is_event_choice_open, active_choice_event, event_choices)
+
+func choose_event_option(choice_index: int) -> bool:
+	if not is_event_choice_open or choice_index < 0 or choice_index >= event_choices.size():
+		return false
+	var choice: Dictionary = event_choices[choice_index]
+	var cost_gold := maxi(0, int(choice.get("cost_gold", 0)))
+	if cost_gold > 0 and not spend_gold(cost_gold):
+		return false
+	var penalty_text := _apply_choice_penalty(choice)
+	var reward_text := _apply_reward_bundle(choice)
+	var completed_event := active_choice_event.duplicate(true)
+	is_event_choice_open = false
+	active_choice_event.clear()
+	event_choices.clear()
+	_complete_open_stage_event(completed_event)
+	var parts: Array[String] = []
+	if cost_gold > 0:
+		parts.append("花费金币 %d" % cost_gold)
+	if not penalty_text.is_empty():
+		parts.append(penalty_text)
+	parts.append(reward_text)
+	var message := "选择：%s，%s" % [str(choice.get("title", "事件选项")), "，".join(parts)]
+	_set_loot_message(message)
+	_set_milestone_message(message)
+	event_choice_open_changed.emit(is_event_choice_open, active_choice_event, event_choices)
+	return true
+
 func register_player(player_node: Node) -> void:
 	player = player_node
 	if player.has_method("sync_health_state"):
@@ -656,6 +744,8 @@ func set_inventory_open(open: bool) -> void:
 	if is_upgrade_pending and open:
 		return
 	if is_shop_open and open:
+		return
+	if is_event_choice_open and open:
 		return
 	if is_inventory_open == open:
 		return
@@ -825,7 +915,7 @@ func apply_upgrade(choice_index: int) -> void:
 		player.apply_upgrade(upgrade["id"])
 
 func is_gameplay_paused() -> bool:
-	return is_upgrade_pending or is_equipment_choice_pending or is_inventory_open or is_shop_open
+	return is_upgrade_pending or is_equipment_choice_pending or is_inventory_open or is_shop_open or is_event_choice_open
 
 func end_run(completed: bool = false) -> void:
 	if is_run_over:
@@ -834,6 +924,7 @@ func end_run(completed: bool = false) -> void:
 	is_run_completed = completed
 	set_inventory_open(false)
 	close_shop_event()
+	close_choice_event()
 	if completed:
 		_set_milestone_message("试炼完成")
 	run_ended.emit(kills, gold)
@@ -965,11 +1056,36 @@ func _build_shop_offers(event: Dictionary) -> Array[Dictionary]:
 		offers.append(offer_data)
 	return offers
 
+func _build_event_choices(event: Dictionary) -> Array[Dictionary]:
+	var choices: Array[Dictionary] = []
+	for choice in event.get("choices", []):
+		var choice_data: Dictionary = choice
+		choices.append(choice_data.duplicate(true))
+	return choices
+
+func _complete_open_stage_event(completed_event: Dictionary) -> void:
+	if completed_event.is_empty():
+		return
+	if str(active_stage_event.get("id", "")) != str(completed_event.get("id", "")):
+		return
+	active_stage_event.clear()
+	stage_event_completed.emit(completed_event)
+	stage_event_changed.emit(active_stage_event, false)
+
 func _apply_stage_event_reward(event: Dictionary) -> void:
 	var reward_text := _apply_reward_bundle(event)
 	var message := "%s，%s" % [str(event.get("complete_message", "事件完成")), reward_text]
 	_set_loot_message(message)
 	_set_milestone_message(message)
+
+func _apply_choice_penalty(choice: Dictionary) -> String:
+	var parts: Array[String] = []
+	var penalty_damage := maxi(0, int(choice.get("penalty_damage", 0)))
+	if penalty_damage > 0 and player != null and player.has_method("take_event_damage"):
+		var applied_damage := int(player.take_event_damage(penalty_damage))
+		if applied_damage > 0:
+			parts.append("生命 -%d" % applied_damage)
+	return "，".join(parts)
 
 func _apply_encounter_reward(encounter: Dictionary) -> void:
 	var reward_text := _apply_reward_bundle(encounter)

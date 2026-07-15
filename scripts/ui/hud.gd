@@ -48,6 +48,10 @@ var shop_panel: PanelContainer
 var shop_title_label: Label
 var shop_offer_list: VBoxContainer
 var shop_offers: Array = []
+var event_choice_panel: PanelContainer
+var event_choice_title_label: Label
+var event_choice_list: VBoxContainer
+var event_choices: Array = []
 var game_over_label: Label
 var milestone_tween: Tween
 
@@ -197,6 +201,24 @@ func _build_ui() -> void:
 	shop_close_button.pressed.connect(_on_shop_close_pressed)
 	shop_root.add_child(shop_close_button)
 
+	event_choice_panel = PanelContainer.new()
+	event_choice_panel.visible = false
+	event_choice_panel.position = Vector2(350, 130)
+	event_choice_panel.custom_minimum_size = Vector2(580, 340)
+	root.add_child(event_choice_panel)
+
+	var event_choice_root := VBoxContainer.new()
+	event_choice_root.add_theme_constant_override("separation", 10)
+	event_choice_panel.add_child(event_choice_root)
+
+	event_choice_title_label = Label.new()
+	event_choice_title_label.text = "随机事件"
+	event_choice_root.add_child(event_choice_title_label)
+
+	event_choice_list = VBoxContainer.new()
+	event_choice_list.add_theme_constant_override("separation", 8)
+	event_choice_root.add_child(event_choice_list)
+
 	game_over_label = Label.new()
 	game_over_label.visible = false
 	game_over_label.position = Vector2(440, 320)
@@ -234,6 +256,7 @@ func _connect_signals() -> void:
 	GameManager.encounter_changed.connect(_on_encounter_changed)
 	GameManager.stage_event_changed.connect(_on_stage_event_changed)
 	GameManager.shop_open_changed.connect(_on_shop_open_changed)
+	GameManager.event_choice_open_changed.connect(_on_event_choice_open_changed)
 
 func _refresh_all() -> void:
 	_on_gold_changed(GameManager.gold)
@@ -264,6 +287,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		GameManager.toggle_inventory_open()
 	elif key_event.keycode == KEY_ESCAPE and GameManager.is_shop_open:
 		GameManager.close_shop_event()
+	elif key_event.keycode == KEY_ESCAPE and GameManager.is_event_choice_open:
+		GameManager.close_choice_event()
 	elif key_event.keycode == KEY_ESCAPE and GameManager.is_inventory_open:
 		if detail_modal_overlay != null and detail_modal_overlay.visible:
 			detail_modal_overlay.visible = false
@@ -409,6 +434,8 @@ func _on_run_ended(kills: int, gold: int) -> void:
 	inventory_panel.visible = false
 	if shop_panel != null:
 		shop_panel.visible = false
+	if event_choice_panel != null:
+		event_choice_panel.visible = false
 	game_over_label.visible = true
 	var title := "试炼完成" if GameManager.is_run_completed else "本局结束"
 	game_over_label.text = "%s\n时间：%s\n击杀：%d\n金币：%d" % [
@@ -455,6 +482,40 @@ func _on_shop_offer_pressed(index: int) -> void:
 
 func _on_shop_close_pressed() -> void:
 	GameManager.close_shop_event()
+
+func _on_event_choice_open_changed(is_open: bool, event: Dictionary, choices: Array) -> void:
+	if event_choice_panel == null:
+		return
+	event_choices = choices.duplicate(true)
+	event_choice_panel.visible = is_open
+	if not is_open:
+		return
+	event_choice_title_label.text = "%s\n%s" % [
+		str(event.get("title", "随机事件")),
+		str(event.get("objective", "选择一项结果"))
+	]
+	_refresh_event_choice_panel()
+
+func _refresh_event_choice_panel() -> void:
+	for child in event_choice_list.get_children():
+		child.queue_free()
+	for index in range(event_choices.size()):
+		var choice: Dictionary = event_choices[index]
+		var button := Button.new()
+		var cost := maxi(0, int(choice.get("cost_gold", 0)))
+		var cost_text := "\n代价：%d 金币" % cost if cost > 0 else ""
+		button.text = "%s%s\n%s" % [
+			str(choice.get("title", "选项")),
+			cost_text,
+			_format_event_choice_result(choice)
+		]
+		button.custom_minimum_size = Vector2(540, 72)
+		button.disabled = cost > 0 and GameManager.gold < cost
+		button.pressed.connect(_on_event_choice_pressed.bind(index))
+		event_choice_list.add_child(button)
+
+func _on_event_choice_pressed(index: int) -> void:
+	GameManager.choose_event_option(index)
 
 func _build_inventory_panel(root: Control) -> void:
 	inventory_panel = PanelContainer.new()
@@ -946,4 +1007,28 @@ func _format_shop_offer_reward(offer: Dictionary) -> String:
 		parts.append("装备 +%d" % reward_equipment_count)
 	if parts.is_empty():
 		return "无直接奖励"
+	return "，".join(parts)
+
+func _format_event_choice_result(choice: Dictionary) -> String:
+	var parts: Array[String] = []
+	var description := str(choice.get("description", ""))
+	if not description.is_empty():
+		parts.append(description)
+	var penalty_damage := maxi(0, int(choice.get("penalty_damage", 0)))
+	var reward_gold := maxi(0, int(choice.get("reward_gold", 0)))
+	var reward_experience := maxi(0, int(choice.get("reward_experience", 0)))
+	var reward_heal := maxi(0, int(choice.get("reward_heal", 0)))
+	var reward_equipment_count := maxi(0, int(choice.get("reward_equipment_count", 0)))
+	if penalty_damage > 0:
+		parts.append("生命 -%d" % penalty_damage)
+	if reward_gold > 0:
+		parts.append("金币 +%d" % reward_gold)
+	if reward_experience > 0:
+		parts.append("经验 +%d" % reward_experience)
+	if reward_heal > 0:
+		parts.append("生命 +%d" % reward_heal)
+	if reward_equipment_count > 0:
+		parts.append("装备 +%d" % reward_equipment_count)
+	if parts.is_empty():
+		return "无直接结果"
 	return "，".join(parts)

@@ -83,6 +83,19 @@ func heal_fixed_amount(amount: int) -> int:
 	GameManager.update_player_health(health, max_health)
 	return health - old_health
 
+func take_event_damage(amount: int) -> int:
+	if GameManager.is_run_over or amount <= 0 or health <= 0:
+		return 0
+	var old_health := health
+	health = max(0, health - amount)
+	GameManager.update_player_health(health, max_health)
+	CombatFeedback.show_damage(get_tree().current_scene, global_position, old_health - health, Color(1, 0.25, 0.25, 1))
+	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1, 0.2, 0.2, 0.9), 1.2)
+	if health <= 0:
+		GameManager.end_run()
+		queue_free()
+	return old_health - health
+
 func apply_upgrade(upgrade_id: String) -> void:
 	match upgrade_id:
 		"damage":

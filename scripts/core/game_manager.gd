@@ -218,6 +218,28 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 		"visual_scale": 2.35,
 		"color": Color(1.0, 0.86, 0.26, 1.0),
 		"bullet_patterns": ["wall", "flower", "pinwheel", "double_ring"],
+		"boss_phases": [
+			{
+				"threshold": 0.70,
+				"title": "棱镜核心：裂光阶段",
+				"message": "Boss 阶段变化：裂光阶段",
+				"bullet_patterns": ["flower", "double_ring", "pinwheel"],
+				"attack_interval_multiplier": 0.86,
+				"projectile_speed_multiplier": 1.06,
+				"color": Color(1.0, 0.62, 0.28, 1.0),
+				"burst_scale": 1.7
+			},
+			{
+				"threshold": 0.35,
+				"title": "棱镜核心：终局折射",
+				"message": "Boss 阶段变化：终局折射",
+				"bullet_patterns": ["wall", "pinwheel", "flower", "double_ring"],
+				"attack_interval_multiplier": 0.72,
+				"projectile_speed_multiplier": 1.14,
+				"color": Color(1.0, 0.32, 0.82, 1.0),
+				"burst_scale": 2.1
+			}
+		],
 		"reward_gold": 60,
 		"reward_experience": 14,
 		"reward_heal": 35,
@@ -571,6 +593,11 @@ func get_active_encounter() -> Dictionary:
 
 func get_active_stage_event() -> Dictionary:
 	return active_stage_event.duplicate(true)
+
+func show_milestone_message(message: String) -> void:
+	if message.is_empty():
+		return
+	_set_milestone_message(message)
 
 func complete_encounter(encounter_id: String) -> void:
 	if active_encounter.is_empty() or str(active_encounter.get("id", "")) != encounter_id:

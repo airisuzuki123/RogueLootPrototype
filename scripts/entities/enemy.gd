@@ -32,6 +32,10 @@ var encounter_id: String = ""
 var is_encounter_enemy: bool = false
 var force_health_bar_visible: bool = false
 var encounter_pattern_counter: int = 0
+var encounter_base_attack_interval: float = 0.8
+var encounter_base_projectile_speed: float = 240.0
+var active_boss_phase_index: int = -1
+var active_boss_phase: Dictionary = {}
 @onready var visual: Polygon2D = $Visual
 @onready var health_bar: ProgressBar = $HealthBar
 
@@ -68,6 +72,7 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO, is_critical: bo
 		return
 	health -= amount
 	knockback_velocity += knockback
+	_update_boss_phase()
 	_update_health_bar(true)
 	_flash_on_hit()
 	var damage_color := Color(1, 0.45, 0.15, 1) if is_critical else Color(1, 0.95, 0.45, 1)
@@ -164,6 +169,7 @@ func configure_encounter(encounter: Dictionary) -> void:
 		_apply_enemy_type(enemy_type)
 		_apply_encounter_config()
 		health = max_health
+		_update_boss_phase()
 		_update_health_bar(false)
 
 func set_movement_bounds(bounds: Rect2) -> void:
@@ -241,6 +247,8 @@ func _apply_encounter_config() -> void:
 	move_speed *= float(encounter_config.get("move_speed_multiplier", 1.0))
 	attack_interval = maxf(0.18, attack_interval * float(encounter_config.get("attack_interval_multiplier", 1.0)))
 	projectile_speed *= float(encounter_config.get("projectile_speed_multiplier", 1.0))
+	encounter_base_attack_interval = attack_interval
+	encounter_base_projectile_speed = projectile_speed
 	ranged_attack_range += float(encounter_config.get("ranged_attack_range_bonus", 0.0))
 	ranged_keep_distance += float(encounter_config.get("ranged_keep_distance_bonus", 0.0))
 	experience_reward += maxi(0, int(encounter_config.get("extra_experience_reward", 0)))
@@ -248,6 +256,32 @@ func _apply_encounter_config() -> void:
 	visual.scale *= float(encounter_config.get("visual_scale", 1.0))
 	visual.color = encounter_config.get("color", visual.color)
 	z_index = 2
+
+func _update_boss_phase() -> void:
+	if not is_encounter_enemy or health <= 0:
+		return
+	var phases: Array = encounter_config.get("boss_phases", [])
+	if phases.is_empty():
+		return
+	var health_ratio := float(health) / float(maxi(1, max_health))
+	var target_phase_index := -1
+	for index in range(phases.size()):
+		var phase: Dictionary = phases[index]
+		if health_ratio <= float(phase.get("threshold", 0.0)):
+			target_phase_index = index
+			break
+	if target_phase_index <= active_boss_phase_index:
+		return
+	active_boss_phase_index = target_phase_index
+	active_boss_phase = phases[target_phase_index].duplicate(true)
+	attack_interval = maxf(0.16, encounter_base_attack_interval * float(active_boss_phase.get("attack_interval_multiplier", 1.0)))
+	projectile_speed = encounter_base_projectile_speed * float(active_boss_phase.get("projectile_speed_multiplier", 1.0))
+	visual.color = active_boss_phase.get("color", visual.color)
+	encounter_pattern_counter = 0
+	var message := str(active_boss_phase.get("message", active_boss_phase.get("title", "Boss 阶段变化")))
+	if not message.is_empty() and GameManager.has_method("show_milestone_message"):
+		GameManager.show_milestone_message(message)
+	CombatFeedback.show_burst(get_tree().current_scene, global_position, visual.color, float(active_boss_phase.get("burst_scale", 1.6)))
 
 func _get_desired_velocity(direction: Vector2, distance: float) -> Vector2:
 	if not _is_bullet_enemy():
@@ -290,6 +324,11 @@ func _update_strafe(delta: float) -> void:
 	strafe_direction *= -1.0
 
 func _select_bullet_pattern() -> String:
+	var boss_phase_patterns: Array = active_boss_phase.get("bullet_patterns", [])
+	if not boss_phase_patterns.is_empty():
+		var phase_pattern := str(boss_phase_patterns[encounter_pattern_counter % boss_phase_patterns.size()])
+		encounter_pattern_counter += 1
+		return phase_pattern
 	var encounter_patterns: Array = encounter_config.get("bullet_patterns", [])
 	if not encounter_patterns.is_empty():
 		var pattern := str(encounter_patterns[encounter_pattern_counter % encounter_patterns.size()])

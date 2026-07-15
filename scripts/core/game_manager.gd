@@ -2,7 +2,11 @@ extends Node
 
 const EquipmentFactory := preload("res://scripts/items/equipment_factory.gd")
 
-const GRAZE_FEEDBACK_INTERVAL_MSEC: int = 220
+const GRAZE_REWARD_REQUIRED: int = 6
+const GRAZE_REWARD_HEAL: int = 4
+const GRAZE_REWARD_SHIELD: int = 12
+const GRAZE_REWARD_SHIELD_DURATION: float = 2.5
+const GRAZE_REWARD_COOLDOWN: float = 3.5
 const SPECIAL_NODE_MIN_INTERVAL: float = 22.0
 const BOSS_PREP_LOCKOUT_SECONDS: float = 12.0
 
@@ -370,6 +374,8 @@ var experience: int = 0
 var experience_to_next_level: int = 5
 var player_health: int = 0
 var player_max_health: int = 0
+var player_graze_shield: int = 0
+var player_graze_shield_remaining: float = 0.0
 var player: Node = null
 var is_run_over: bool = false
 var is_run_completed: bool = false
@@ -408,7 +414,8 @@ var current_phase_objective_completed: bool = false
 var current_phase_warning_sent: bool = false
 var latest_run_time_second: int = -1
 var phase_bullet_pattern_counters := {}
-var latest_graze_feedback_msec: int = -100000
+var graze_charge: int = 0
+var graze_reward_cooldown_remaining: float = 0.0
 
 const UPGRADE_POOL := [
 	{
@@ -462,6 +469,8 @@ func reset_run() -> void:
 	experience_to_next_level = 5
 	player_health = 0
 	player_max_health = 0
+	player_graze_shield = 0
+	player_graze_shield_remaining = 0.0
 	player = null
 	is_run_over = false
 	is_run_completed = false
@@ -493,7 +502,8 @@ func reset_run() -> void:
 	current_phase_warning_sent = false
 	latest_run_time_second = -1
 	phase_bullet_pattern_counters.clear()
-	latest_graze_feedback_msec = -100000
+	graze_charge = 0
+	graze_reward_cooldown_remaining = 0.0
 	gold_changed.emit(gold)
 	enemy_killed.emit(kills)
 	graze_changed.emit(grazes)
@@ -514,6 +524,7 @@ func reset_run() -> void:
 func update_run_time(delta: float) -> void:
 	if is_run_over or is_gameplay_paused():
 		return
+	_update_graze_reward_cooldown(delta)
 	run_elapsed_time += delta
 	_update_run_phase()
 	_update_encounter_schedule()
@@ -707,6 +718,12 @@ func update_player_health(current: int, maximum: int) -> void:
 	player_health = current
 	player_max_health = maximum
 	health_changed.emit(current, maximum)
+
+func update_player_graze_shield(amount: int, remaining: float, emit_change: bool = true) -> void:
+	player_graze_shield = maxi(0, amount)
+	player_graze_shield_remaining = maxf(0.0, remaining)
+	if emit_change:
+		graze_changed.emit(grazes)
 
 func add_gold(amount: int, apply_bonus: bool = true) -> int:
 	if is_run_over:
@@ -918,11 +935,33 @@ func register_graze() -> bool:
 	if is_run_over:
 		return false
 	grazes += 1
+	graze_charge = mini(GRAZE_REWARD_REQUIRED, graze_charge + 1)
 	graze_changed.emit(grazes)
-	var now_msec := Time.get_ticks_msec()
-	if now_msec - latest_graze_feedback_msec < GRAZE_FEEDBACK_INTERVAL_MSEC:
+	if graze_charge < GRAZE_REWARD_REQUIRED or graze_reward_cooldown_remaining > 0.0:
 		return false
-	latest_graze_feedback_msec = now_msec
+	return _trigger_graze_reward()
+
+func _update_graze_reward_cooldown(delta: float) -> void:
+	if graze_reward_cooldown_remaining <= 0.0:
+		return
+	graze_reward_cooldown_remaining = maxf(0.0, graze_reward_cooldown_remaining - delta)
+	if graze_reward_cooldown_remaining <= 0.0:
+		graze_changed.emit(grazes)
+
+func _trigger_graze_reward() -> bool:
+	graze_charge = 0
+	graze_reward_cooldown_remaining = GRAZE_REWARD_COOLDOWN
+	var healed_amount := 0
+	if player != null and player.has_method("heal_fixed_amount"):
+		healed_amount = int(player.heal_fixed_amount(GRAZE_REWARD_HEAL))
+	if player != null and player.has_method("apply_graze_shield"):
+		player.apply_graze_shield(GRAZE_REWARD_SHIELD, GRAZE_REWARD_SHIELD_DURATION)
+	var reward_parts: Array[String] = []
+	if healed_amount > 0:
+		reward_parts.append("生命 +%d" % healed_amount)
+	reward_parts.append("护盾 +%d" % GRAZE_REWARD_SHIELD)
+	_set_loot_message("擦弹专注：%s" % "，".join(reward_parts))
+	graze_changed.emit(grazes)
 	return true
 
 func add_experience(amount: int) -> void:

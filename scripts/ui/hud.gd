@@ -302,7 +302,13 @@ func _on_enemy_killed(total: int) -> void:
 	kills_label.text = "击杀：%d" % total
 
 func _on_graze_changed(total: int) -> void:
-	graze_label.text = "擦弹：%d" % total
+	var charge := int(GameManager.graze_charge)
+	var required := int(GameManager.GRAZE_REWARD_REQUIRED)
+	var shield := int(GameManager.player_graze_shield)
+	var cooldown := float(GameManager.graze_reward_cooldown_remaining)
+	var shield_text := " | 护盾：%d" % shield if shield > 0 else ""
+	var cooldown_text := " | 冷却中" if cooldown > 0.0 else ""
+	graze_label.text = "擦弹：%d | 专注：%d / %d%s%s" % [total, charge, required, shield_text, cooldown_text]
 
 func _on_health_changed(current: int, maximum: int) -> void:
 	health_label.text = "生命：%d / %d" % [current, maximum]

@@ -13,6 +13,8 @@ const CombatFeedback := preload("res://scripts/effects/combat_feedback.gd")
 @export var knockback_recovery: float = 11.0
 
 var health: int
+var graze_shield: int = 0
+var graze_shield_timer: float = 0.0
 var movement_bounds: Rect2 = Rect2()
 var fire_cooldown: float = 0.0
 var invulnerability_timer: float = 0.0
@@ -48,6 +50,7 @@ func _physics_process(delta: float) -> void:
 	if GameManager.is_run_over or GameManager.is_gameplay_paused():
 		return
 	_update_invulnerability(delta)
+	_update_graze_shield(delta)
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	velocity = direction * move_speed + knockback_velocity
 	move_and_slide()
@@ -60,9 +63,12 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 		return
 	invulnerability_timer = invulnerability_duration
 	knockback_velocity += knockback
-	health -= amount
+	var remaining_damage := _absorb_damage_with_graze_shield(maxi(0, amount))
+	if remaining_damage <= 0:
+		return
+	health -= remaining_damage
 	GameManager.update_player_health(max(health, 0), max_health)
-	CombatFeedback.show_damage(get_tree().current_scene, global_position, amount, Color(1, 0.25, 0.25, 1))
+	CombatFeedback.show_damage(get_tree().current_scene, global_position, remaining_damage, Color(1, 0.25, 0.25, 1))
 	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1, 0.2, 0.2, 0.9), 1.3)
 	if health <= 0:
 		GameManager.end_run()
@@ -70,6 +76,7 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 
 func sync_health_state() -> void:
 	GameManager.update_player_health(health, max_health)
+	GameManager.update_player_graze_shield(graze_shield, graze_shield_timer)
 
 func set_movement_bounds(bounds: Rect2) -> void:
 	movement_bounds = bounds
@@ -82,6 +89,13 @@ func heal_fixed_amount(amount: int) -> int:
 	health = min(max_health, health + amount)
 	GameManager.update_player_health(health, max_health)
 	return health - old_health
+
+func apply_graze_shield(amount: int, duration: float) -> void:
+	if amount <= 0 or duration <= 0.0 or health <= 0:
+		return
+	graze_shield = maxi(graze_shield, amount)
+	graze_shield_timer = maxf(graze_shield_timer, duration)
+	_sync_graze_shield_state()
 
 func take_event_damage(amount: int) -> int:
 	if GameManager.is_run_over or amount <= 0 or health <= 0:
@@ -310,3 +324,31 @@ func _update_invulnerability(delta: float) -> void:
 	invulnerability_timer -= delta
 	visual.modulate.a = 0.35 if int(invulnerability_timer * 20.0) % 2 == 0 else 1.0
 	hit_core.modulate = Color(1.0, 0.95, 0.35, 1.0)
+
+func _update_graze_shield(delta: float) -> void:
+	if graze_shield <= 0:
+		return
+	graze_shield_timer -= delta
+	if graze_shield_timer > 0.0:
+		GameManager.update_player_graze_shield(graze_shield, graze_shield_timer, false)
+		return
+	graze_shield = 0
+	graze_shield_timer = 0.0
+	_sync_graze_shield_state()
+
+func _absorb_damage_with_graze_shield(incoming_damage: int) -> int:
+	if incoming_damage <= 0 or graze_shield <= 0:
+		return incoming_damage
+	var absorbed := mini(graze_shield, incoming_damage)
+	graze_shield -= absorbed
+	var remaining_damage := incoming_damage - absorbed
+	if graze_shield <= 0:
+		graze_shield = 0
+		graze_shield_timer = 0.0
+	_sync_graze_shield_state()
+	CombatFeedback.show_damage(get_tree().current_scene, global_position, absorbed, Color(0.45, 0.9, 1.0, 1.0))
+	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(0.35, 0.85, 1.0, 0.75), 1.0)
+	return remaining_damage
+
+func _sync_graze_shield_state() -> void:
+	GameManager.update_player_graze_shield(graze_shield, graze_shield_timer)

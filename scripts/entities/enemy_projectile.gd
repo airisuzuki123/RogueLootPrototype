@@ -103,8 +103,8 @@ func _try_graze_player() -> void:
 		return
 	has_grazed = true
 	if GameManager.register_graze():
-		CombatFeedback.show_text(get_tree().current_scene, player.global_position, "擦弹", Color(0.55, 0.95, 1.0, 1.0))
-		CombatFeedback.show_burst(get_tree().current_scene, player.global_position, Color(0.45, 0.9, 1.0, 0.55), 0.55)
+		CombatFeedback.show_text(get_tree().current_scene, player.global_position, "护盾", Color(0.55, 0.95, 1.0, 1.0))
+		CombatFeedback.show_burst(get_tree().current_scene, player.global_position, Color(0.45, 0.9, 1.0, 0.7), 0.85)
 
 func _on_body_entered(body: Node) -> void:
 	if body.name != "Player":

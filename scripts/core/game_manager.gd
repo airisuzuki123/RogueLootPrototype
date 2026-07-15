@@ -3,6 +3,8 @@ extends Node
 const EquipmentFactory := preload("res://scripts/items/equipment_factory.gd")
 
 const GRAZE_FEEDBACK_INTERVAL_MSEC: int = 220
+const SPECIAL_NODE_MIN_INTERVAL: float = 22.0
+const BOSS_PREP_LOCKOUT_SECONDS: float = 12.0
 
 signal gold_changed(total: int)
 signal enemy_killed(total: int)
@@ -181,7 +183,7 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 		"id": "elite_turret",
 		"kind": "elite",
 		"title": "精英：环阵炮台",
-		"trigger_time": 176.0,
+		"trigger_time": 184.0,
 		"enemy_type": "turret",
 		"objective": "击败精英，观察环形与交叉弹幕缺口",
 		"spawn_message": "精英遭遇：环阵炮台锁定战场",
@@ -282,7 +284,7 @@ const STAGE_EVENT_SCHEDULE: Array[Dictionary] = [
 		"id": "volatile_shrine",
 		"kind": "choice",
 		"title": "随机事件：不稳定圣坛",
-		"trigger_time": 166.0,
+		"trigger_time": 164.0,
 		"objective": "触碰圣坛，在风险和奖励中选择一项",
 		"spawn_message": "随机事件：不稳定圣坛已出现",
 		"complete_message": "随机事件已结束：不稳定圣坛",
@@ -315,7 +317,7 @@ const STAGE_EVENT_SCHEDULE: Array[Dictionary] = [
 		"id": "midrun_shop",
 		"kind": "shop",
 		"title": "商店：临时补给站",
-		"trigger_time": 198.0,
+		"trigger_time": 212.0,
 		"objective": "触碰商店，用金币购买一项补给",
 		"spawn_message": "商店事件：临时补给站已出现",
 		"complete_message": "商店已离开：临时补给站",
@@ -398,6 +400,7 @@ var triggered_encounter_ids := {}
 var active_encounter: Dictionary = {}
 var triggered_stage_event_ids := {}
 var active_stage_event: Dictionary = {}
+var last_special_node_time: float = -9999.0
 var run_elapsed_time: float = 0.0
 var current_phase_index: int = 0
 var current_phase_kill_start: int = 0
@@ -482,6 +485,7 @@ func reset_run() -> void:
 	active_encounter.clear()
 	triggered_stage_event_ids.clear()
 	active_stage_event.clear()
+	last_special_node_time = -9999.0
 	run_elapsed_time = 0.0
 	current_phase_index = 0
 	current_phase_kill_start = 0
@@ -1029,6 +1033,8 @@ func _update_phase_warning() -> void:
 func _update_encounter_schedule() -> void:
 	if is_run_over or not active_encounter.is_empty():
 		return
+	if not _can_start_special_node():
+		return
 	for encounter in ENCOUNTER_SCHEDULE:
 		var encounter_id := str(encounter.get("id", ""))
 		if encounter_id.is_empty() or triggered_encounter_ids.has(encounter_id):
@@ -1043,6 +1049,7 @@ func _start_encounter(encounter: Dictionary) -> void:
 	if encounter_id.is_empty():
 		return
 	triggered_encounter_ids[encounter_id] = true
+	last_special_node_time = run_elapsed_time
 	active_encounter = encounter.duplicate(true)
 	var message := str(active_encounter.get("spawn_message", active_encounter.get("title", "遭遇开始")))
 	_set_loot_message(message)
@@ -1053,11 +1060,16 @@ func _start_encounter(encounter: Dictionary) -> void:
 func _update_stage_event_schedule() -> void:
 	if is_run_over or not active_stage_event.is_empty():
 		return
+	if not _can_start_special_node():
+		return
 	for event in STAGE_EVENT_SCHEDULE:
 		var event_id := str(event.get("id", ""))
 		if event_id.is_empty() or triggered_stage_event_ids.has(event_id):
 			continue
 		if run_elapsed_time < float(event.get("trigger_time", 0.0)):
+			continue
+		if _is_stage_event_blocked_by_boss(event):
+			triggered_stage_event_ids[event_id] = true
 			continue
 		_start_stage_event(event)
 		return
@@ -1067,12 +1079,36 @@ func _start_stage_event(event: Dictionary) -> void:
 	if event_id.is_empty():
 		return
 	triggered_stage_event_ids[event_id] = true
+	last_special_node_time = run_elapsed_time
 	active_stage_event = event.duplicate(true)
 	var message := str(active_stage_event.get("spawn_message", active_stage_event.get("title", "事件开始")))
 	_set_loot_message(message)
 	_set_milestone_message(message)
 	stage_event_changed.emit(active_stage_event, true)
 	stage_event_requested.emit(active_stage_event)
+
+func _can_start_special_node() -> bool:
+	if is_gameplay_paused():
+		return false
+	if not active_encounter.is_empty() or not active_stage_event.is_empty():
+		return false
+	return run_elapsed_time - last_special_node_time >= SPECIAL_NODE_MIN_INTERVAL
+
+func _is_stage_event_blocked_by_boss(event: Dictionary) -> bool:
+	if str(event.get("kind", "")) == "chest" and str(event.get("id", "")) == "preboss_chest":
+		return false
+	var boss_time := _get_next_untriggered_boss_time()
+	return boss_time >= 0.0 and boss_time - run_elapsed_time <= BOSS_PREP_LOCKOUT_SECONDS
+
+func _get_next_untriggered_boss_time() -> float:
+	for encounter in ENCOUNTER_SCHEDULE:
+		if str(encounter.get("kind", "")) != "boss":
+			continue
+		var encounter_id := str(encounter.get("id", ""))
+		if triggered_encounter_ids.has(encounter_id):
+			continue
+		return float(encounter.get("trigger_time", -1.0))
+	return -1.0
 
 func _build_shop_offers(event: Dictionary) -> Array[Dictionary]:
 	var offers: Array[Dictionary] = []

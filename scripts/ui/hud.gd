@@ -1063,6 +1063,12 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 		parts.append("爆裂 +%d" % explosion_bonus)
 	if int(upgrade_stacks.get("graze_barrier", 0)) > 0:
 		parts.append("折光 x%d" % int(upgrade_stacks.get("graze_barrier", 0)))
+	if int(upgrade_stacks.get("clear_barrier", 0)) > 0:
+		parts.append("清弹 x%d" % int(upgrade_stacks.get("clear_barrier", 0)))
+	if int(upgrade_stacks.get("pulse_nova", 0)) > 0:
+		parts.append("新星 x%d" % int(upgrade_stacks.get("pulse_nova", 0)))
+	if int(upgrade_stacks.get("charged_volley", 0)) > 0:
+		parts.append("连射 x%d" % int(upgrade_stacks.get("charged_volley", 0)))
 	if chain_stacks > 0:
 		parts.append("连锁 x%d" % chain_stacks)
 	if orbit_stacks > 0:

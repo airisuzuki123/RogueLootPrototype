@@ -42,7 +42,17 @@ func _configure_visuals() -> void:
 	var trail_color := Color(0.45, 0.92, 1.0, 0.36)
 	var core_color := Color(1.0, 1.0, 1.0, 0.42)
 	var visual_scale := 1.0
-	if power_tags.has("overload"):
+	if power_tags.has("nova"):
+		projectile_color = Color(1.0, 0.68, 0.28, 1.0)
+		glow_color = Color(1.0, 0.4, 0.12, 0.3)
+		trail_color = Color(1.0, 0.56, 0.18, 0.44)
+		visual_scale += 0.16
+	elif power_tags.has("volley"):
+		projectile_color = Color(1.0, 0.93, 0.38, 1.0)
+		glow_color = Color(1.0, 0.78, 0.18, 0.3)
+		trail_color = Color(1.0, 0.86, 0.26, 0.44)
+		visual_scale += 0.12
+	elif power_tags.has("overload"):
 		projectile_color = Color(1.0, 0.46, 0.95, 1.0)
 		glow_color = Color(1.0, 0.24, 0.86, 0.28)
 		trail_color = Color(1.0, 0.34, 0.92, 0.42)

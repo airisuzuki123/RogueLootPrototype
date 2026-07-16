@@ -120,12 +120,14 @@ func take_event_damage(amount: int) -> int:
 		queue_free()
 	return old_health - health
 
-func apply_upgrade(upgrade_id: String) -> void:
+func apply_upgrade(upgrade_id: String) -> Dictionary:
 	_add_upgrade_stack(upgrade_id)
+	var result: Dictionary = {}
 	match upgrade_id:
 		"damage":
 			upgrade_damage_bonus += 5
 			projectile_damage += 5
+			result["damage_bonus"] = 5
 		"attack_speed":
 			upgrade_attack_speed_stacks += 1
 			base_fire_interval = max(0.18, base_fire_interval * 0.82)
@@ -153,8 +155,24 @@ func apply_upgrade(upgrade_id: String) -> void:
 			upgrade_pierce_bonus += 1
 		"blast_core":
 			upgrade_explosion_radius_bonus += 36.0
+			result["explosion_radius"] = 36
 		"graze_barrier":
 			apply_graze_shield(22, 4.0)
+			result["shield"] = 22
+		"clear_barrier":
+			result["cleared_projectiles"] = GameManager.clear_enemy_projectiles_from_upgrade()
+			apply_graze_shield(16, 3.5)
+			result["shield"] = 16
+			CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(0.38, 0.92, 1.0, 0.82), 1.8)
+		"pulse_nova":
+			upgrade_explosion_radius_bonus += 18.0
+			result["explosion_radius"] = 18
+			result["nova_projectiles"] = _fire_upgrade_nova()
+		"charged_volley":
+			upgrade_damage_bonus += 3
+			projectile_damage += 3
+			result["damage_bonus"] = 3
+			result["volley_projectiles"] = _fire_charged_volley()
 		"chain_spark":
 			chain_spark_stacks += 1
 		"orbit_blade":
@@ -172,6 +190,7 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"form_burst":
 			upgrade_explosion_radius_bonus += 28.0
 	_emit_build_summary()
+	return result
 
 func equip_weapon(new_weapon: Dictionary, old_weapon: Dictionary = {}) -> void:
 	equip_item(new_weapon, old_weapon)
@@ -396,6 +415,26 @@ func _fire_extra_skill_projectiles(base_direction: Vector2) -> void:
 		for index in range(bullet_count):
 			var angle := TAU * float(index) / float(bullet_count)
 			_spawn_player_projectile(Vector2.RIGHT.rotated(angle), 0.58, ["overload", "blast"])
+
+func _fire_upgrade_nova() -> int:
+	var bullet_count := 10
+	for index in range(bullet_count):
+		var angle := TAU * float(index) / float(bullet_count)
+		_spawn_player_projectile(Vector2.RIGHT.rotated(angle), 0.68, ["nova", "blast"])
+	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1.0, 0.72, 0.25, 0.85), 1.9)
+	return bullet_count
+
+func _fire_charged_volley() -> int:
+	var target := _find_nearest_enemy()
+	var base_direction := Vector2.RIGHT
+	if target != null:
+		base_direction = global_position.direction_to(target.global_position)
+	var bullet_count := 5
+	for index in range(bullet_count):
+		var offset_angle := deg_to_rad(float(index - 2) * 5.5)
+		_spawn_player_projectile(base_direction.rotated(offset_angle), 1.12, ["volley", "charged"])
+	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1.0, 0.93, 0.36, 0.82), 1.45)
+	return bullet_count
 
 func _emit_build_summary() -> void:
 	GameManager.update_player_build_summary({

@@ -537,6 +537,21 @@ const UPGRADE_POOL := [
 		"description": "立即获得 22 点短暂护盾"
 	},
 	{
+		"id": "clear_barrier",
+		"title": "清弹屏障",
+		"description": "立即清除敌弹，并获得短暂护盾"
+	},
+	{
+		"id": "pulse_nova",
+		"title": "脉冲新星",
+		"description": "立即释放一圈爆裂弹，并略微提升爆裂范围"
+	},
+	{
+		"id": "charged_volley",
+		"title": "充能连射",
+		"description": "立即向目标方向连射高亮弹，并提升少量伤害"
+	},
+	{
 		"id": "chain_spark",
 		"title": "连锁电弧",
 		"description": "每次攻击额外发射一枚自动偏转的连锁弹"
@@ -1108,7 +1123,16 @@ func apply_upgrade(choice_index: int) -> void:
 	pending_upgrade_choices.clear()
 	is_upgrade_pending = false
 	if player != null and player.has_method("apply_upgrade"):
-		player.apply_upgrade(upgrade["id"])
+		var result = player.apply_upgrade(upgrade["id"])
+		var result_dictionary: Dictionary = {}
+		if result is Dictionary:
+			result_dictionary = result
+		var result_text := _format_upgrade_result(result_dictionary)
+		var message := "选择强化：%s" % str(upgrade.get("title", "强化"))
+		if not result_text.is_empty():
+			message = "%s，%s" % [message, result_text]
+		_set_loot_message(message)
+		_set_milestone_message(message)
 
 func is_gameplay_paused() -> bool:
 	return is_upgrade_pending or is_equipment_choice_pending or is_inventory_open or is_shop_open or is_event_choice_open
@@ -1571,8 +1595,16 @@ func _apply_reward_bundle(source: Dictionary) -> String:
 		var cleared_projectiles := _clear_enemy_projectiles()
 		reward_parts.append("清除敌弹 %d" % cleared_projectiles)
 	if not reward_upgrade_id.is_empty() and player != null and player.has_method("apply_upgrade"):
-		player.apply_upgrade(reward_upgrade_id)
-		reward_parts.append("技能：%s" % str(source.get("reward_upgrade_title", _get_upgrade_title(reward_upgrade_id))))
+		var upgrade_result = player.apply_upgrade(reward_upgrade_id)
+		var upgrade_title := str(source.get("reward_upgrade_title", _get_upgrade_title(reward_upgrade_id)))
+		var upgrade_result_dictionary: Dictionary = {}
+		if upgrade_result is Dictionary:
+			upgrade_result_dictionary = upgrade_result
+		var upgrade_effect_text := _format_upgrade_result(upgrade_result_dictionary)
+		if upgrade_effect_text.is_empty():
+			reward_parts.append("技能：%s" % upgrade_title)
+		else:
+			reward_parts.append("技能：%s（%s）" % [upgrade_title, upgrade_effect_text])
 	if reward_equipment_count > 0:
 		var reward_level := maxi(1, level + get_current_phase_enemy_level_bonus() + int(source.get("reward_level_bonus", 0)))
 		var equipment_added := 0
@@ -1604,6 +1636,31 @@ func _clear_enemy_projectiles() -> int:
 		projectile.queue_free()
 		cleared_count += 1
 	return cleared_count
+
+func clear_enemy_projectiles_from_upgrade() -> int:
+	return _clear_enemy_projectiles()
+
+func _format_upgrade_result(result: Dictionary) -> String:
+	var parts: Array[String] = []
+	var cleared_projectiles := int(result.get("cleared_projectiles", 0))
+	var shield := int(result.get("shield", 0))
+	var nova_projectiles := int(result.get("nova_projectiles", 0))
+	var volley_projectiles := int(result.get("volley_projectiles", 0))
+	var damage_bonus := int(result.get("damage_bonus", 0))
+	var explosion_radius := int(result.get("explosion_radius", 0))
+	if cleared_projectiles > 0:
+		parts.append("清除敌弹 %d" % cleared_projectiles)
+	if shield > 0:
+		parts.append("护盾 +%d" % shield)
+	if nova_projectiles > 0:
+		parts.append("新星弹 %d" % nova_projectiles)
+	if volley_projectiles > 0:
+		parts.append("连射弹 %d" % volley_projectiles)
+	if damage_bonus > 0:
+		parts.append("伤害 +%d" % damage_bonus)
+	if explosion_radius > 0:
+		parts.append("爆裂 +%d" % explosion_radius)
+	return "，".join(parts)
 
 func _get_phase_index_for_time(elapsed_time: float) -> int:
 	var cursor := 0.0

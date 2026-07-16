@@ -185,8 +185,8 @@ func _build_ui() -> void:
 
 	shop_panel = PanelContainer.new()
 	shop_panel.visible = false
-	shop_panel.position = Vector2(360, 135)
-	shop_panel.custom_minimum_size = Vector2(560, 340)
+	shop_panel.position = Vector2(300, 70)
+	shop_panel.custom_minimum_size = Vector2(680, 560)
 	root.add_child(shop_panel)
 
 	var shop_root := VBoxContainer.new()
@@ -195,22 +195,33 @@ func _build_ui() -> void:
 
 	shop_title_label = Label.new()
 	shop_title_label.text = "商店"
+	shop_title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	shop_title_label.custom_minimum_size = Vector2(620, 0)
 	shop_root.add_child(shop_title_label)
+
+	var shop_offer_scroll := ScrollContainer.new()
+	shop_offer_scroll.custom_minimum_size = Vector2(620, 270)
+	shop_root.add_child(shop_offer_scroll)
 
 	shop_offer_list = VBoxContainer.new()
 	shop_offer_list.add_theme_constant_override("separation", 8)
-	shop_root.add_child(shop_offer_list)
+	shop_offer_scroll.add_child(shop_offer_list)
+
+	var shop_button_row := HBoxContainer.new()
+	shop_button_row.add_theme_constant_override("separation", 12)
+	shop_root.add_child(shop_button_row)
 
 	shop_refresh_button = Button.new()
-	shop_refresh_button.custom_minimum_size = Vector2(180, 40)
+	shop_refresh_button.text = "刷新商品"
+	shop_refresh_button.custom_minimum_size = Vector2(220, 44)
 	shop_refresh_button.pressed.connect(_on_shop_refresh_pressed)
-	shop_root.add_child(shop_refresh_button)
+	shop_button_row.add_child(shop_refresh_button)
 
 	var shop_close_button := Button.new()
-	shop_close_button.text = "离开商店"
-	shop_close_button.custom_minimum_size = Vector2(160, 40)
+	shop_close_button.text = "关闭商店"
+	shop_close_button.custom_minimum_size = Vector2(180, 44)
 	shop_close_button.pressed.connect(_on_shop_close_pressed)
-	shop_root.add_child(shop_close_button)
+	shop_button_row.add_child(shop_close_button)
 
 	event_choice_panel = PanelContainer.new()
 	event_choice_panel.visible = false

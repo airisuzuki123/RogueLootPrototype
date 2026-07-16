@@ -532,6 +532,21 @@ const UPGRADE_POOL := [
 		"id": "graze_barrier",
 		"title": "折光护盾",
 		"description": "立即获得 22 点短暂护盾"
+	},
+	{
+		"id": "chain_spark",
+		"title": "连锁电弧",
+		"description": "每次攻击额外发射一枚自动偏转的连锁弹"
+	},
+	{
+		"id": "orbit_blade",
+		"title": "回旋刃",
+		"description": "每次攻击额外向侧翼发射两枚回旋弹"
+	},
+	{
+		"id": "overload_burst",
+		"title": "过载爆发",
+		"description": "每 4 次攻击释放一圈爆裂弹"
 	}
 ]
 
@@ -1392,6 +1407,30 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "blast_core",
 			"reward_upgrade_title": "爆裂核心"
+		},
+		{
+			"id": "shop_chain_skill",
+			"title": "技能：连锁电弧",
+			"description": "每次攻击额外发射会偏转追敌的连锁弹",
+			"cost": 24 + completed_stage * 3,
+			"reward_upgrade_id": "chain_spark",
+			"reward_upgrade_title": "连锁电弧"
+		},
+		{
+			"id": "shop_orbit_skill",
+			"title": "技能：回旋刃",
+			"description": "每次攻击向侧翼追加两枚回旋弹",
+			"cost": 22 + completed_stage * 3,
+			"reward_upgrade_id": "orbit_blade",
+			"reward_upgrade_title": "回旋刃"
+		},
+		{
+			"id": "shop_overload_skill",
+			"title": "技能：过载爆发",
+			"description": "每 4 次攻击释放一圈爆裂弹",
+			"cost": 28 + completed_stage * 3,
+			"reward_upgrade_id": "overload_burst",
+			"reward_upgrade_title": "过载爆发"
 		}
 	]
 	if completed_stage >= 4:

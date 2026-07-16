@@ -1030,6 +1030,9 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 	var projectile_bonus := int(summary.get("upgrade_projectile_count_bonus", 0))
 	var pierce_bonus := int(summary.get("upgrade_pierce_bonus", 0))
 	var explosion_bonus := int(summary.get("upgrade_explosion_radius_bonus", 0))
+	var chain_stacks := int(summary.get("chain_spark_stacks", 0))
+	var orbit_stacks := int(summary.get("orbit_blade_stacks", 0))
+	var overload_stacks := int(summary.get("overload_burst_stacks", 0))
 	if damage_bonus > 0:
 		parts.append("强击 +%d" % damage_bonus)
 	if attack_speed_stacks > 0:
@@ -1042,6 +1045,12 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 		parts.append("爆裂 +%d" % explosion_bonus)
 	if int(upgrade_stacks.get("graze_barrier", 0)) > 0:
 		parts.append("折光 x%d" % int(upgrade_stacks.get("graze_barrier", 0)))
+	if chain_stacks > 0:
+		parts.append("连锁 x%d" % chain_stacks)
+	if orbit_stacks > 0:
+		parts.append("回旋 x%d" % orbit_stacks)
+	if overload_stacks > 0:
+		parts.append("过载 x%d" % overload_stacks)
 	return parts
 
 func _format_event_choice_result(choice: Dictionary) -> String:

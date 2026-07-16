@@ -41,6 +41,10 @@ var upgrade_attack_speed_stacks: int = 0
 var upgrade_projectile_count_bonus: int = 0
 var upgrade_pierce_bonus: int = 0
 var upgrade_explosion_radius_bonus: float = 0.0
+var chain_spark_stacks: int = 0
+var orbit_blade_stacks: int = 0
+var overload_burst_stacks: int = 0
+var attack_sequence: int = 0
 var upgrade_stacks := {}
 @onready var visual: Polygon2D = $Visual
 @onready var hit_core: Polygon2D = $HitCore
@@ -151,6 +155,12 @@ func apply_upgrade(upgrade_id: String) -> void:
 			upgrade_explosion_radius_bonus += 36.0
 		"graze_barrier":
 			apply_graze_shield(22, 4.0)
+		"chain_spark":
+			chain_spark_stacks += 1
+		"orbit_blade":
+			orbit_blade_stacks += 1
+		"overload_burst":
+			overload_burst_stacks += 1
 		"form_focused":
 			upgrade_damage_bonus += 8
 			projectile_damage += 8
@@ -192,22 +202,13 @@ func _update_auto_attack(delta: float) -> void:
 	if target == null:
 		return
 	fire_cooldown = fire_interval
+	attack_sequence += 1
 	var base_direction: Vector2 = global_position.direction_to(target.global_position)
 	var total_projectiles := _get_total_projectile_count()
 	for index in range(total_projectiles):
-		var projectile := PROJECTILE_SCENE.instantiate()
 		var spread: float = deg_to_rad(equipment_spread_degrees * (index - (total_projectiles - 1) / 2.0))
-		projectile.global_position = global_position
-		projectile.direction = base_direction.rotated(spread)
-		projectile.damage = _roll_projectile_damage()
-		projectile.is_critical = projectile.damage > _get_base_projectile_damage()
-		projectile.pierce_remaining = _get_total_pierce()
-		projectile.explosion_radius = _get_total_explosion_radius()
-		projectile.explosion_damage = int(round(float(projectile.damage) * _get_total_explosion_damage_ratio()))
-		projectile.power_tags = _get_projectile_power_tags(projectile)
-		projectile.source_player = self
-		projectile.life_steal_percent = equipment_life_steal_bonus
-		get_tree().current_scene.add_child(projectile)
+		_spawn_player_projectile(base_direction.rotated(spread), 1.0, [])
+	_fire_extra_skill_projectiles(base_direction)
 
 func _find_nearest_enemy() -> Node2D:
 	var nearest: Node2D = null
@@ -360,6 +361,42 @@ func _get_projectile_power_tags(projectile: Node) -> Array[String]:
 		tags.append("charged")
 	return tags
 
+func _spawn_player_projectile(direction: Vector2, damage_multiplier: float = 1.0, extra_tags: Array[String] = []) -> void:
+	var projectile := PROJECTILE_SCENE.instantiate()
+	projectile.global_position = global_position
+	projectile.direction = direction.normalized()
+	projectile.damage = maxi(1, int(round(float(_roll_projectile_damage()) * damage_multiplier)))
+	projectile.is_critical = projectile.damage > int(round(float(_get_base_projectile_damage()) * damage_multiplier))
+	projectile.pierce_remaining = _get_total_pierce()
+	projectile.explosion_radius = _get_total_explosion_radius()
+	if extra_tags.has("overload") and projectile.explosion_radius <= 0.0:
+		projectile.explosion_radius = 56.0 + float(overload_burst_stacks) * 8.0
+	projectile.explosion_damage = int(round(float(projectile.damage) * _get_total_explosion_damage_ratio()))
+	if extra_tags.has("overload") and projectile.explosion_damage <= 0:
+		projectile.explosion_damage = maxi(1, int(round(float(projectile.damage) * 0.35)))
+	projectile.source_player = self
+	projectile.life_steal_percent = equipment_life_steal_bonus
+	projectile.power_tags = _get_projectile_power_tags(projectile)
+	for tag in extra_tags:
+		if not projectile.power_tags.has(tag):
+			projectile.power_tags.append(tag)
+	get_tree().current_scene.add_child(projectile)
+
+func _fire_extra_skill_projectiles(base_direction: Vector2) -> void:
+	for index in range(mini(chain_spark_stacks, 3)):
+		var angle := deg_to_rad(18.0 + float(index) * 10.0)
+		var side := -1.0 if index % 2 == 0 else 1.0
+		_spawn_player_projectile(base_direction.rotated(angle * side), 0.72, ["chain"])
+	for index in range(mini(orbit_blade_stacks, 3)):
+		var side_angle := deg_to_rad(82.0 + float(index) * 8.0)
+		_spawn_player_projectile(base_direction.rotated(side_angle), 0.62, ["orbit"])
+		_spawn_player_projectile(base_direction.rotated(-side_angle), 0.62, ["orbit"])
+	if overload_burst_stacks > 0 and attack_sequence % 4 == 0:
+		var bullet_count := mini(12, 6 + overload_burst_stacks * 2)
+		for index in range(bullet_count):
+			var angle := TAU * float(index) / float(bullet_count)
+			_spawn_player_projectile(Vector2.RIGHT.rotated(angle), 0.58, ["overload", "blast"])
+
 func _emit_build_summary() -> void:
 	GameManager.update_player_build_summary({
 		"damage": _get_base_projectile_damage(),
@@ -375,6 +412,9 @@ func _emit_build_summary() -> void:
 		"upgrade_projectile_count_bonus": upgrade_projectile_count_bonus,
 		"upgrade_pierce_bonus": upgrade_pierce_bonus,
 		"upgrade_explosion_radius_bonus": int(round(upgrade_explosion_radius_bonus)),
+		"chain_spark_stacks": chain_spark_stacks,
+		"orbit_blade_stacks": orbit_blade_stacks,
+		"overload_burst_stacks": overload_burst_stacks,
 		"upgrade_stacks": upgrade_stacks.duplicate(true)
 	})
 

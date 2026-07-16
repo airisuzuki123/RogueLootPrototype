@@ -42,11 +42,26 @@ func _configure_visuals() -> void:
 	var trail_color := Color(0.45, 0.92, 1.0, 0.36)
 	var core_color := Color(1.0, 1.0, 1.0, 0.42)
 	var visual_scale := 1.0
-	if power_tags.has("blast"):
+	if power_tags.has("overload"):
+		projectile_color = Color(1.0, 0.46, 0.95, 1.0)
+		glow_color = Color(1.0, 0.24, 0.86, 0.28)
+		trail_color = Color(1.0, 0.34, 0.92, 0.42)
+		visual_scale += 0.14
+	elif power_tags.has("blast"):
 		projectile_color = Color(1.0, 0.78, 0.38, 1.0)
 		glow_color = Color(1.0, 0.48, 0.18, 0.24)
 		trail_color = Color(1.0, 0.62, 0.22, 0.38)
 		visual_scale += 0.12
+	elif power_tags.has("chain"):
+		projectile_color = Color(0.55, 0.86, 1.0, 1.0)
+		glow_color = Color(0.32, 0.62, 1.0, 0.27)
+		trail_color = Color(0.38, 0.72, 1.0, 0.42)
+		visual_scale += 0.08
+	elif power_tags.has("orbit"):
+		projectile_color = Color(0.72, 0.56, 1.0, 1.0)
+		glow_color = Color(0.62, 0.34, 1.0, 0.26)
+		trail_color = Color(0.74, 0.46, 1.0, 0.38)
+		visual_scale += 0.06
 	elif power_tags.has("pierce"):
 		projectile_color = Color(0.48, 1.0, 0.72, 1.0)
 		glow_color = Color(0.25, 1.0, 0.62, 0.24)

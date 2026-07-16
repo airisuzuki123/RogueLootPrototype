@@ -459,10 +459,12 @@ func _on_build_summary_changed(summary: Dictionary) -> void:
 	var attack_interval := float(summary.get("attack_interval", 0.0))
 	var attacks_per_second := 0.0 if attack_interval <= 0.0 else 1.0 / attack_interval
 	var player_size_bonus := int(summary.get("player_size_bonus", 0))
+	var flow_damage_bonus := int(summary.get("flow_damage_bonus_percent", 0))
 	var stationary_critical_bonus := int(summary.get("stationary_critical_bonus", 0))
 	var lines: Array[String] = []
-	lines.append("构筑：伤害 %d | 弹体 %d | 穿透 %d | 爆裂 %d | 玩家体积 +%d%%" % [
+	lines.append("构筑：伤害 %d | 联动伤害 +%d%% | 弹体 %d | 穿透 %d | 爆裂 %d | 玩家体积 +%d%%" % [
 		int(summary.get("damage", 0)),
+		flow_damage_bonus,
 		int(summary.get("projectiles", 0)),
 		int(summary.get("pierce", 0)),
 		int(summary.get("explosion_radius", 0)),
@@ -1167,6 +1169,8 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 	var explosion_bonus := int(summary.get("upgrade_explosion_radius_bonus", 0))
 	var mass_stacks := int(summary.get("mass_resonance_stacks", 0))
 	var slow_stacks := int(summary.get("slow_resonance_stacks", 0))
+	var mass_damage_bonus := int(summary.get("mass_damage_bonus_percent", 0))
+	var slow_damage_bonus := int(summary.get("slow_damage_bonus_percent", 0))
 	var still_stacks := int(summary.get("still_focus_stacks", 0))
 	var chain_stacks := int(summary.get("chain_spark_stacks", 0))
 	var orbit_stacks := int(summary.get("orbit_blade_stacks", 0))
@@ -1187,9 +1191,9 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 	if explosion_bonus > 0:
 		parts.append("爆裂 +%d" % explosion_bonus)
 	if mass_stacks > 0:
-		parts.append("体积共鸣 x%d" % mass_stacks)
+		parts.append("体积共鸣 x%d/+%d%%" % [mass_stacks, mass_damage_bonus])
 	if slow_stacks > 0:
-		parts.append("迟缓共鸣 x%d" % slow_stacks)
+		parts.append("迟缓共鸣 x%d/+%d%%" % [slow_stacks, slow_damage_bonus])
 	if still_stacks > 0:
 		parts.append("静立 x%d" % still_stacks)
 	if int(upgrade_stacks.get("graze_barrier", 0)) > 0:
@@ -1243,6 +1247,7 @@ func _build_reward_parts(source: Dictionary) -> Array[String]:
 	var reward_experience := maxi(0, int(source.get("reward_experience", 0)))
 	var reward_heal := maxi(0, int(source.get("reward_heal", 0)))
 	var reward_graze_shield := maxi(0, int(source.get("reward_graze_shield", 0)))
+	var reward_graze_shield_duration := float(source.get("reward_graze_shield_duration", 0.0))
 	var reward_equipment_count := maxi(0, int(source.get("reward_equipment_count", 0)))
 	var reward_upgrade_title := str(source.get("reward_upgrade_title", ""))
 	if reward_gold > 0:
@@ -1252,7 +1257,10 @@ func _build_reward_parts(source: Dictionary) -> Array[String]:
 	if reward_heal > 0:
 		parts.append("生命 +%d" % reward_heal)
 	if reward_graze_shield > 0:
-		parts.append("护盾 +%d" % reward_graze_shield)
+		if reward_graze_shield_duration > 0.0:
+			parts.append("护盾 +%d，持续 %.1f 秒" % [reward_graze_shield, reward_graze_shield_duration])
+		else:
+			parts.append("护盾 +%d" % reward_graze_shield)
 	if bool(source.get("reward_clear_projectiles", false)):
 		parts.append("清除敌弹")
 	if reward_equipment_count > 0:

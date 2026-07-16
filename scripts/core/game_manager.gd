@@ -494,7 +494,7 @@ const UPGRADE_POOL := [
 	{
 		"id": "attack_speed",
 		"title": "快速施放",
-		"description": "射击间隔缩短 18%"
+		"description": "射击间隔 -18%"
 	},
 	{
 		"id": "move_speed",
@@ -524,22 +524,22 @@ const UPGRADE_POOL := [
 	{
 		"id": "multishot",
 		"title": "分裂射击",
-		"description": "每次攻击投射物 +1，玩家体积更大，移动更慢"
+		"description": "投射物 +1，玩家体积 +20%（最高 +90%），当前移速 -30%（最低 120）"
 	},
 	{
 		"id": "mass_resonance",
 		"title": "体积共鸣",
-		"description": "投射物越大，伤害越高"
+		"description": "每层：玩家体积每 +10%，投射物伤害 +6%，每层上限 +30%"
 	},
 	{
 		"id": "slow_resonance",
 		"title": "迟缓共鸣",
-		"description": "移动越慢，投射物伤害越高"
+		"description": "每层：当前移速每低于初始值 10%，投射物伤害 +8%，每层上限 +40%"
 	},
 	{
 		"id": "still_focus",
 		"title": "静立聚焦",
-		"description": "静止时逐步提高暴击率"
+		"description": "每层：静止每 0.7 秒暴击率 +8%，每层上限 +32%；移动每秒失去 1 层"
 	},
 	{
 		"id": "piercing_rounds",
@@ -549,57 +549,57 @@ const UPGRADE_POOL := [
 	{
 		"id": "blast_core",
 		"title": "爆裂核心",
-		"description": "投射物命中时获得爆裂范围"
+		"description": "爆裂范围 +36，玩家体积 +10%（最高 +90%）"
 	},
 	{
 		"id": "graze_barrier",
 		"title": "折光护盾",
-		"description": "立即获得 22 点短暂护盾"
+		"description": "护盾 +22，持续 4 秒"
 	},
 	{
 		"id": "clear_barrier",
 		"title": "清弹屏障",
-		"description": "立即清除敌弹，并获得短暂护盾"
+		"description": "立即清除敌弹，护盾 +16，持续 3.5 秒"
 	},
 	{
 		"id": "chain_spark",
 		"title": "连锁电弧",
-		"description": "每次攻击额外发射一枚自动偏转的连锁弹"
+		"description": "每次攻击连锁弹 +1，最多 3 枚；单枚伤害 66%，超出后每层伤害 +6%"
 	},
 	{
 		"id": "orbit_blade",
 		"title": "回旋刃",
-		"description": "每次攻击额外向侧翼发射两枚回旋弹"
+		"description": "每次攻击两侧回旋弹各 +1，最多各 3 枚；单枚伤害 54%，超出后每层伤害 +8%"
 	},
 	{
 		"id": "overload_burst",
 		"title": "过载爆发",
-		"description": "每 4 次攻击释放一圈爆裂弹"
+		"description": "每 4 次攻击释放 8 枚爆裂弹，每层 +2 枚，上限 12 枚"
 	},
 	{
 		"id": "homing_shards",
 		"title": "寻迹碎片",
-		"description": "每次攻击额外发射会轻微追踪敌人的碎片"
+		"description": "每次攻击追踪碎片 +1，最多 3 枚；单枚伤害 56%，超出后每层伤害 +8%"
 	},
 	{
 		"id": "heavy_shot",
 		"title": "重压弹芯",
-		"description": "每 3 次攻击发射一枚慢速重弹，伤害和击退更高"
+		"description": "每 3 次攻击发射 1 枚重弹，伤害 +2，击退 +45%，玩家体积 +6%（最高 +90%）"
 	},
 	{
 		"id": "close_slash",
 		"title": "近身刀环",
-		"description": "周期性斩击主角周围近距离敌人"
+		"description": "每 1.18 秒斩击半径 85；每层半径 +13，冷却 -0.09 秒，最低 0.48 秒"
 	},
 	{
 		"id": "pulse_field",
 		"title": "脉冲场",
-		"description": "周期性释放以主角为中心的范围脉冲"
+		"description": "每 2.25 秒释放半径 110 脉冲；每层半径 +14，冷却 -0.12 秒，最低 1.15 秒"
 	},
 	{
 		"id": "channel_beam",
 		"title": "引导光束",
-		"description": "持续锁定最近敌人造成小额连续伤害"
+		"description": "每 0.32 秒对 330 范围内最近敌人造成 24% 投射物伤害；每层射程 +28、伤害 +4.5%、间隔 -0.025 秒"
 	}
 ]
 
@@ -1535,7 +1535,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_shield",
 			"title": "折光护盾",
 			"category": "生存",
-			"description": "获得 24 点短暂护盾",
+			"description": "护盾 +24，持续 4 秒",
 			"cost": 14 + completed_stage * 2,
 			"reward_graze_shield": 24,
 			"reward_graze_shield_duration": 4.0
@@ -1546,7 +1546,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_prep_barrier",
 			"title": "预备屏障",
 			"category": "生存",
-			"description": "下一关压力较高，获得更厚的短暂护盾",
+			"description": "护盾 +34，持续 5 秒",
 			"cost": 18 + completed_stage * 2,
 			"reward_graze_shield": 34,
 			"reward_graze_shield_duration": 5.0
@@ -1567,7 +1567,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_boss_equipment",
 			"title": "决战装备",
 			"category": "装备",
-			"description": "获得 1 件更高等级装备，用于准备特殊关卡",
+			"description": "获得 1 件当前等级 +3 的装备",
 			"cost": 28 + completed_stage * 3,
 			"reward_equipment_count": 1,
 			"reward_level_bonus": 3
@@ -1586,7 +1586,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_attack_speed_skill",
 			"title": "技能：急速施放",
 			"category": "基础技能",
-			"description": "射击间隔缩短，提升所有投射组合频率",
+			"description": "射击间隔 -18%",
 			"cost": 18 + completed_stage * 2,
 			"reward_upgrade_id": "attack_speed",
 			"reward_upgrade_title": "急速施放"
@@ -1595,7 +1595,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_multishot_skill",
 			"title": "技能：分裂射击",
 			"category": "基础技能",
-			"description": "投射物 +1，玩家体积更大但移动更慢，适合体积和迟缓联动",
+			"description": "投射物 +1，玩家体积 +20%（最高 +90%），当前移速 -30%（最低 120）",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "multishot",
 			"reward_upgrade_title": "分裂射击"
@@ -1604,7 +1604,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_mass_resonance_skill",
 			"title": "技能：体积共鸣",
 			"category": "基础技能",
-			"description": "投射物越大，伤害越高，适合分裂和重弹",
+			"description": "每层：玩家体积每 +10%，投射物伤害 +6%，每层上限 +30%",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "mass_resonance",
 			"reward_upgrade_title": "体积共鸣"
@@ -1613,7 +1613,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_slow_resonance_skill",
 			"title": "技能：迟缓共鸣",
 			"category": "基础技能",
-			"description": "移动越慢，投射物伤害越高，适合重火力站桩",
+			"description": "每层：当前移速每低于初始值 10%，投射物伤害 +8%，每层上限 +40%",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "slow_resonance",
 			"reward_upgrade_title": "迟缓共鸣"
@@ -1622,7 +1622,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_still_focus_skill",
 			"title": "技能：静立聚焦",
 			"category": "基础技能",
-			"description": "静止时逐步提高暴击率，移动后衰减",
+			"description": "每层：静止每 0.7 秒暴击率 +8%，每层上限 +32%；移动每秒失去 1 层",
 			"cost": 20 + completed_stage * 3,
 			"reward_upgrade_id": "still_focus",
 			"reward_upgrade_title": "静立聚焦"
@@ -1637,22 +1637,12 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"reward_upgrade_title": "穿透弹芯"
 		}
 	]
-	if is_elite_prep or is_boss_prep or is_final_prep:
-		core_skill_pool.append({
-			"id": "shop_prep_volley_skill",
-			"title": "技能：充能连射",
-			"category": "基础技能",
-			"description": "立即连射并提升少量伤害，适合精英和 Boss 前爆发",
-			"cost": 24 + completed_stage * 3,
-			"reward_upgrade_id": "charged_volley",
-			"reward_upgrade_title": "充能连射"
-		})
 	var shape_skill_pool: Array[Dictionary] = [
 		{
 			"id": "shop_blast_skill",
 			"title": "技能：爆裂核心",
 			"category": "形态技能",
-			"description": "命中时产生范围爆裂，适合聚怪清场",
+			"description": "爆裂范围 +36，玩家体积 +10%（最高 +90%）",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "blast_core",
 			"reward_upgrade_title": "爆裂核心"
@@ -1661,7 +1651,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_chain_skill",
 			"title": "技能：连锁电弧",
 			"category": "形态技能",
-			"description": "每次攻击额外发射会偏转追敌的连锁弹",
+			"description": "每次攻击连锁弹 +1，最多 3 枚；单枚伤害 66%，超出后每层伤害 +6%",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "chain_spark",
 			"reward_upgrade_title": "连锁电弧"
@@ -1670,7 +1660,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_orbit_skill",
 			"title": "技能：回旋刃",
 			"category": "形态技能",
-			"description": "每次攻击向侧翼追加两枚回旋弹",
+			"description": "每次攻击两侧回旋弹各 +1，最多各 3 枚；单枚伤害 54%，超出后每层伤害 +8%",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "orbit_blade",
 			"reward_upgrade_title": "回旋刃"
@@ -1679,7 +1669,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_overload_skill",
 			"title": "技能：过载爆发",
 			"category": "形态技能",
-			"description": "每 4 次攻击释放一圈爆裂弹",
+			"description": "每 4 次攻击释放 8 枚爆裂弹，每层 +2 枚，上限 12 枚",
 			"cost": 28 + completed_stage * 3,
 			"reward_upgrade_id": "overload_burst",
 			"reward_upgrade_title": "过载爆发"
@@ -1688,7 +1678,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_homing_skill",
 			"title": "技能：寻迹碎片",
 			"category": "形态技能",
-			"description": "每次攻击追加轻微追踪弹，适合补足漏怪",
+			"description": "每次攻击追踪碎片 +1，最多 3 枚；单枚伤害 56%，超出后每层伤害 +8%",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "homing_shards",
 			"reward_upgrade_title": "寻迹碎片"
@@ -1697,7 +1687,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_heavy_skill",
 			"title": "技能：重压弹芯",
 			"category": "形态技能",
-			"description": "周期发射慢速重弹，提升单点伤害和击退",
+			"description": "每 3 次攻击发射 1 枚重弹，伤害 +2，击退 +45%，玩家体积 +6%（最高 +90%）",
 			"cost": 26 + completed_stage * 3,
 			"reward_upgrade_id": "heavy_shot",
 			"reward_upgrade_title": "重压弹芯"
@@ -1706,7 +1696,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_close_slash_skill",
 			"title": "技能：近身刀环",
 			"category": "身法技能",
-			"description": "周期斩击主角周围敌人，缓解贴脸压力",
+			"description": "每 1.18 秒斩击半径 85；每层半径 +13，冷却 -0.09 秒，最低 0.48 秒",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "close_slash",
 			"reward_upgrade_title": "近身刀环"
@@ -1715,7 +1705,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_pulse_field_skill",
 			"title": "技能：脉冲场",
 			"category": "身法技能",
-			"description": "周期释放中心脉冲，击退并伤害周围敌人",
+			"description": "每 2.25 秒释放半径 110 脉冲；每层半径 +14，冷却 -0.12 秒，最低 1.15 秒",
 			"cost": 25 + completed_stage * 3,
 			"reward_upgrade_id": "pulse_field",
 			"reward_upgrade_title": "脉冲场"
@@ -1724,28 +1714,18 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_channel_beam_skill",
 			"title": "技能：引导光束",
 			"category": "身法技能",
-			"description": "持续锁定最近敌人造成连续伤害",
+			"description": "每 0.32 秒对 330 范围内最近敌人造成 24% 投射物伤害；每层射程 +28、伤害 +4.5%、间隔 -0.025 秒",
 			"cost": 28 + completed_stage * 3,
 			"reward_upgrade_id": "channel_beam",
 			"reward_upgrade_title": "引导光束"
 		}
 	]
-	if is_boss_prep or is_final_prep:
-		shape_skill_pool.append({
-			"id": "shop_prep_nova_skill",
-			"title": "技能：脉冲新星",
-			"category": "形态技能",
-			"description": "立即释放环形爆裂弹，并提升爆裂范围",
-			"cost": 26 + completed_stage * 3,
-			"reward_upgrade_id": "pulse_nova",
-			"reward_upgrade_title": "脉冲新星"
-		})
 	if completed_stage >= 4:
 		gear_pool.append({
 			"id": "shop_clear",
 			"title": "清场符标",
 			"category": "工具",
-			"description": "清除敌弹并恢复少量生命",
+			"description": "立即清除敌弹，生命 +12",
 			"cost": 20 + completed_stage * 2,
 			"reward_heal": 12,
 			"reward_clear_projectiles": true
@@ -1755,7 +1735,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_boss_clear",
 			"title": "净场符标",
 			"category": "工具",
-			"description": "进入高压关前清除敌弹并获得短暂护盾",
+			"description": "立即清除敌弹，护盾 +18，持续 4 秒",
 			"cost": 24 + completed_stage * 2,
 			"reward_graze_shield": 18,
 			"reward_graze_shield_duration": 4.0,
@@ -1766,8 +1746,8 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 	var survival_preferred_chance := 0.92 if survival_preferred_id == "shop_shield" else 0.65
 	offers.append(_roll_stage_shop_offer(survival_pool, survival_preferred_id, survival_preferred_chance))
 	offers.append(_roll_stage_shop_offer(gear_pool, "shop_boss_clear" if is_boss_prep or is_final_prep else ""))
-	offers.append(_roll_stage_shop_offer(core_skill_pool, "shop_prep_volley_skill" if is_elite_prep or is_boss_prep or is_final_prep else ""))
-	offers.append(_roll_stage_shop_offer(shape_skill_pool, "shop_prep_nova_skill" if is_boss_prep or is_final_prep else ""))
+	offers.append(_roll_stage_shop_offer(core_skill_pool, "shop_still_focus_skill" if is_elite_prep or is_boss_prep or is_final_prep else ""))
+	offers.append(_roll_stage_shop_offer(shape_skill_pool, "shop_overload_skill" if is_boss_prep or is_final_prep else ""))
 	return offers
 
 func _get_survival_preferred_shop_offer(is_high_pressure_prep: bool) -> String:
@@ -1825,15 +1805,15 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 		"damage":
 			return "本层伤害 +5，购买后强击层数 %d" % next_stack
 		"attack_speed":
-			return "本层射击间隔缩短 18%，购买后急速层数 %d" % next_stack
+			return "本层射击间隔 -18%，购买后急速层数 %d" % next_stack
 		"multishot":
-			return "本层弹体 +1、玩家体积 +18%、移速 -18，购买后分裂层数 %d" % next_stack
+			return "本层投射物 +1，玩家体积 +20%（最高 +90%），当前移速 -30%（最低 120）；购买后分裂层数 %d" % next_stack
 		"mass_resonance":
-			return "购买后玩家体积越大，伤害收益越高"
+			return "每层：玩家体积每 +10%，投射物伤害 +6%，每层上限 +30%；购买后体积共鸣层数 %d" % next_stack
 		"slow_resonance":
-			return "购买后移动速度越低，投射物伤害越高"
+			return "每层：当前移速每低于初始值 10%，投射物伤害 +8%，每层上限 +40%；购买后迟缓共鸣层数 %d" % next_stack
 		"still_focus":
-			return "购买后静止时暴击率逐步提高，移动后衰减"
+			return "每层：静止每 0.7 秒暴击率 +8%，每层上限 +32%；移动每秒失去 1 层；购买后静立层数 %d" % next_stack
 		"piercing_rounds":
 			return "本层穿透 +1，购买后穿透层数 %d" % next_stack
 		"blast_core":
@@ -1844,34 +1824,38 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 			return "立即释放 10 枚新星弹，并永久爆裂范围 +18"
 		"chain_spark":
 			if next_stack <= 3:
-				return "购买后每次攻击追加 %d 枚连锁弹" % next_stack
-			return "连锁弹数量已达 3 枚，继续提高伤害、寿命和击退"
+				return "购买后每次攻击追加 %d 枚连锁弹，单枚伤害 %d%%" % [next_stack, 66 + (next_stack - 1) * 6]
+			return "连锁弹数量 3 枚；本层单枚伤害 +6%，寿命 +0.08 秒，击退 +4%"
 		"orbit_blade":
 			if next_stack <= 3:
-				return "购买后每次攻击向两侧各追加 %d 枚回旋弹" % next_stack
-			return "回旋弹数量已达上限，继续提高伤害、寿命和击退"
+				return "购买后每次攻击两侧各追加 %d 枚回旋弹，单枚伤害 %d%%" % [next_stack, 54 + (next_stack - 1) * 8]
+			return "回旋弹数量两侧各 3 枚；本层单枚伤害 +8%，寿命 +0.08 秒，击退 +5%"
 		"overload_burst":
-			return "购买后每 4 次攻击释放 %d 枚环形爆裂弹" % mini(12, 6 + next_stack * 2)
+			return "购买后每 4 次攻击释放 %d 枚爆裂弹，单枚伤害 %d%%" % [
+				mini(12, 6 + next_stack * 2),
+				50 + next_stack * 8
+			]
 		"homing_shards":
 			if next_stack <= 3:
-				return "购买后每次攻击追加 %d 枚追踪碎片" % next_stack
-			return "追踪碎片数量已达 3 枚，继续提高追踪强度和伤害"
+				return "购买后每次攻击追加 %d 枚追踪碎片，单枚伤害 %d%%" % [next_stack, 56 + (next_stack - 1) * 8]
+			return "追踪碎片数量 3 枚；本层单枚伤害 +8%，追踪强度 +0.65"
 		"heavy_shot":
-			return "每 3 次攻击发射重弹，本层继续提高伤害和击退"
+			return "本层伤害 +2、玩家体积 +6%（最高 +90%）；每 3 次攻击发射 1 枚重弹，击退 +45%"
 		"close_slash":
-			return "购买后刀环半径约 %d，冷却约 %.1f 秒" % [
+			return "购买后刀环半径 %d，冷却 %.2f 秒" % [
 				int(round(72.0 + float(next_stack) * 13.0)),
 				maxf(0.48, 1.18 - float(next_stack) * 0.09)
 			]
 		"pulse_field":
-			return "购买后脉冲半径约 %d，冷却约 %.1f 秒" % [
+			return "购买后脉冲半径 %d，冷却 %.2f 秒" % [
 				int(round(96.0 + float(next_stack) * 14.0)),
 				maxf(1.15, 2.25 - float(next_stack) * 0.12)
 			]
 		"channel_beam":
-			return "购买后光束射程约 %d，跳伤间隔约 %.2f 秒" % [
+			return "购买后光束射程 %d，跳伤间隔 %.2f 秒，单跳伤害 %.1f%% 投射物伤害" % [
 				int(round(330.0 + float(next_stack) * 28.0)),
-				maxf(0.12, 0.32 - float(next_stack) * 0.025)
+				maxf(0.12, 0.32 - float(next_stack) * 0.025),
+				(0.24 + float(next_stack) * 0.045) * 100.0
 			]
 	return ""
 
@@ -1933,7 +1917,7 @@ func _apply_reward_bundle(source: Dictionary) -> String:
 	if reward_graze_shield > 0 and player != null and player.has_method("apply_graze_shield"):
 		var shield_duration := maxf(0.1, float(source.get("reward_graze_shield_duration", GRAZE_REWARD_SHIELD_DURATION)))
 		player.apply_graze_shield(reward_graze_shield, shield_duration)
-		reward_parts.append("护盾 +%d" % reward_graze_shield)
+		reward_parts.append("护盾 +%d，持续 %.1f 秒" % [reward_graze_shield, shield_duration])
 	if bool(source.get("reward_clear_projectiles", false)):
 		var cleared_projectiles := _clear_enemy_projectiles()
 		reward_parts.append("清除敌弹 %d" % cleared_projectiles)
@@ -1997,6 +1981,7 @@ func _format_upgrade_result(result: Dictionary) -> String:
 	var volley_projectiles := int(result.get("volley_projectiles", 0))
 	var damage_bonus := int(result.get("damage_bonus", 0))
 	var attack_speed_percent := int(result.get("attack_speed_percent", 0))
+	var shield_duration := float(result.get("shield_duration", 0.0))
 	var move_speed_bonus := int(result.get("move_speed_bonus", 0))
 	var max_health_bonus := int(result.get("max_health_bonus", 0))
 	var heal := int(result.get("heal", 0))
@@ -2005,7 +1990,10 @@ func _format_upgrade_result(result: Dictionary) -> String:
 	if cleared_projectiles > 0:
 		parts.append("清除敌弹 %d" % cleared_projectiles)
 	if shield > 0:
-		parts.append("护盾 +%d" % shield)
+		if shield_duration > 0.0:
+			parts.append("护盾 +%d，持续 %.1f 秒" % [shield, shield_duration])
+		else:
+			parts.append("护盾 +%d" % shield)
 	if nova_projectiles > 0:
 		parts.append("新星弹 %d" % nova_projectiles)
 	if volley_projectiles > 0:
@@ -2013,7 +2001,7 @@ func _format_upgrade_result(result: Dictionary) -> String:
 	if damage_bonus > 0:
 		parts.append("伤害 +%d" % damage_bonus)
 	if attack_speed_percent > 0:
-		parts.append("攻速 +%d%%" % attack_speed_percent)
+		parts.append("射击间隔 -%d%%" % attack_speed_percent)
 	if move_speed_bonus > 0:
 		parts.append("移速 +%d" % move_speed_bonus)
 	if max_health_bonus > 0:

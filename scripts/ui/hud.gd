@@ -578,14 +578,15 @@ func _refresh_shop_panel() -> void:
 		var button := Button.new()
 		var cost := maxi(0, int(offer.get("cost", 0)))
 		var sold := bool(offer.get("sold", false))
+		var reward_text := _format_shop_offer_reward(offer)
 		button.text = "【%s】%s%s\n价格：%d 金币\n%s" % [
 			str(offer.get("category", "商品")),
 			str(offer.get("title", "商品")),
 			"（已购买）" if sold else "",
 			cost,
-			_format_shop_offer_reward(offer)
+			reward_text
 		]
-		button.custom_minimum_size = Vector2(520, 68)
+		button.custom_minimum_size = Vector2(520, 116)
 		button.disabled = sold or GameManager.gold < cost
 		button.pressed.connect(_on_shop_offer_pressed.bind(index))
 		shop_offer_list.add_child(button)
@@ -1135,14 +1136,22 @@ func _format_stage_event_reward(event: Dictionary) -> String:
 	return _format_reward_parts(event, "无")
 
 func _format_shop_offer_reward(offer: Dictionary) -> String:
-	var parts: Array[String] = []
+	var lines: Array[String] = []
 	var description := str(offer.get("description", ""))
 	if not description.is_empty():
-		parts.append(description)
-	parts.append_array(_build_reward_parts(offer))
-	if parts.is_empty():
+		lines.append(description)
+	var stack_preview := str(offer.get("stack_preview", ""))
+	if not stack_preview.is_empty():
+		lines.append(stack_preview)
+	var purchase_preview := str(offer.get("purchase_preview", ""))
+	if not purchase_preview.is_empty():
+		lines.append(purchase_preview)
+	var reward_parts := _build_reward_parts(offer)
+	if not reward_parts.is_empty():
+		lines.append("奖励：" + "，".join(reward_parts))
+	if lines.is_empty():
 		return "无直接奖励"
-	return "，".join(parts)
+	return "\n".join(lines)
 
 func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 	var parts: Array[String] = []

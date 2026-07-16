@@ -1730,11 +1730,22 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"reward_clear_projectiles": true
 		})
 	var offers: Array[Dictionary] = []
-	offers.append(_roll_stage_shop_offer(survival_pool, "shop_prep_barrier" if is_elite_prep or is_boss_prep or is_final_prep else ""))
+	var survival_preferred_id := _get_survival_preferred_shop_offer(is_elite_prep or is_boss_prep or is_final_prep)
+	var survival_preferred_chance := 0.92 if survival_preferred_id == "shop_shield" else 0.65
+	offers.append(_roll_stage_shop_offer(survival_pool, survival_preferred_id, survival_preferred_chance))
 	offers.append(_roll_stage_shop_offer(gear_pool, "shop_boss_clear" if is_boss_prep or is_final_prep else ""))
 	offers.append(_roll_stage_shop_offer(core_skill_pool, "shop_prep_volley_skill" if is_elite_prep or is_boss_prep or is_final_prep else ""))
 	offers.append(_roll_stage_shop_offer(shape_skill_pool, "shop_prep_nova_skill" if is_boss_prep or is_final_prep else ""))
 	return offers
+
+func _get_survival_preferred_shop_offer(is_high_pressure_prep: bool) -> String:
+	if is_high_pressure_prep:
+		return "shop_prep_barrier"
+	if player_max_health > 0 and player_health >= player_max_health:
+		return "shop_shield"
+	if player_max_health > 0 and player_health <= int(round(float(player_max_health) * 0.55)):
+		return "shop_heal"
+	return ""
 
 func _roll_shop_offer_from_pool(pool: Array[Dictionary]) -> Dictionary:
 	if pool.is_empty():
@@ -1742,10 +1753,10 @@ func _roll_shop_offer_from_pool(pool: Array[Dictionary]) -> Dictionary:
 	var index := randi_range(0, pool.size() - 1)
 	return pool[index].duplicate(true)
 
-func _roll_stage_shop_offer(pool: Array[Dictionary], preferred_id: String = "") -> Dictionary:
+func _roll_stage_shop_offer(pool: Array[Dictionary], preferred_id: String = "", preferred_chance: float = 0.65) -> Dictionary:
 	if pool.is_empty():
 		return {}
-	if not preferred_id.is_empty() and randf() < 0.65:
+	if not preferred_id.is_empty() and randf() < preferred_chance:
 		for offer in pool:
 			if str(offer.get("id", "")) == preferred_id:
 				return offer.duplicate(true)
@@ -1757,8 +1768,74 @@ func _build_shop_offers(event: Dictionary) -> Array[Dictionary]:
 		var offer_data: Dictionary = offer
 		offer_data = offer_data.duplicate(true)
 		offer_data["sold"] = false
+		offer_data = _annotate_shop_offer_context(offer_data)
 		offers.append(offer_data)
 	return offers
+
+func _annotate_shop_offer_context(offer: Dictionary) -> Dictionary:
+	var reward_upgrade_id := str(offer.get("reward_upgrade_id", ""))
+	if reward_upgrade_id.is_empty():
+		return offer
+	var current_stack := _get_upgrade_stack_count(reward_upgrade_id)
+	offer["stack_preview"] = "当前 %d 层，购买后 %d 层" % [current_stack, current_stack + 1]
+	var purchase_preview := _get_upgrade_purchase_preview(reward_upgrade_id, current_stack)
+	if not purchase_preview.is_empty():
+		offer["purchase_preview"] = purchase_preview
+	return offer
+
+func _get_upgrade_stack_count(upgrade_id: String) -> int:
+	var upgrade_stacks: Dictionary = player_build_summary.get("upgrade_stacks", {})
+	return int(upgrade_stacks.get(upgrade_id, 0))
+
+func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> String:
+	var next_stack := current_stack + 1
+	match upgrade_id:
+		"damage":
+			return "本层伤害 +5，购买后强击层数 %d" % next_stack
+		"attack_speed":
+			return "本层射击间隔缩短 18%，购买后急速层数 %d" % next_stack
+		"multishot":
+			return "本层弹体 +1，购买后分裂层数 %d" % next_stack
+		"piercing_rounds":
+			return "本层穿透 +1，购买后穿透层数 %d" % next_stack
+		"blast_core":
+			return "本层爆裂范围 +36，购买后爆裂层数 %d" % next_stack
+		"charged_volley":
+			return "立即连射 5 枚高亮弹，并永久伤害 +3"
+		"pulse_nova":
+			return "立即释放 10 枚新星弹，并永久爆裂范围 +18"
+		"chain_spark":
+			if next_stack <= 3:
+				return "购买后每次攻击追加 %d 枚连锁弹" % next_stack
+			return "连锁弹数量已达 3 枚，继续提高伤害、寿命和击退"
+		"orbit_blade":
+			if next_stack <= 3:
+				return "购买后每次攻击向两侧各追加 %d 枚回旋弹" % next_stack
+			return "回旋弹数量已达上限，继续提高伤害、寿命和击退"
+		"overload_burst":
+			return "购买后每 4 次攻击释放 %d 枚环形爆裂弹" % mini(12, 6 + next_stack * 2)
+		"homing_shards":
+			if next_stack <= 3:
+				return "购买后每次攻击追加 %d 枚追踪碎片" % next_stack
+			return "追踪碎片数量已达 3 枚，继续提高追踪强度和伤害"
+		"heavy_shot":
+			return "每 3 次攻击发射重弹，本层继续提高伤害和击退"
+		"close_slash":
+			return "购买后刀环半径约 %d，冷却约 %.1f 秒" % [
+				int(round(72.0 + float(next_stack) * 13.0)),
+				maxf(0.48, 1.18 - float(next_stack) * 0.09)
+			]
+		"pulse_field":
+			return "购买后脉冲半径约 %d，冷却约 %.1f 秒" % [
+				int(round(96.0 + float(next_stack) * 14.0)),
+				maxf(1.15, 2.25 - float(next_stack) * 0.12)
+			]
+		"channel_beam":
+			return "购买后光束射程约 %d，跳伤间隔约 %.2f 秒" % [
+				int(round(330.0 + float(next_stack) * 28.0)),
+				maxf(0.12, 0.32 - float(next_stack) * 0.025)
+			]
+	return ""
 
 func _build_event_choices(event: Dictionary) -> Array[Dictionary]:
 	var choices: Array[Dictionary] = []
@@ -1829,10 +1906,16 @@ func _apply_reward_bundle(source: Dictionary) -> String:
 		if upgrade_result is Dictionary:
 			upgrade_result_dictionary = upgrade_result
 		var upgrade_effect_text := _format_upgrade_result(upgrade_result_dictionary)
-		if upgrade_effect_text.is_empty():
+		var upgrade_stack_text := _format_upgrade_stack_result(reward_upgrade_id)
+		if upgrade_effect_text.is_empty() and upgrade_stack_text.is_empty():
 			reward_parts.append("技能：%s" % upgrade_title)
 		else:
-			reward_parts.append("技能：%s（%s）" % [upgrade_title, upgrade_effect_text])
+			var upgrade_details: Array[String] = []
+			if not upgrade_effect_text.is_empty():
+				upgrade_details.append(upgrade_effect_text)
+			if not upgrade_stack_text.is_empty():
+				upgrade_details.append(upgrade_stack_text)
+			reward_parts.append("技能：%s（%s）" % [upgrade_title, "，".join(upgrade_details)])
 	if reward_equipment_count > 0:
 		var reward_level := maxi(1, level + get_current_phase_enemy_level_bonus() + int(source.get("reward_level_bonus", 0)))
 		var equipment_added := 0
@@ -1904,6 +1987,12 @@ func _format_upgrade_result(result: Dictionary) -> String:
 	if not skill_text.is_empty():
 		parts.append(skill_text)
 	return "，".join(parts)
+
+func _format_upgrade_stack_result(upgrade_id: String) -> String:
+	var stack_count := _get_upgrade_stack_count(upgrade_id)
+	if stack_count <= 0:
+		return ""
+	return "已到 %d 层" % stack_count
 
 func _get_phase_index_for_time(elapsed_time: float) -> int:
 	var cursor := 0.0

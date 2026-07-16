@@ -524,7 +524,22 @@ const UPGRADE_POOL := [
 	{
 		"id": "multishot",
 		"title": "分裂射击",
-		"description": "每次攻击投射物 +1"
+		"description": "每次攻击投射物 +1，玩家体积更大，移动更慢"
+	},
+	{
+		"id": "mass_resonance",
+		"title": "体积共鸣",
+		"description": "投射物越大，伤害越高"
+	},
+	{
+		"id": "slow_resonance",
+		"title": "迟缓共鸣",
+		"description": "移动越慢，投射物伤害越高"
+	},
+	{
+		"id": "still_focus",
+		"title": "静立聚焦",
+		"description": "静止时逐步提高暴击率"
 	},
 	{
 		"id": "piercing_rounds",
@@ -545,16 +560,6 @@ const UPGRADE_POOL := [
 		"id": "clear_barrier",
 		"title": "清弹屏障",
 		"description": "立即清除敌弹，并获得短暂护盾"
-	},
-	{
-		"id": "pulse_nova",
-		"title": "脉冲新星",
-		"description": "立即释放一圈爆裂弹，并略微提升爆裂范围"
-	},
-	{
-		"id": "charged_volley",
-		"title": "充能连射",
-		"description": "立即向目标方向连射高亮弹，并提升少量伤害"
 	},
 	{
 		"id": "chain_spark",
@@ -1590,10 +1595,37 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_multishot_skill",
 			"title": "技能：分裂射击",
 			"category": "基础技能",
-			"description": "每次攻击投射物 +1，适合爆裂和暴击",
+			"description": "投射物 +1，玩家体积更大但移动更慢，适合体积和迟缓联动",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "multishot",
 			"reward_upgrade_title": "分裂射击"
+		},
+		{
+			"id": "shop_mass_resonance_skill",
+			"title": "技能：体积共鸣",
+			"category": "基础技能",
+			"description": "投射物越大，伤害越高，适合分裂和重弹",
+			"cost": 22 + completed_stage * 3,
+			"reward_upgrade_id": "mass_resonance",
+			"reward_upgrade_title": "体积共鸣"
+		},
+		{
+			"id": "shop_slow_resonance_skill",
+			"title": "技能：迟缓共鸣",
+			"category": "基础技能",
+			"description": "移动越慢，投射物伤害越高，适合重火力站桩",
+			"cost": 22 + completed_stage * 3,
+			"reward_upgrade_id": "slow_resonance",
+			"reward_upgrade_title": "迟缓共鸣"
+		},
+		{
+			"id": "shop_still_focus_skill",
+			"title": "技能：静立聚焦",
+			"category": "基础技能",
+			"description": "静止时逐步提高暴击率，移动后衰减",
+			"cost": 20 + completed_stage * 3,
+			"reward_upgrade_id": "still_focus",
+			"reward_upgrade_title": "静立聚焦"
 		},
 		{
 			"id": "shop_pierce_skill",
@@ -1795,11 +1827,17 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 		"attack_speed":
 			return "本层射击间隔缩短 18%，购买后急速层数 %d" % next_stack
 		"multishot":
-			return "本层弹体 +1，购买后分裂层数 %d" % next_stack
+			return "本层弹体 +1、玩家体积 +18%、移速 -18，购买后分裂层数 %d" % next_stack
+		"mass_resonance":
+			return "购买后玩家体积越大，伤害收益越高"
+		"slow_resonance":
+			return "购买后移动速度越低，投射物伤害越高"
+		"still_focus":
+			return "购买后静止时暴击率逐步提高，移动后衰减"
 		"piercing_rounds":
 			return "本层穿透 +1，购买后穿透层数 %d" % next_stack
 		"blast_core":
-			return "本层爆裂范围 +36，购买后爆裂层数 %d" % next_stack
+			return "本层爆裂范围 +36、玩家体积 +10%，购买后爆裂层数 %d" % next_stack
 		"charged_volley":
 			return "立即连射 5 枚高亮弹，并永久伤害 +3"
 		"pulse_nova":

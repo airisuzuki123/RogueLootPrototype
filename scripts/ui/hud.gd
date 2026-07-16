@@ -458,16 +458,20 @@ func _on_build_summary_changed(summary: Dictionary) -> void:
 		return
 	var attack_interval := float(summary.get("attack_interval", 0.0))
 	var attacks_per_second := 0.0 if attack_interval <= 0.0 else 1.0 / attack_interval
+	var player_size_bonus := int(summary.get("player_size_bonus", 0))
+	var stationary_critical_bonus := int(summary.get("stationary_critical_bonus", 0))
 	var lines: Array[String] = []
-	lines.append("构筑：伤害 %d | 弹体 %d | 穿透 %d | 爆裂 %d" % [
+	lines.append("构筑：伤害 %d | 弹体 %d | 穿透 %d | 爆裂 %d | 玩家体积 +%d%%" % [
 		int(summary.get("damage", 0)),
 		int(summary.get("projectiles", 0)),
 		int(summary.get("pierce", 0)),
-		int(summary.get("explosion_radius", 0))
+		int(summary.get("explosion_radius", 0)),
+		player_size_bonus
 	])
-	lines.append("攻速 %.1f/秒 | 暴击 %d%% | 移速 %d" % [
+	lines.append("攻速 %.1f/秒 | 暴击 %d%% | 静立 +%d%% | 移速 %d" % [
 		attacks_per_second,
 		int(summary.get("critical_chance", 0)),
+		stationary_critical_bonus,
 		int(summary.get("move_speed", 0))
 	])
 	var skill_parts := _format_skill_stack_parts(summary)
@@ -1161,6 +1165,9 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 	var projectile_bonus := int(summary.get("upgrade_projectile_count_bonus", 0))
 	var pierce_bonus := int(summary.get("upgrade_pierce_bonus", 0))
 	var explosion_bonus := int(summary.get("upgrade_explosion_radius_bonus", 0))
+	var mass_stacks := int(summary.get("mass_resonance_stacks", 0))
+	var slow_stacks := int(summary.get("slow_resonance_stacks", 0))
+	var still_stacks := int(summary.get("still_focus_stacks", 0))
 	var chain_stacks := int(summary.get("chain_spark_stacks", 0))
 	var orbit_stacks := int(summary.get("orbit_blade_stacks", 0))
 	var overload_stacks := int(summary.get("overload_burst_stacks", 0))
@@ -1179,6 +1186,12 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 		parts.append("穿透 +%d" % pierce_bonus)
 	if explosion_bonus > 0:
 		parts.append("爆裂 +%d" % explosion_bonus)
+	if mass_stacks > 0:
+		parts.append("体积共鸣 x%d" % mass_stacks)
+	if slow_stacks > 0:
+		parts.append("迟缓共鸣 x%d" % slow_stacks)
+	if still_stacks > 0:
+		parts.append("静立 x%d" % still_stacks)
 	if int(upgrade_stacks.get("graze_barrier", 0)) > 0:
 		parts.append("折光 x%d" % int(upgrade_stacks.get("graze_barrier", 0)))
 	if int(upgrade_stacks.get("clear_barrier", 0)) > 0:

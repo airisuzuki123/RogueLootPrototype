@@ -13,6 +13,7 @@ const CombatFeedback := preload("res://scripts/effects/combat_feedback.gd")
 @export var knockback_recovery: float = 11.0
 
 var health: int
+var base_move_speed: float = 260.0
 var graze_shield: int = 0
 var graze_shield_timer: float = 0.0
 var movement_bounds: Rect2 = Rect2()
@@ -41,6 +42,10 @@ var upgrade_attack_speed_stacks: int = 0
 var upgrade_projectile_count_bonus: int = 0
 var upgrade_pierce_bonus: int = 0
 var upgrade_explosion_radius_bonus: float = 0.0
+var upgrade_player_size_bonus: float = 0.0
+var mass_resonance_stacks: int = 0
+var slow_resonance_stacks: int = 0
+var still_focus_stacks: int = 0
 var chain_spark_stacks: int = 0
 var orbit_blade_stacks: int = 0
 var overload_burst_stacks: int = 0
@@ -53,12 +58,15 @@ var attack_sequence: int = 0
 var close_slash_cooldown: float = 0.0
 var pulse_field_cooldown: float = 0.0
 var channel_beam_tick_timer: float = 0.0
+var stationary_focus_time: float = 0.0
+var last_stationary_focus_tier: int = 0
 var upgrade_stacks := {}
 @onready var visual: Polygon2D = $Visual
 @onready var hit_core: Polygon2D = $HitCore
 
 func _ready() -> void:
 	health = max_health
+	base_move_speed = move_speed
 	base_fire_interval = fire_interval
 	sync_health_state()
 
@@ -70,6 +78,8 @@ func _physics_process(delta: float) -> void:
 	_update_close_range_skills(delta)
 	_update_channel_skill(delta)
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	_update_motion_focus(delta, direction)
+	_update_player_body_scale()
 	velocity = direction * move_speed + knockback_velocity
 	move_and_slide()
 	knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, knockback_recovery * knockback_velocity.length() * delta)
@@ -165,13 +175,26 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 		"multishot":
 			upgrade_projectile_count_bonus += 1
 			projectile_count += 1
-			result["skill_text"] = "投射物 +1"
+			upgrade_player_size_bonus += 0.18
+			move_speed = maxf(140.0, move_speed - 18.0)
+			result["skill_text"] = "投射物 +1，玩家体积 +18%，移速 -18"
+		"mass_resonance":
+			mass_resonance_stacks += 1
+			result["skill_text"] = "玩家越大伤害越高 x%d" % mass_resonance_stacks
+		"slow_resonance":
+			slow_resonance_stacks += 1
+			result["skill_text"] = "移动越慢伤害越高 x%d" % slow_resonance_stacks
+		"still_focus":
+			still_focus_stacks += 1
+			result["skill_text"] = "静止时暴击更高 x%d" % still_focus_stacks
 		"piercing_rounds":
 			upgrade_pierce_bonus += 1
 			result["skill_text"] = "穿透 +1"
 		"blast_core":
 			upgrade_explosion_radius_bonus += 36.0
+			upgrade_player_size_bonus += 0.10
 			result["explosion_radius"] = 36
+			result["skill_text"] = "爆裂 +36，玩家体积 +10%"
 		"graze_barrier":
 			apply_graze_shield(22, 4.0)
 			result["shield"] = 22
@@ -205,8 +228,9 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			heavy_shot_stacks += 1
 			upgrade_damage_bonus += 2
 			projectile_damage += 2
+			upgrade_player_size_bonus += 0.06
 			result["damage_bonus"] = 2
-			result["skill_text"] = "重弹强化 x%d" % heavy_shot_stacks
+			result["skill_text"] = "重弹强化 x%d，玩家体积 +6%" % heavy_shot_stacks
 		"close_slash":
 			close_slash_stacks += 1
 			result["skill_text"] = "刀环强化 x%d" % close_slash_stacks
@@ -289,8 +313,9 @@ func _clamp_to_movement_bounds() -> void:
 	if bounds.size.x <= 0.0 or bounds.size.y <= 0.0:
 		var viewport_rect := get_viewport_rect()
 		bounds = Rect2(Vector2.ZERO, viewport_rect.size)
-	global_position.x = clampf(global_position.x, bounds.position.x + screen_margin, bounds.end.x - screen_margin)
-	global_position.y = clampf(global_position.y, bounds.position.y + screen_margin, bounds.end.y - screen_margin)
+	var body_margin := screen_margin + maxf(0.0, (scale.x - 1.0) * 18.0)
+	global_position.x = clampf(global_position.x, bounds.position.x + body_margin, bounds.end.x - body_margin)
+	global_position.y = clampf(global_position.y, bounds.position.y + body_margin, bounds.end.y - body_margin)
 
 func _apply_equipment_stats(equipment: Dictionary) -> void:
 	if str(equipment.get("slot", "weapon")) == "weapon":
@@ -359,18 +384,53 @@ func _calculate_fire_interval() -> float:
 func _get_base_projectile_damage() -> int:
 	return max(1, int(round(float(projectile_damage + equipment_damage_bonus) * equipment_damage_multiplier)))
 
+func _get_flow_damage_multiplier(include_stationary_bonus: bool = false) -> float:
+	var size_bonus := maxf(0.0, upgrade_player_size_bonus)
+	var size_multiplier := 1.0 + size_bonus * (0.35 + float(mass_resonance_stacks) * 0.08)
+	var slow_ratio := 0.0
+	if base_move_speed > 0.0:
+		slow_ratio = clampf((base_move_speed - move_speed) / base_move_speed, 0.0, 0.45)
+	var slow_multiplier := 1.0 + slow_ratio * (0.85 + float(slow_resonance_stacks) * 0.10)
+	var stationary_multiplier := 1.0
+	if include_stationary_bonus:
+		stationary_multiplier += float(_get_stationary_focus_tier()) * 0.04
+	return size_multiplier * slow_multiplier * stationary_multiplier
+
+func _get_player_size_multiplier() -> float:
+	var size_bonus := maxf(0.0, upgrade_player_size_bonus)
+	var slow_ratio := 0.0
+	if base_move_speed > 0.0:
+		slow_ratio = clampf((base_move_speed - move_speed) / base_move_speed, 0.0, 0.45)
+	var size_multiplier := 1.0 + size_bonus * 0.9 + slow_ratio * 0.65
+	size_multiplier += float(mass_resonance_stacks) * 0.03
+	return clampf(size_multiplier, 0.85, 1.8)
+
+func _get_stationary_focus_tier() -> int:
+	var focus_interval := maxf(0.45, 0.70 - float(still_focus_stacks) * 0.04)
+	return clampi(int(floor(stationary_focus_time / focus_interval)), 0, 4)
+
+func _get_stationary_crit_bonus() -> int:
+	var tier := _get_stationary_focus_tier()
+	if tier <= 0:
+		return 0
+	return tier * (4 + still_focus_stacks * 2)
+
 func _get_total_projectile_count() -> int:
 	return maxi(1, projectile_count + equipment_projectile_count_bonus + affix_projectile_count_bonus)
 
 func _get_total_pierce() -> int:
 	return equipment_pierce_bonus + affix_pierce_bonus + upgrade_pierce_bonus
 
-func _roll_projectile_damage() -> int:
-	var damage := _get_base_projectile_damage()
-	var critical_chance := clampf(float(equipment_critical_chance_bonus) / 100.0, 0.0, 0.75)
-	if randf() < critical_chance:
-		return damage * 2
-	return damage
+func _roll_projectile_damage() -> Dictionary:
+	var damage := maxi(1, int(round(float(_get_base_projectile_damage()) * _get_flow_damage_multiplier())))
+	var critical_chance := clampf(float(equipment_critical_chance_bonus + _get_stationary_crit_bonus()) / 100.0, 0.0, 0.82)
+	var is_critical := randf() < critical_chance
+	if is_critical:
+		damage *= 2
+	return {
+		"damage": damage,
+		"is_critical": is_critical
+	}
 
 func _get_total_explosion_radius() -> float:
 	return equipment_explosion_radius + affix_explosion_radius_bonus + upgrade_explosion_radius_bonus
@@ -426,8 +486,9 @@ func _spawn_player_projectile(direction: Vector2, damage_multiplier: float = 1.0
 	var projectile := PROJECTILE_SCENE.instantiate()
 	projectile.global_position = global_position
 	projectile.direction = direction.normalized()
-	projectile.damage = maxi(1, int(round(float(_roll_projectile_damage()) * damage_multiplier)))
-	projectile.is_critical = projectile.damage > int(round(float(_get_base_projectile_damage()) * damage_multiplier))
+	var damage_roll := _roll_projectile_damage()
+	projectile.damage = maxi(1, int(round(float(damage_roll.get("damage", 1)) * damage_multiplier)))
+	projectile.is_critical = bool(damage_roll.get("is_critical", false))
 	projectile.pierce_remaining = _get_total_pierce()
 	projectile.explosion_radius = _get_total_explosion_radius()
 	if extra_tags.has("overload") and projectile.explosion_radius <= 0.0:
@@ -508,9 +569,26 @@ func _update_channel_skill(delta: float) -> void:
 	channel_beam_tick_timer = maxf(0.12, 0.32 - float(channel_beam_stacks) * 0.025)
 	_fire_channel_beam_tick()
 
+func _update_motion_focus(delta: float, input_direction: Vector2) -> void:
+	var old_tier := _get_stationary_focus_tier()
+	var is_moving := input_direction.length_squared() > 0.01 or knockback_velocity.length_squared() > 100.0
+	if is_moving:
+		stationary_focus_time = maxf(0.0, stationary_focus_time - delta * 1.65)
+	else:
+		var build_rate := 1.0 + float(still_focus_stacks) * 0.18
+		stationary_focus_time = minf(3.2, stationary_focus_time + delta * build_rate)
+	var new_tier := _get_stationary_focus_tier()
+	if new_tier != old_tier or new_tier != last_stationary_focus_tier:
+		last_stationary_focus_tier = new_tier
+		_emit_build_summary()
+
+func _update_player_body_scale() -> void:
+	scale = Vector2.ONE * _get_player_size_multiplier()
+
 func _fire_close_slash() -> void:
-	var radius := 72.0 + float(close_slash_stacks) * 13.0
-	var damage := maxi(1, int(round(float(_get_base_projectile_damage()) * (0.50 + float(close_slash_stacks) * 0.10))))
+	var stationary_tier := _get_stationary_focus_tier()
+	var radius := 72.0 + float(close_slash_stacks) * 13.0 + float(stationary_tier) * 6.0
+	var damage := maxi(1, int(round(float(_get_base_projectile_damage()) * (0.50 + float(close_slash_stacks) * 0.10) * _get_flow_damage_multiplier(true))))
 	var hit_count := 0
 	for enemy_node in get_tree().get_nodes_in_group("enemies"):
 		var enemy := enemy_node as Node2D
@@ -541,8 +619,9 @@ func _show_close_slash_effect(radius: float) -> void:
 		CombatFeedback.show_line(world, start, end, Color(0.86, 1.0, 0.58, 0.72), 3.0 + float(close_slash_stacks) * 0.22, 0.16)
 
 func _fire_pulse_field() -> void:
-	var radius := 96.0 + float(pulse_field_stacks) * 14.0
-	var damage := maxi(1, int(round(float(_get_base_projectile_damage()) * (0.38 + float(pulse_field_stacks) * 0.06))))
+	var stationary_tier := _get_stationary_focus_tier()
+	var radius := 96.0 + float(pulse_field_stacks) * 14.0 + float(stationary_tier) * 8.0
+	var damage := maxi(1, int(round(float(_get_base_projectile_damage()) * (0.38 + float(pulse_field_stacks) * 0.06) * _get_flow_damage_multiplier(true))))
 	var hit_count := 0
 	for enemy_node in get_tree().get_nodes_in_group("enemies"):
 		var enemy := enemy_node as Node2D
@@ -579,11 +658,12 @@ func _fire_channel_beam_tick() -> void:
 	var target := _find_nearest_enemy()
 	if target == null:
 		return
-	var max_range := 330.0 + float(channel_beam_stacks) * 28.0
+	var stationary_tier := _get_stationary_focus_tier()
+	var max_range := 330.0 + float(channel_beam_stacks) * 28.0 + float(stationary_tier) * 18.0
 	var distance := global_position.distance_to(target.global_position)
 	if distance > max_range:
 		return
-	var damage := maxi(1, int(round(float(_get_base_projectile_damage()) * (0.24 + float(channel_beam_stacks) * 0.045))))
+	var damage := maxi(1, int(round(float(_get_base_projectile_damage()) * (0.24 + float(channel_beam_stacks) * 0.045) * _get_flow_damage_multiplier(true))))
 	if target.has_method("take_damage"):
 		var knockback := global_position.direction_to(target.global_position) * 36.0
 		target.take_damage(damage, knockback)
@@ -617,15 +697,22 @@ func _emit_build_summary() -> void:
 		"projectiles": _get_total_projectile_count(),
 		"pierce": _get_total_pierce(),
 		"explosion_radius": int(round(_get_total_explosion_radius())),
+		"player_size_bonus": int(round((_get_player_size_multiplier() - 1.0) * 100.0)),
+		"stationary_focus_tier": _get_stationary_focus_tier(),
+		"stationary_critical_bonus": _get_stationary_crit_bonus(),
 		"attack_interval": fire_interval,
 		"move_speed": int(round(move_speed)),
-		"critical_chance": equipment_critical_chance_bonus,
+		"critical_chance": equipment_critical_chance_bonus + _get_stationary_crit_bonus(),
 		"shield": graze_shield,
 		"upgrade_damage_bonus": upgrade_damage_bonus,
 		"upgrade_attack_speed_stacks": upgrade_attack_speed_stacks,
 		"upgrade_projectile_count_bonus": upgrade_projectile_count_bonus,
 		"upgrade_pierce_bonus": upgrade_pierce_bonus,
 		"upgrade_explosion_radius_bonus": int(round(upgrade_explosion_radius_bonus)),
+		"upgrade_player_size_bonus": int(round(upgrade_player_size_bonus * 100.0)),
+		"mass_resonance_stacks": mass_resonance_stacks,
+		"slow_resonance_stacks": slow_resonance_stacks,
+		"still_focus_stacks": still_focus_stacks,
 		"chain_spark_stacks": chain_spark_stacks,
 		"orbit_blade_stacks": orbit_blade_stacks,
 		"overload_burst_stacks": overload_burst_stacks,

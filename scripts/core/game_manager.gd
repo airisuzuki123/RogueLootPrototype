@@ -16,6 +16,7 @@ signal gold_changed(total: int)
 signal enemy_killed(total: int)
 signal graze_changed(total: int)
 signal health_changed(current: int, maximum: int)
+signal build_summary_changed(summary: Dictionary)
 signal experience_changed(current: int, required: int, level: int)
 signal equipment_changed(equipped_items: Dictionary)
 signal loot_message_changed(message: String)
@@ -429,6 +430,7 @@ var experience: int = 0
 var experience_to_next_level: int = 5
 var player_health: int = 0
 var player_max_health: int = 0
+var player_build_summary: Dictionary = {}
 var player_graze_shield: int = 0
 var player_graze_shield_remaining: float = 0.0
 var player: Node = null
@@ -542,6 +544,7 @@ func reset_run() -> void:
 	experience_to_next_level = 5
 	player_health = 0
 	player_max_health = 0
+	player_build_summary.clear()
 	player_graze_shield = 0
 	player_graze_shield_remaining = 0.0
 	player = null
@@ -589,6 +592,7 @@ func reset_run() -> void:
 	shop_open_changed.emit(is_shop_open, active_shop_event, shop_offers)
 	event_choice_open_changed.emit(is_event_choice_open, active_choice_event, event_choices)
 	equipment_changed.emit(equipped_items)
+	build_summary_changed.emit(player_build_summary)
 	loot_message_changed.emit(latest_loot_message)
 	run_milestone_message_changed.emit(latest_milestone_message)
 	encounter_changed.emit(active_encounter, false)
@@ -817,6 +821,10 @@ func update_player_health(current: int, maximum: int) -> void:
 	player_health = current
 	player_max_health = maximum
 	health_changed.emit(current, maximum)
+
+func update_player_build_summary(summary: Dictionary) -> void:
+	player_build_summary = summary.duplicate(true)
+	build_summary_changed.emit(player_build_summary)
 
 func update_player_graze_shield(amount: int, remaining: float, emit_change: bool = true) -> void:
 	player_graze_shield = maxi(0, amount)

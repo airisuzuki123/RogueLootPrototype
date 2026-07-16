@@ -36,8 +36,12 @@ var equipment_explosion_damage_ratio: float = 0.0
 var affix_projectile_count_bonus: int = 0
 var affix_pierce_bonus: int = 0
 var affix_explosion_radius_bonus: float = 0.0
+var upgrade_damage_bonus: int = 0
+var upgrade_attack_speed_stacks: int = 0
+var upgrade_projectile_count_bonus: int = 0
 var upgrade_pierce_bonus: int = 0
 var upgrade_explosion_radius_bonus: float = 0.0
+var upgrade_stacks := {}
 @onready var visual: Polygon2D = $Visual
 @onready var hit_core: Polygon2D = $HitCore
 
@@ -77,6 +81,7 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 func sync_health_state() -> void:
 	GameManager.update_player_health(health, max_health)
 	GameManager.update_player_graze_shield(graze_shield, graze_shield_timer)
+	_emit_build_summary()
 
 func set_movement_bounds(bounds: Rect2) -> void:
 	movement_bounds = bounds
@@ -96,6 +101,7 @@ func apply_graze_shield(amount: int, duration: float) -> void:
 	graze_shield = maxi(graze_shield, amount)
 	graze_shield_timer = maxf(graze_shield_timer, duration)
 	_sync_graze_shield_state()
+	_emit_build_summary()
 
 func take_event_damage(amount: int) -> int:
 	if GameManager.is_run_over or amount <= 0 or health <= 0:
@@ -111,10 +117,13 @@ func take_event_damage(amount: int) -> int:
 	return old_health - health
 
 func apply_upgrade(upgrade_id: String) -> void:
+	_add_upgrade_stack(upgrade_id)
 	match upgrade_id:
 		"damage":
+			upgrade_damage_bonus += 5
 			projectile_damage += 5
 		"attack_speed":
+			upgrade_attack_speed_stacks += 1
 			base_fire_interval = max(0.18, base_fire_interval * 0.82)
 			fire_interval = _calculate_fire_interval()
 		"move_speed":
@@ -134,6 +143,7 @@ func apply_upgrade(upgrade_id: String) -> void:
 			health = min(max_health, health + 45)
 			GameManager.update_player_health(health, max_health)
 		"multishot":
+			upgrade_projectile_count_bonus += 1
 			projectile_count += 1
 		"piercing_rounds":
 			upgrade_pierce_bonus += 1
@@ -142,13 +152,16 @@ func apply_upgrade(upgrade_id: String) -> void:
 		"graze_barrier":
 			apply_graze_shield(22, 4.0)
 		"form_focused":
+			upgrade_damage_bonus += 8
 			projectile_damage += 8
 		"form_scatter":
+			upgrade_projectile_count_bonus += 1
 			projectile_count += 1
 		"form_piercing":
 			upgrade_pierce_bonus += 1
 		"form_burst":
 			upgrade_explosion_radius_bonus += 28.0
+	_emit_build_summary()
 
 func equip_weapon(new_weapon: Dictionary, old_weapon: Dictionary = {}) -> void:
 	equip_item(new_weapon, old_weapon)
@@ -159,6 +172,7 @@ func equip_item(new_item: Dictionary, old_item: Dictionary = {}) -> void:
 	if not new_item.is_empty():
 		_apply_equipment_stats(new_item)
 	GameManager.update_player_health(health, max_health)
+	_emit_build_summary()
 
 func heal_from_life_steal(hit_damage: int) -> void:
 	if equipment_life_steal_bonus <= 0 or health <= 0 or health >= max_health:
@@ -179,7 +193,7 @@ func _update_auto_attack(delta: float) -> void:
 		return
 	fire_cooldown = fire_interval
 	var base_direction: Vector2 = global_position.direction_to(target.global_position)
-	var total_projectiles: int = maxi(1, projectile_count + equipment_projectile_count_bonus + affix_projectile_count_bonus)
+	var total_projectiles := _get_total_projectile_count()
 	for index in range(total_projectiles):
 		var projectile := PROJECTILE_SCENE.instantiate()
 		var spread: float = deg_to_rad(equipment_spread_degrees * (index - (total_projectiles - 1) / 2.0))
@@ -187,9 +201,10 @@ func _update_auto_attack(delta: float) -> void:
 		projectile.direction = base_direction.rotated(spread)
 		projectile.damage = _roll_projectile_damage()
 		projectile.is_critical = projectile.damage > _get_base_projectile_damage()
-		projectile.pierce_remaining = equipment_pierce_bonus + affix_pierce_bonus + upgrade_pierce_bonus
+		projectile.pierce_remaining = _get_total_pierce()
 		projectile.explosion_radius = _get_total_explosion_radius()
 		projectile.explosion_damage = int(round(float(projectile.damage) * _get_total_explosion_damage_ratio()))
+		projectile.power_tags = _get_projectile_power_tags(projectile)
 		projectile.source_player = self
 		projectile.life_steal_percent = equipment_life_steal_bonus
 		get_tree().current_scene.add_child(projectile)
@@ -282,6 +297,12 @@ func _calculate_fire_interval() -> float:
 func _get_base_projectile_damage() -> int:
 	return max(1, int(round(float(projectile_damage + equipment_damage_bonus) * equipment_damage_multiplier)))
 
+func _get_total_projectile_count() -> int:
+	return maxi(1, projectile_count + equipment_projectile_count_bonus + affix_projectile_count_bonus)
+
+func _get_total_pierce() -> int:
+	return equipment_pierce_bonus + affix_pierce_bonus + upgrade_pierce_bonus
+
 func _roll_projectile_damage() -> int:
 	var damage := _get_base_projectile_damage()
 	var critical_chance := clampf(float(equipment_critical_chance_bonus) / 100.0, 0.0, 0.75)
@@ -321,6 +342,41 @@ func _reset_weapon_form() -> void:
 	equipment_spread_degrees = 8.0
 	equipment_explosion_radius = 0.0
 	equipment_explosion_damage_ratio = 0.0
+
+func _add_upgrade_stack(upgrade_id: String) -> void:
+	upgrade_stacks[upgrade_id] = int(upgrade_stacks.get(upgrade_id, 0)) + 1
+
+func _get_projectile_power_tags(projectile: Node) -> Array[String]:
+	var tags: Array[String] = []
+	if projectile.is_critical:
+		tags.append("critical")
+	if int(projectile.pierce_remaining) > 0:
+		tags.append("pierce")
+	if float(projectile.explosion_radius) > 0.0:
+		tags.append("blast")
+	if _get_total_projectile_count() >= 3:
+		tags.append("multi")
+	if upgrade_damage_bonus >= 10:
+		tags.append("charged")
+	return tags
+
+func _emit_build_summary() -> void:
+	GameManager.update_player_build_summary({
+		"damage": _get_base_projectile_damage(),
+		"projectiles": _get_total_projectile_count(),
+		"pierce": _get_total_pierce(),
+		"explosion_radius": int(round(_get_total_explosion_radius())),
+		"attack_interval": fire_interval,
+		"move_speed": int(round(move_speed)),
+		"critical_chance": equipment_critical_chance_bonus,
+		"shield": graze_shield,
+		"upgrade_damage_bonus": upgrade_damage_bonus,
+		"upgrade_attack_speed_stacks": upgrade_attack_speed_stacks,
+		"upgrade_projectile_count_bonus": upgrade_projectile_count_bonus,
+		"upgrade_pierce_bonus": upgrade_pierce_bonus,
+		"upgrade_explosion_radius_bonus": int(round(upgrade_explosion_radius_bonus)),
+		"upgrade_stacks": upgrade_stacks.duplicate(true)
+	})
 
 func _update_invulnerability(delta: float) -> void:
 	if invulnerability_timer <= 0.0:

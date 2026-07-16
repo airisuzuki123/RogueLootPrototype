@@ -12,6 +12,7 @@ var phase_objective_label: Label
 var encounter_label: Label
 var stage_event_label: Label
 var equipment_label: Label
+var build_summary_label: Label
 var loot_message_label: Label
 var hint_label: Label
 var milestone_label: Label
@@ -106,6 +107,10 @@ func _build_ui() -> void:
 	equipment_label = Label.new()
 	equipment_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	stats.add_child(equipment_label)
+
+	build_summary_label = Label.new()
+	build_summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	stats.add_child(build_summary_label)
 
 	loot_message_label = Label.new()
 	stats.add_child(loot_message_label)
@@ -250,6 +255,7 @@ func _connect_signals() -> void:
 	GameManager.health_changed.connect(_on_health_changed)
 	GameManager.experience_changed.connect(_on_experience_changed)
 	GameManager.equipment_changed.connect(_on_equipment_changed)
+	GameManager.build_summary_changed.connect(_on_build_summary_changed)
 	GameManager.loot_message_changed.connect(_on_loot_message_changed)
 	GameManager.equipment_choice_requested.connect(_on_equipment_choice_requested)
 	GameManager.inventory_changed.connect(_on_inventory_changed)
@@ -282,6 +288,7 @@ func _refresh_all() -> void:
 	_on_stage_event_changed(active_stage_event, not active_stage_event.is_empty())
 	_on_health_changed(GameManager.player_health, GameManager.player_max_health)
 	_on_equipment_changed(GameManager.equipped_items)
+	_on_build_summary_changed(GameManager.player_build_summary)
 	_on_loot_message_changed(GameManager.latest_loot_message)
 	_on_inventory_changed(GameManager.get_inventory_items())
 
@@ -390,6 +397,31 @@ func _on_equipment_changed(new_equipped_items: Dictionary) -> void:
 	equipped_items = new_equipped_items.duplicate(true)
 	equipment_label.text = EquipmentFactory.describe_loadout(equipped_items)
 	_refresh_inventory_panel()
+
+func _on_build_summary_changed(summary: Dictionary) -> void:
+	if build_summary_label == null:
+		return
+	if summary.is_empty():
+		build_summary_label.text = "构筑：等待初始化"
+		return
+	var attack_interval := float(summary.get("attack_interval", 0.0))
+	var attacks_per_second := 0.0 if attack_interval <= 0.0 else 1.0 / attack_interval
+	var lines: Array[String] = []
+	lines.append("构筑：伤害 %d | 弹体 %d | 穿透 %d | 爆裂 %d" % [
+		int(summary.get("damage", 0)),
+		int(summary.get("projectiles", 0)),
+		int(summary.get("pierce", 0)),
+		int(summary.get("explosion_radius", 0))
+	])
+	lines.append("攻速 %.1f/秒 | 暴击 %d%% | 移速 %d" % [
+		attacks_per_second,
+		int(summary.get("critical_chance", 0)),
+		int(summary.get("move_speed", 0))
+	])
+	var skill_parts := _format_skill_stack_parts(summary)
+	if not skill_parts.is_empty():
+		lines.append("技能：" + "，".join(skill_parts))
+	build_summary_label.text = "\n".join(lines)
 
 func _on_loot_message_changed(message: String) -> void:
 	loot_message_label.text = message
@@ -989,6 +1021,28 @@ func _format_shop_offer_reward(offer: Dictionary) -> String:
 	if parts.is_empty():
 		return "无直接奖励"
 	return "，".join(parts)
+
+func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
+	var parts: Array[String] = []
+	var upgrade_stacks: Dictionary = summary.get("upgrade_stacks", {})
+	var damage_bonus := int(summary.get("upgrade_damage_bonus", 0))
+	var attack_speed_stacks := int(summary.get("upgrade_attack_speed_stacks", 0))
+	var projectile_bonus := int(summary.get("upgrade_projectile_count_bonus", 0))
+	var pierce_bonus := int(summary.get("upgrade_pierce_bonus", 0))
+	var explosion_bonus := int(summary.get("upgrade_explosion_radius_bonus", 0))
+	if damage_bonus > 0:
+		parts.append("强击 +%d" % damage_bonus)
+	if attack_speed_stacks > 0:
+		parts.append("急速 x%d" % attack_speed_stacks)
+	if projectile_bonus > 0:
+		parts.append("分裂 +%d" % projectile_bonus)
+	if pierce_bonus > 0:
+		parts.append("穿透 +%d" % pierce_bonus)
+	if explosion_bonus > 0:
+		parts.append("爆裂 +%d" % explosion_bonus)
+	if int(upgrade_stacks.get("graze_barrier", 0)) > 0:
+		parts.append("折光 x%d" % int(upgrade_stacks.get("graze_barrier", 0)))
+	return parts
 
 func _format_event_choice_result(choice: Dictionary) -> String:
 	var parts: Array[String] = []

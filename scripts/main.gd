@@ -74,7 +74,7 @@ func _toggle_fullscreen() -> void:
 	else:
 		windowed_size_before_fullscreen = DisplayServer.window_get_size()
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-	_on_viewport_size_changed()
+	call_deferred("_on_viewport_size_changed")
 
 func _center_window() -> void:
 	var screen := DisplayServer.window_get_current_screen()

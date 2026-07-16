@@ -496,13 +496,12 @@ func _on_shop_open_changed(is_open: bool, event: Dictionary, offers: Array) -> v
 	shop_panel.visible = is_open
 	if not is_open:
 		return
-	shop_title_label.text = "%s\n%s" % [
-		str(event.get("title", "商店")),
-		str(event.get("objective", "选择一项补给"))
-	]
+	_update_shop_title()
 	_refresh_shop_panel()
 
 func _refresh_shop_panel() -> void:
+	if shop_panel != null and shop_panel.visible:
+		_update_shop_title()
 	for child in shop_offer_list.get_children():
 		child.queue_free()
 	if shop_refresh_button != null:
@@ -514,7 +513,8 @@ func _refresh_shop_panel() -> void:
 		var button := Button.new()
 		var cost := maxi(0, int(offer.get("cost", 0)))
 		var sold := bool(offer.get("sold", false))
-		button.text = "%s%s\n价格：%d 金币\n%s" % [
+		button.text = "【%s】%s%s\n价格：%d 金币\n%s" % [
+			str(offer.get("category", "商品")),
 			str(offer.get("title", "商品")),
 			"（已购买）" if sold else "",
 			cost,
@@ -533,6 +533,14 @@ func _on_shop_refresh_pressed() -> void:
 
 func _on_shop_close_pressed() -> void:
 	GameManager.close_shop_event()
+
+func _update_shop_title() -> void:
+	shop_title_label.text = "%s\n%s\n金币：%d | 刷新：%d" % [
+		str(GameManager.active_shop_event.get("title", "商店")),
+		str(GameManager.active_shop_event.get("objective", "选择一项补给")),
+		GameManager.gold,
+		GameManager.get_shop_refresh_cost()
+	]
 
 func _on_event_choice_open_changed(is_open: bool, event: Dictionary, choices: Array) -> void:
 	if event_choice_panel == null:

@@ -1344,10 +1344,11 @@ func _get_next_untriggered_boss_time() -> float:
 	return -1.0
 
 func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
-	var pool: Array[Dictionary] = [
+	var survival_pool: Array[Dictionary] = [
 		{
 			"id": "shop_heal",
 			"title": "应急治疗",
+			"category": "生存",
 			"description": "恢复 45 生命",
 			"cost": 12 + completed_stage * 2,
 			"reward_heal": 45
@@ -1355,22 +1356,29 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_shield",
 			"title": "折光护盾",
+			"category": "生存",
 			"description": "获得 24 点短暂护盾",
 			"cost": 14 + completed_stage * 2,
 			"reward_graze_shield": 24,
 			"reward_graze_shield_duration": 4.0
-		},
+		}
+	]
+	var gear_pool: Array[Dictionary] = [
 		{
 			"id": "shop_equipment",
 			"title": "鉴定装备",
+			"category": "装备",
 			"description": "获得 1 件当前关卡等级装备",
 			"cost": 18 + completed_stage * 3,
 			"reward_equipment_count": 1,
 			"reward_level_bonus": 1
-		},
+		}
+	]
+	var core_skill_pool: Array[Dictionary] = [
 		{
 			"id": "shop_damage_skill",
 			"title": "技能：强击弹体",
+			"category": "基础技能",
 			"description": "投射物伤害 +5，适合暴击和穿透",
 			"cost": 16 + completed_stage * 2,
 			"reward_upgrade_id": "damage",
@@ -1379,6 +1387,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_attack_speed_skill",
 			"title": "技能：急速施放",
+			"category": "基础技能",
 			"description": "射击间隔缩短，提升所有投射组合频率",
 			"cost": 18 + completed_stage * 2,
 			"reward_upgrade_id": "attack_speed",
@@ -1387,6 +1396,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_multishot_skill",
 			"title": "技能：分裂射击",
+			"category": "基础技能",
 			"description": "每次攻击投射物 +1，适合爆裂和暴击",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "multishot",
@@ -1395,14 +1405,18 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_pierce_skill",
 			"title": "技能：穿透弹芯",
+			"category": "基础技能",
 			"description": "投射物穿透 +1，适合多投射和直线清场",
 			"cost": 20 + completed_stage * 3,
 			"reward_upgrade_id": "piercing_rounds",
 			"reward_upgrade_title": "穿透弹芯"
-		},
+		}
+	]
+	var shape_skill_pool: Array[Dictionary] = [
 		{
 			"id": "shop_blast_skill",
 			"title": "技能：爆裂核心",
+			"category": "形态技能",
 			"description": "命中时产生范围爆裂，适合聚怪清场",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "blast_core",
@@ -1411,6 +1425,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_chain_skill",
 			"title": "技能：连锁电弧",
+			"category": "形态技能",
 			"description": "每次攻击额外发射会偏转追敌的连锁弹",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "chain_spark",
@@ -1419,6 +1434,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_orbit_skill",
 			"title": "技能：回旋刃",
+			"category": "形态技能",
 			"description": "每次攻击向侧翼追加两枚回旋弹",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "orbit_blade",
@@ -1427,6 +1443,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_overload_skill",
 			"title": "技能：过载爆发",
+			"category": "形态技能",
 			"description": "每 4 次攻击释放一圈爆裂弹",
 			"cost": 28 + completed_stage * 3,
 			"reward_upgrade_id": "overload_burst",
@@ -1434,19 +1451,27 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		}
 	]
 	if completed_stage >= 4:
-		pool.append({
+		gear_pool.append({
 			"id": "shop_clear",
 			"title": "清场符标",
+			"category": "工具",
 			"description": "清除敌弹并恢复少量生命",
 			"cost": 20 + completed_stage * 2,
 			"reward_heal": 12,
 			"reward_clear_projectiles": true
 		})
-	pool.shuffle()
 	var offers: Array[Dictionary] = []
-	for index in range(min(4, pool.size())):
-		offers.append(pool[index])
+	offers.append(_roll_shop_offer_from_pool(survival_pool))
+	offers.append(_roll_shop_offer_from_pool(gear_pool))
+	offers.append(_roll_shop_offer_from_pool(core_skill_pool))
+	offers.append(_roll_shop_offer_from_pool(shape_skill_pool))
 	return offers
+
+func _roll_shop_offer_from_pool(pool: Array[Dictionary]) -> Dictionary:
+	if pool.is_empty():
+		return {}
+	var index := randi_range(0, pool.size() - 1)
+	return pool[index].duplicate(true)
 
 func _build_shop_offers(event: Dictionary) -> Array[Dictionary]:
 	var offers: Array[Dictionary] = []

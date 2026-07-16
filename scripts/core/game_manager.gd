@@ -1226,9 +1226,74 @@ func _build_between_stage_shop_event(completed_stage: int) -> Dictionary:
 		"objective": "购买技能或装备，刷新需消耗金币；离开后进入第 %d 关" % next_stage,
 		"complete_message": "离开商店，进入第 %d 关" % next_stage,
 		"completed_stage": completed_stage,
+		"next_stage_preview": _build_next_stage_preview(next_stage),
 		"stage_summary": last_stage_summary.duplicate(true),
 		"offers": _roll_between_stage_shop_offers(completed_stage)
 	}
+
+func _build_next_stage_preview(stage_number: int) -> Dictionary:
+	var phase_index := stage_number - 1
+	if phase_index < 0 or phase_index >= RUN_PHASES.size():
+		return {}
+	var phase: Dictionary = RUN_PHASES[phase_index].duplicate(true)
+	var special_title := ""
+	var special_objective := ""
+	var kind := "普通关"
+	if stage_number >= STAGE_COUNT:
+		kind = "终局关"
+	for encounter in ENCOUNTER_SCHEDULE:
+		if int(encounter.get("stage_index", -1)) != stage_number:
+			continue
+		special_title = str(encounter.get("title", "特殊遭遇"))
+		special_objective = str(encounter.get("objective", "击败特殊敌人"))
+		kind = "Boss 关" if str(encounter.get("kind", "")) == "boss" else "精英关"
+		break
+	var patterns: Array = phase.get("bullet_patterns", [])
+	var pattern_text := "常规弹幕"
+	if not patterns.is_empty():
+		var pattern_names: Array[String] = []
+		for pattern in patterns:
+			pattern_names.append(_get_bullet_pattern_label(str(pattern)))
+		pattern_text = " / ".join(pattern_names)
+	return {
+		"stage_number": stage_number,
+		"kind": kind,
+		"name": str(phase.get("name", "未知关卡")),
+		"goal": str(phase.get("goal", "")),
+		"special_title": special_title,
+		"special_objective": special_objective,
+		"patterns": pattern_text,
+		"kill_target": maxi(0, int(phase.get("kill_target", 0))),
+		"reward_gold": maxi(0, int(phase.get("reward_gold", 0))),
+		"reward_experience": maxi(0, int(phase.get("reward_experience", 0))),
+		"reward_heal": maxi(0, int(phase.get("reward_heal", 0)))
+	}
+
+func _get_bullet_pattern_label(pattern_id: String) -> String:
+	match pattern_id:
+		"aimed":
+			return "直线"
+		"aimed_burst":
+			return "集束"
+		"fan":
+			return "扇形"
+		"ring":
+			return "环形"
+		"cross":
+			return "交叉"
+		"sweep":
+			return "扫射"
+		"spiral":
+			return "螺旋"
+		"double_ring":
+			return "双环"
+		"pinwheel":
+			return "针轮"
+		"wall":
+			return "墙幕"
+		"flower":
+			return "花形"
+	return pattern_id
 
 func _update_current_phase_objective() -> void:
 	if current_phase_objective_completed:

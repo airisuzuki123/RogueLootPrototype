@@ -544,10 +544,12 @@ func _update_shop_title() -> void:
 			int(summary.get("overkill", 0)),
 			int(summary.get("bonus_gold", 0))
 		]
-	shop_title_label.text = "%s\n%s%s\n金币：%d | 刷新：%d" % [
+	var preview_text := _format_shop_next_stage_preview(GameManager.active_shop_event.get("next_stage_preview", {}))
+	shop_title_label.text = "%s\n%s%s%s\n金币：%d | 刷新：%d" % [
 		str(GameManager.active_shop_event.get("title", "商店")),
 		str(GameManager.active_shop_event.get("objective", "选择一项补给")),
 		summary_text,
+		preview_text,
 		GameManager.gold,
 		GameManager.get_shop_refresh_cost()
 	]
@@ -1014,6 +1016,43 @@ func _format_phase_reward(phase: Dictionary) -> String:
 	var reward_gold := maxi(0, int(phase.get("reward_gold", 0)))
 	var reward_experience := maxi(0, int(phase.get("reward_experience", 0)))
 	var reward_heal := maxi(0, int(phase.get("reward_heal", 0)))
+	if reward_gold > 0:
+		parts.append("金币 +%d" % reward_gold)
+	if reward_experience > 0:
+		parts.append("经验 +%d" % reward_experience)
+	if reward_heal > 0:
+		parts.append("生命 +%d" % reward_heal)
+	if parts.is_empty():
+		return "无"
+	return "，".join(parts)
+
+func _format_shop_next_stage_preview(preview: Dictionary) -> String:
+	if preview.is_empty():
+		return ""
+	var stage_number := int(preview.get("stage_number", 0))
+	var kind := str(preview.get("kind", "普通关"))
+	var name := str(preview.get("name", "未知关卡"))
+	var patterns := str(preview.get("patterns", "常规弹幕"))
+	var special_title := str(preview.get("special_title", ""))
+	var special_objective := str(preview.get("special_objective", ""))
+	var line := "\n下一关：%s | %s | %s" % [name, kind, patterns]
+	if not special_title.is_empty():
+		line += "\n特殊目标：%s" % special_title
+		if not special_objective.is_empty():
+			line += " - %s" % special_objective
+	line += "\n击杀目标：%d | 奖励：%s" % [
+		int(preview.get("kill_target", 0)),
+		_format_preview_reward(preview)
+	]
+	if stage_number > 0 and kind == "终局关":
+		line += " | 完成第 %d 关结束本局" % stage_number
+	return line
+
+func _format_preview_reward(preview: Dictionary) -> String:
+	var parts: Array[String] = []
+	var reward_gold := int(preview.get("reward_gold", 0))
+	var reward_experience := int(preview.get("reward_experience", 0))
+	var reward_heal := int(preview.get("reward_heal", 0))
 	if reward_gold > 0:
 		parts.append("金币 +%d" % reward_gold)
 	if reward_experience > 0:

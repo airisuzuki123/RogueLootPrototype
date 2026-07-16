@@ -41,3 +41,24 @@ static func show_line(world: Node, start_position: Vector2, end_position: Vector
 	var tween := line.create_tween()
 	tween.tween_property(line, "modulate:a", 0.0, duration)
 	tween.tween_callback(Callable(line, "queue_free"))
+
+static func show_ring(world: Node, position: Vector2, radius: float, tint: Color, width: float = 4.0, duration: float = 0.18) -> void:
+	if world == null:
+		return
+	var ring := Line2D.new()
+	ring.global_position = Vector2.ZERO
+	ring.closed = true
+	ring.width = width
+	ring.default_color = tint
+	ring.z_index = 5
+	var points := PackedVector2Array()
+	var segment_count := 48
+	for index in range(segment_count):
+		var angle := TAU * float(index) / float(segment_count)
+		points.append(position + Vector2.RIGHT.rotated(angle) * radius)
+	ring.points = points
+	world.add_child(ring)
+	var tween := ring.create_tween()
+	tween.tween_property(ring, "width", width * 0.35, duration)
+	tween.parallel().tween_property(ring, "modulate:a", 0.0, duration)
+	tween.tween_callback(Callable(ring, "queue_free"))

@@ -185,26 +185,31 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			result["volley_projectiles"] = _fire_charged_volley()
 		"chain_spark":
 			chain_spark_stacks += 1
+			result["skill_text"] = "连锁强化 x%d" % chain_spark_stacks
 		"orbit_blade":
 			orbit_blade_stacks += 1
+			result["skill_text"] = "回旋强化 x%d" % orbit_blade_stacks
 		"overload_burst":
 			overload_burst_stacks += 1
+			result["skill_text"] = "过载强化 x%d" % overload_burst_stacks
 		"homing_shards":
 			homing_shard_stacks += 1
+			result["skill_text"] = "寻迹强化 x%d" % homing_shard_stacks
 		"heavy_shot":
 			heavy_shot_stacks += 1
 			upgrade_damage_bonus += 2
 			projectile_damage += 2
 			result["damage_bonus"] = 2
+			result["skill_text"] = "重弹强化 x%d" % heavy_shot_stacks
 		"close_slash":
 			close_slash_stacks += 1
-			result["skill_text"] = "近身刀环"
+			result["skill_text"] = "刀环强化 x%d" % close_slash_stacks
 		"pulse_field":
 			pulse_field_stacks += 1
-			result["skill_text"] = "脉冲场"
+			result["skill_text"] = "脉冲强化 x%d" % pulse_field_stacks
 		"channel_beam":
 			channel_beam_stacks += 1
-			result["skill_text"] = "引导光束"
+			result["skill_text"] = "光束强化 x%d" % channel_beam_stacks
 		"form_focused":
 			upgrade_damage_bonus += 8
 			projectile_damage += 8
@@ -418,7 +423,13 @@ func _spawn_player_projectile(direction: Vector2, damage_multiplier: float = 1.0
 		projectile.explosion_radius = 56.0 + float(overload_burst_stacks) * 8.0
 	projectile.explosion_damage = int(round(float(projectile.damage) * _get_total_explosion_damage_ratio()))
 	if extra_tags.has("overload") and projectile.explosion_damage <= 0:
-		projectile.explosion_damage = maxi(1, int(round(float(projectile.damage) * 0.35)))
+		projectile.explosion_damage = maxi(1, int(round(float(projectile.damage) * (0.30 + float(overload_burst_stacks) * 0.04))))
+	if extra_tags.has("chain"):
+		projectile.lifetime = maxf(projectile.lifetime, 1.45 + float(chain_spark_stacks) * 0.08)
+		projectile.knockback_force *= 1.0 + float(chain_spark_stacks) * 0.04
+	if extra_tags.has("orbit"):
+		projectile.lifetime = maxf(projectile.lifetime, 1.35 + float(orbit_blade_stacks) * 0.08)
+		projectile.knockback_force *= 1.0 + float(orbit_blade_stacks) * 0.05
 	projectile.source_player = self
 	projectile.life_steal_percent = equipment_life_steal_bonus
 	projectile.power_tags = _get_projectile_power_tags(projectile)
@@ -429,29 +440,39 @@ func _spawn_player_projectile(direction: Vector2, damage_multiplier: float = 1.0
 		projectile.speed *= 0.78
 		projectile.knockback_force *= 1.45 + float(heavy_shot_stacks) * 0.12
 		projectile.lifetime = maxf(projectile.lifetime, 1.65)
+		if projectile.explosion_radius <= 0.0 and heavy_shot_stacks >= 2:
+			projectile.explosion_radius = 38.0 + float(heavy_shot_stacks) * 8.0
+			projectile.explosion_damage = maxi(projectile.explosion_damage, int(round(float(projectile.damage) * 0.28)))
 	for tag in extra_tags:
 		if not projectile.power_tags.has(tag):
 			projectile.power_tags.append(tag)
 	get_tree().current_scene.add_child(projectile)
 
 func _fire_extra_skill_projectiles(base_direction: Vector2) -> void:
-	for index in range(mini(chain_spark_stacks, 3)):
+	var chain_count := mini(chain_spark_stacks, 3)
+	var chain_multiplier := 0.66 + float(chain_spark_stacks) * 0.06
+	for index in range(chain_count):
 		var angle := deg_to_rad(18.0 + float(index) * 10.0)
 		var side := -1.0 if index % 2 == 0 else 1.0
-		_spawn_player_projectile(base_direction.rotated(angle * side), 0.72, ["chain"])
-	for index in range(mini(orbit_blade_stacks, 3)):
+		_spawn_player_projectile(base_direction.rotated(angle * side), chain_multiplier, ["chain"])
+	var orbit_count := mini(orbit_blade_stacks, 3)
+	var orbit_multiplier := 0.54 + float(orbit_blade_stacks) * 0.08
+	for index in range(orbit_count):
 		var side_angle := deg_to_rad(82.0 + float(index) * 8.0)
-		_spawn_player_projectile(base_direction.rotated(side_angle), 0.62, ["orbit"])
-		_spawn_player_projectile(base_direction.rotated(-side_angle), 0.62, ["orbit"])
+		_spawn_player_projectile(base_direction.rotated(side_angle), orbit_multiplier, ["orbit"])
+		_spawn_player_projectile(base_direction.rotated(-side_angle), orbit_multiplier, ["orbit"])
 	if overload_burst_stacks > 0 and attack_sequence % 4 == 0:
 		var bullet_count := mini(12, 6 + overload_burst_stacks * 2)
+		var overload_multiplier := 0.50 + float(overload_burst_stacks) * 0.08
 		for index in range(bullet_count):
 			var angle := TAU * float(index) / float(bullet_count)
-			_spawn_player_projectile(Vector2.RIGHT.rotated(angle), 0.58, ["overload", "blast"])
+			_spawn_player_projectile(Vector2.RIGHT.rotated(angle), overload_multiplier, ["overload", "blast"])
 	if homing_shard_stacks > 0:
-		for index in range(mini(homing_shard_stacks, 3)):
-			var angle := deg_to_rad((float(index) - float(mini(homing_shard_stacks, 3) - 1) * 0.5) * 24.0)
-			_spawn_player_projectile(base_direction.rotated(angle), 0.64, ["homing"])
+		var homing_count := mini(homing_shard_stacks, 3)
+		var homing_multiplier := 0.56 + float(homing_shard_stacks) * 0.08
+		for index in range(homing_count):
+			var angle := deg_to_rad((float(index) - float(homing_count - 1) * 0.5) * 24.0)
+			_spawn_player_projectile(base_direction.rotated(angle), homing_multiplier, ["homing"])
 	if heavy_shot_stacks > 0 and attack_sequence % 3 == 0:
 		_spawn_player_projectile(base_direction, 1.55 + float(heavy_shot_stacks) * 0.12, ["heavy", "charged"])
 
@@ -462,7 +483,7 @@ func _update_close_range_skills(delta: float) -> void:
 		pulse_field_cooldown -= delta
 	if close_slash_stacks > 0 and close_slash_cooldown <= 0.0:
 		_fire_close_slash()
-		close_slash_cooldown = maxf(0.62, 1.18 - float(close_slash_stacks) * 0.08)
+		close_slash_cooldown = maxf(0.48, 1.18 - float(close_slash_stacks) * 0.09)
 	if pulse_field_stacks > 0 and pulse_field_cooldown <= 0.0:
 		_fire_pulse_field()
 		pulse_field_cooldown = maxf(1.15, 2.25 - float(pulse_field_stacks) * 0.12)
@@ -477,8 +498,8 @@ func _update_channel_skill(delta: float) -> void:
 	_fire_channel_beam_tick()
 
 func _fire_close_slash() -> void:
-	var radius := 70.0 + float(close_slash_stacks) * 10.0
-	var damage := maxi(1, int(round(float(_get_base_projectile_damage()) * (0.52 + float(close_slash_stacks) * 0.08))))
+	var radius := 72.0 + float(close_slash_stacks) * 13.0
+	var damage := maxi(1, int(round(float(_get_base_projectile_damage()) * (0.50 + float(close_slash_stacks) * 0.10))))
 	var hit_count := 0
 	for enemy_node in get_tree().get_nodes_in_group("enemies"):
 		var enemy := enemy_node as Node2D
@@ -491,9 +512,22 @@ func _fire_close_slash() -> void:
 			var knockback := global_position.direction_to(enemy.global_position) * (150.0 + float(close_slash_stacks) * 16.0)
 			enemy.take_damage(damage, knockback)
 			hit_count += 1
+	_show_close_slash_effect(radius)
 	if hit_count > 0:
 		CombatFeedback.show_text(get_tree().current_scene, global_position, "斩击", Color(0.82, 1.0, 0.72, 1.0))
-	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(0.62, 1.0, 0.58, 0.66), 1.1 + float(close_slash_stacks) * 0.14)
+	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(0.62, 1.0, 0.58, 0.74), 1.25 + float(close_slash_stacks) * 0.18)
+
+func _show_close_slash_effect(radius: float) -> void:
+	var world := get_tree().current_scene
+	CombatFeedback.show_ring(world, global_position, radius, Color(0.72, 1.0, 0.55, 0.78), 5.0 + float(close_slash_stacks) * 0.45, 0.20)
+	CombatFeedback.show_ring(world, global_position, radius * 0.64, Color(0.95, 1.0, 0.70, 0.46), 2.2 + float(close_slash_stacks) * 0.25, 0.14)
+	var slash_count := mini(8, 3 + close_slash_stacks)
+	var rotation_offset := float(attack_sequence % 8) * 0.42
+	for index in range(slash_count):
+		var angle := rotation_offset + TAU * float(index) / float(slash_count)
+		var start := global_position + Vector2.RIGHT.rotated(angle - 0.26) * radius * 0.32
+		var end := global_position + Vector2.RIGHT.rotated(angle + 0.26) * radius
+		CombatFeedback.show_line(world, start, end, Color(0.86, 1.0, 0.58, 0.72), 3.0 + float(close_slash_stacks) * 0.22, 0.16)
 
 func _fire_pulse_field() -> void:
 	var radius := 96.0 + float(pulse_field_stacks) * 14.0

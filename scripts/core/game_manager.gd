@@ -1459,6 +1459,11 @@ func _get_next_untriggered_boss_time() -> float:
 	return -1.0
 
 func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
+	var next_stage_preview := _build_next_stage_preview(completed_stage + 1)
+	var next_stage_kind := str(next_stage_preview.get("kind", "普通关"))
+	var is_elite_prep := next_stage_kind == "精英关"
+	var is_boss_prep := next_stage_kind == "Boss 关"
+	var is_final_prep := next_stage_kind == "终局关"
 	var survival_pool: Array[Dictionary] = [
 		{
 			"id": "shop_heal",
@@ -1478,6 +1483,16 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"reward_graze_shield_duration": 4.0
 		}
 	]
+	if is_elite_prep or is_boss_prep or is_final_prep:
+		survival_pool.append({
+			"id": "shop_prep_barrier",
+			"title": "预备屏障",
+			"category": "生存",
+			"description": "下一关压力较高，获得更厚的短暂护盾",
+			"cost": 18 + completed_stage * 2,
+			"reward_graze_shield": 34,
+			"reward_graze_shield_duration": 5.0
+		})
 	var gear_pool: Array[Dictionary] = [
 		{
 			"id": "shop_equipment",
@@ -1489,6 +1504,16 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"reward_level_bonus": 1
 		}
 	]
+	if is_boss_prep or is_final_prep:
+		gear_pool.append({
+			"id": "shop_boss_equipment",
+			"title": "决战装备",
+			"category": "装备",
+			"description": "获得 1 件更高等级装备，用于准备特殊关卡",
+			"cost": 28 + completed_stage * 3,
+			"reward_equipment_count": 1,
+			"reward_level_bonus": 3
+		})
 	var core_skill_pool: Array[Dictionary] = [
 		{
 			"id": "shop_damage_skill",
@@ -1527,6 +1552,16 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"reward_upgrade_title": "穿透弹芯"
 		}
 	]
+	if is_elite_prep or is_boss_prep or is_final_prep:
+		core_skill_pool.append({
+			"id": "shop_prep_volley_skill",
+			"title": "技能：充能连射",
+			"category": "基础技能",
+			"description": "立即连射并提升少量伤害，适合精英和 Boss 前爆发",
+			"cost": 24 + completed_stage * 3,
+			"reward_upgrade_id": "charged_volley",
+			"reward_upgrade_title": "充能连射"
+		})
 	var shape_skill_pool: Array[Dictionary] = [
 		{
 			"id": "shop_blast_skill",
@@ -1565,6 +1600,16 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"reward_upgrade_title": "过载爆发"
 		}
 	]
+	if is_boss_prep or is_final_prep:
+		shape_skill_pool.append({
+			"id": "shop_prep_nova_skill",
+			"title": "技能：脉冲新星",
+			"category": "形态技能",
+			"description": "立即释放环形爆裂弹，并提升爆裂范围",
+			"cost": 26 + completed_stage * 3,
+			"reward_upgrade_id": "pulse_nova",
+			"reward_upgrade_title": "脉冲新星"
+		})
 	if completed_stage >= 4:
 		gear_pool.append({
 			"id": "shop_clear",
@@ -1575,11 +1620,22 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"reward_heal": 12,
 			"reward_clear_projectiles": true
 		})
+	if is_boss_prep or is_final_prep:
+		gear_pool.append({
+			"id": "shop_boss_clear",
+			"title": "净场符标",
+			"category": "工具",
+			"description": "进入高压关前清除敌弹并获得短暂护盾",
+			"cost": 24 + completed_stage * 2,
+			"reward_graze_shield": 18,
+			"reward_graze_shield_duration": 4.0,
+			"reward_clear_projectiles": true
+		})
 	var offers: Array[Dictionary] = []
-	offers.append(_roll_shop_offer_from_pool(survival_pool))
-	offers.append(_roll_shop_offer_from_pool(gear_pool))
-	offers.append(_roll_shop_offer_from_pool(core_skill_pool))
-	offers.append(_roll_shop_offer_from_pool(shape_skill_pool))
+	offers.append(_roll_stage_shop_offer(survival_pool, "shop_prep_barrier" if is_elite_prep or is_boss_prep or is_final_prep else ""))
+	offers.append(_roll_stage_shop_offer(gear_pool, "shop_boss_clear" if is_boss_prep or is_final_prep else ""))
+	offers.append(_roll_stage_shop_offer(core_skill_pool, "shop_prep_volley_skill" if is_elite_prep or is_boss_prep or is_final_prep else ""))
+	offers.append(_roll_stage_shop_offer(shape_skill_pool, "shop_prep_nova_skill" if is_boss_prep or is_final_prep else ""))
 	return offers
 
 func _roll_shop_offer_from_pool(pool: Array[Dictionary]) -> Dictionary:
@@ -1587,6 +1643,15 @@ func _roll_shop_offer_from_pool(pool: Array[Dictionary]) -> Dictionary:
 		return {}
 	var index := randi_range(0, pool.size() - 1)
 	return pool[index].duplicate(true)
+
+func _roll_stage_shop_offer(pool: Array[Dictionary], preferred_id: String = "") -> Dictionary:
+	if pool.is_empty():
+		return {}
+	if not preferred_id.is_empty() and randf() < 0.65:
+		for offer in pool:
+			if str(offer.get("id", "")) == preferred_id:
+				return offer.duplicate(true)
+	return _roll_shop_offer_from_pool(pool)
 
 func _build_shop_offers(event: Dictionary) -> Array[Dictionary]:
 	var offers: Array[Dictionary] = []

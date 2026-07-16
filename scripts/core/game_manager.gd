@@ -10,7 +10,7 @@ const GRAZE_REWARD_COOLDOWN: float = 6.0
 const SPECIAL_NODE_MIN_INTERVAL: float = 22.0
 const BOSS_PREP_LOCKOUT_SECONDS: float = 12.0
 const STAGE_COUNT: int = 10
-const SHOP_REFRESH_BASE_COST: int = 8
+const SHOP_REFRESH_BASE_COST: int = 6
 const OVERKILL_BONUS_PER_KILL: int = 2
 const OVERKILL_BONUS_CAP: int = 24
 
@@ -146,7 +146,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.78,
 		"spawn_count": 1,
 		"enemy_level_bonus": 2,
-		"enemy_weight_bonus": {"grunt": 8, "runner": 6, "tank": 6, "bulwark": 4, "ranged": 18, "weaver": 16, "turret": 14},
+		"enemy_weight_bonus": {"grunt": 10, "runner": 8, "tank": 7, "bulwark": 5, "ranged": 16, "weaver": 14, "turret": 12},
 		"bullet_pattern": "spiral",
 		"bullet_patterns": ["spiral", "fan", "mirror_fan", "double_ring", "sweep"],
 		"enemy_bullet_patterns": {
@@ -170,7 +170,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.72,
 		"spawn_count": 1,
 		"enemy_level_bonus": 2,
-		"enemy_weight_bonus": {"grunt": 8, "runner": 6, "tank": 8, "bulwark": 6, "ranged": 20, "weaver": 16, "turret": 14},
+		"enemy_weight_bonus": {"grunt": 10, "runner": 8, "tank": 9, "bulwark": 7, "ranged": 18, "weaver": 14, "turret": 12},
 		"bullet_pattern": "wall",
 		"bullet_patterns": ["wall", "diamond", "cross", "ring"],
 		"enemy_bullet_patterns": {
@@ -194,7 +194,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.94,
 		"spawn_count": 1,
 		"enemy_level_bonus": 3,
-		"enemy_weight_bonus": {"grunt": 6, "runner": 4, "tank": 7, "bulwark": 5, "ranged": 16, "weaver": 12, "turret": 22},
+		"enemy_weight_bonus": {"grunt": 8, "runner": 5, "tank": 8, "bulwark": 6, "ranged": 14, "weaver": 11, "turret": 22},
 		"bullet_pattern": "ring",
 		"bullet_patterns": ["ring", "diamond", "double_ring", "pinwheel"],
 		"enemy_bullet_patterns": {
@@ -218,7 +218,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 1.06,
 		"spawn_count": 1,
 		"enemy_level_bonus": 3,
-		"enemy_weight_bonus": {"grunt": 4, "runner": 2, "tank": 7, "bulwark": 5, "ranged": 14, "weaver": 14, "turret": 22},
+		"enemy_weight_bonus": {"grunt": 6, "runner": 3, "tank": 8, "bulwark": 7, "ranged": 12, "weaver": 12, "turret": 22},
 		"bullet_pattern": "flower",
 		"bullet_patterns": ["wall", "flower", "diamond", "pinwheel", "double_ring"],
 		"enemy_bullet_patterns": {
@@ -242,7 +242,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.66,
 		"spawn_count": 2,
 		"enemy_level_bonus": 4,
-		"enemy_weight_bonus": {"grunt": 10, "runner": 8, "tank": 9, "bulwark": 8, "ranged": 22, "weaver": 18, "turret": 22},
+		"enemy_weight_bonus": {"grunt": 14, "runner": 10, "tank": 11, "bulwark": 10, "ranged": 18, "weaver": 15, "turret": 19},
 		"bullet_pattern": "wall",
 		"bullet_patterns": ["wall", "spiral", "flower", "diamond", "pinwheel"],
 		"enemy_bullet_patterns": {
@@ -266,7 +266,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.58,
 		"spawn_count": 2,
 		"enemy_level_bonus": 5,
-		"enemy_weight_bonus": {"grunt": 12, "runner": 8, "tank": 10, "bulwark": 9, "ranged": 22, "weaver": 18, "turret": 22},
+		"enemy_weight_bonus": {"grunt": 16, "runner": 11, "tank": 12, "bulwark": 11, "ranged": 18, "weaver": 15, "turret": 19},
 		"bullet_pattern": "wall",
 		"bullet_patterns": ["wall", "spiral", "flower", "diamond", "pinwheel"],
 		"enemy_bullet_patterns": {
@@ -295,7 +295,7 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 		"objective": "击败精英，穿过连续扇形扫射",
 		"spawn_message": "精英遭遇：织弹追猎者正在入场",
 		"defeat_message": "精英已击败：织弹追猎者",
-		"health_multiplier": 3.2,
+		"health_multiplier": 3.45,
 		"touch_damage_multiplier": 1.2,
 		"move_speed_multiplier": 1.08,
 		"attack_interval_multiplier": 0.82,
@@ -315,7 +315,7 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 				"objective": "击败精英，处理交叉弹幕和扫射追压",
 				"spawn_message": "精英遭遇：弧光织手切入战场",
 				"defeat_message": "精英已击败：弧光织手",
-				"health_multiplier": 3.45,
+				"health_multiplier": 3.7,
 				"attack_interval_multiplier": 0.78,
 				"projectile_speed_multiplier": 1.08,
 				"color": Color(0.50, 0.72, 1.0, 1.0),
@@ -339,7 +339,7 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 		"objective": "击败精英，观察环形与交叉弹幕缺口",
 		"spawn_message": "精英遭遇：环阵炮台锁定战场",
 		"defeat_message": "精英已击败：环阵炮台",
-		"health_multiplier": 4.0,
+		"health_multiplier": 4.35,
 		"touch_damage_multiplier": 1.25,
 		"move_speed_multiplier": 0.88,
 		"attack_interval_multiplier": 0.78,
@@ -359,7 +359,7 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 				"objective": "击败精英，穿过弹幕墙和环形缺口",
 				"spawn_message": "精英遭遇：折幕炮台封锁路线",
 				"defeat_message": "精英已击败：折幕炮台",
-				"health_multiplier": 4.25,
+				"health_multiplier": 4.55,
 				"attack_interval_multiplier": 0.82,
 				"projectile_speed_multiplier": 1.05,
 				"color": Color(0.42, 1.0, 0.72, 1.0),
@@ -382,8 +382,8 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 		"objective": "击败 Boss，处理墙幕、花形弹幕和旋转缺口",
 		"spawn_message": "Boss 遭遇：棱镜核心展开",
 		"defeat_message": "Boss 已击败：棱镜核心",
-		"health_multiplier": 8.5,
-		"health_bonus": 120,
+		"health_multiplier": 9.25,
+		"health_bonus": 150,
 		"touch_damage_multiplier": 1.45,
 		"move_speed_multiplier": 0.72,
 		"attack_interval_multiplier": 0.62,
@@ -834,7 +834,9 @@ func refresh_shop_offers() -> bool:
 	return true
 
 func get_shop_refresh_cost() -> int:
-	return SHOP_REFRESH_BASE_COST + shop_refresh_count * 4
+	var completed_stage := maxi(0, int(active_shop_event.get("completed_stage", 0)))
+	var stage_surcharge := int(floor(float(completed_stage) / 2.0))
+	return SHOP_REFRESH_BASE_COST + stage_surcharge + shop_refresh_count * 5
 
 func get_run_summary() -> Dictionary:
 	return {
@@ -1873,6 +1875,10 @@ func _format_upgrade_result(result: Dictionary) -> String:
 	var nova_projectiles := int(result.get("nova_projectiles", 0))
 	var volley_projectiles := int(result.get("volley_projectiles", 0))
 	var damage_bonus := int(result.get("damage_bonus", 0))
+	var attack_speed_percent := int(result.get("attack_speed_percent", 0))
+	var move_speed_bonus := int(result.get("move_speed_bonus", 0))
+	var max_health_bonus := int(result.get("max_health_bonus", 0))
+	var heal := int(result.get("heal", 0))
 	var explosion_radius := int(result.get("explosion_radius", 0))
 	var skill_text := str(result.get("skill_text", ""))
 	if cleared_projectiles > 0:
@@ -1885,6 +1891,14 @@ func _format_upgrade_result(result: Dictionary) -> String:
 		parts.append("连射弹 %d" % volley_projectiles)
 	if damage_bonus > 0:
 		parts.append("伤害 +%d" % damage_bonus)
+	if attack_speed_percent > 0:
+		parts.append("攻速 +%d%%" % attack_speed_percent)
+	if move_speed_bonus > 0:
+		parts.append("移速 +%d" % move_speed_bonus)
+	if max_health_bonus > 0:
+		parts.append("生命上限 +%d" % max_health_bonus)
+	if heal > 0:
+		parts.append("生命 +%d" % heal)
 	if explosion_radius > 0:
 		parts.append("爆裂 +%d" % explosion_radius)
 	if not skill_text.is_empty():

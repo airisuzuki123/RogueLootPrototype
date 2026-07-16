@@ -37,6 +37,7 @@ var encounter_base_projectile_speed: float = 240.0
 var knockback_resistance: float = 1.0
 var active_boss_phase_index: int = -1
 var active_boss_phase: Dictionary = {}
+var encounter_aura_timer: float = 0.0
 @onready var visual: Polygon2D = $Visual
 @onready var health_bar: ProgressBar = $HealthBar
 
@@ -53,6 +54,7 @@ func _physics_process(delta: float) -> void:
 	if GameManager.is_run_over or GameManager.is_gameplay_paused():
 		return
 	attack_cooldown -= delta
+	_update_encounter_aura(delta)
 	_update_strafe(delta)
 	if target == null or not is_instance_valid(target):
 		return
@@ -490,3 +492,20 @@ func _spawn_enemy_projectile(direction: Vector2, offset: Vector2, color: Color, 
 
 func _show_ranged_burst(color: Color, size: float) -> void:
 	CombatFeedback.show_burst(get_tree().current_scene, global_position, color, size)
+
+func _update_encounter_aura(delta: float) -> void:
+	if not is_encounter_enemy:
+		return
+	encounter_aura_timer -= delta
+	if encounter_aura_timer > 0.0:
+		return
+	var aura_color: Color = active_boss_phase.get("color", encounter_config.get("color", visual.color))
+	var radius := 42.0 * maxf(1.0, visual.scale.x)
+	var width := 2.2
+	var duration := 0.18
+	if str(encounter_config.get("kind", "")) == "boss":
+		radius *= 1.15
+		width = 3.2
+		duration = 0.22
+	encounter_aura_timer = 0.55 if str(encounter_config.get("kind", "")) == "boss" else 0.8
+	CombatFeedback.show_ring(get_tree().current_scene, global_position, radius, Color(aura_color.r, aura_color.g, aura_color.b, 0.46), width, duration)

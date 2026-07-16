@@ -142,27 +142,33 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			upgrade_attack_speed_stacks += 1
 			base_fire_interval = max(0.18, base_fire_interval * 0.82)
 			fire_interval = _calculate_fire_interval()
+			result["attack_speed_percent"] = 18
 		"move_speed":
 			move_speed += 35.0
+			result["move_speed_bonus"] = 35
 		"max_health":
 			max_health += 25
-			health = min(max_health, health + 25)
+			result["heal"] = _heal_after_upgrade(25)
 			GameManager.update_player_health(health, max_health)
+			result["max_health_bonus"] = 25
 		"heal":
-			health = min(max_health, health + 40)
+			result["heal"] = _heal_after_upgrade(40)
 			GameManager.update_player_health(health, max_health)
 		"strong_heal":
-			health = min(max_health, health + 70)
+			result["heal"] = _heal_after_upgrade(70)
 			GameManager.update_player_health(health, max_health)
 		"recovery_training":
 			max_health += 12
-			health = min(max_health, health + 45)
+			result["heal"] = _heal_after_upgrade(45)
 			GameManager.update_player_health(health, max_health)
+			result["max_health_bonus"] = 12
 		"multishot":
 			upgrade_projectile_count_bonus += 1
 			projectile_count += 1
+			result["skill_text"] = "投射物 +1"
 		"piercing_rounds":
 			upgrade_pierce_bonus += 1
+			result["skill_text"] = "穿透 +1"
 		"blast_core":
 			upgrade_explosion_radius_bonus += 36.0
 			result["explosion_radius"] = 36
@@ -240,6 +246,11 @@ func heal_from_life_steal(hit_damage: int) -> void:
 	var heal_amount: int = max(1, int(round(float(hit_damage) * float(equipment_life_steal_bonus) / 100.0)))
 	health = min(max_health, health + heal_amount)
 	GameManager.update_player_health(health, max_health)
+
+func _heal_after_upgrade(amount: int) -> int:
+	var old_health := health
+	health = min(max_health, health + maxi(0, amount))
+	return health - old_health
 
 func get_gold_bonus_percent() -> int:
 	return equipment_gold_bonus

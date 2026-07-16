@@ -193,14 +193,23 @@ func _apply_enemy_type(type_id: String) -> void:
 			visual.scale = Vector2(0.85, 0.85)
 			knockback_resistance = 0.75
 		"tank":
-			max_health = 55
+			max_health = 64
 			move_speed = 75.0
 			touch_damage = 16
 			experience_reward = 3
 			loot_chance = 0.38
 			visual.color = Color(0.75, 0.15, 1, 1)
 			visual.scale = Vector2(1.35, 1.35)
-			knockback_resistance = 1.75
+			knockback_resistance = 1.9
+		"bulwark":
+			max_health = 105
+			move_speed = 54.0
+			touch_damage = 18
+			experience_reward = 4
+			loot_chance = 0.42
+			visual.color = Color(0.95, 0.72, 0.24, 1.0)
+			visual.scale = Vector2(1.62, 1.62)
+			knockback_resistance = 2.45
 		"ranged":
 			max_health = 22
 			move_speed = 95.0

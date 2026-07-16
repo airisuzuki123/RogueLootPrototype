@@ -29,7 +29,8 @@ var enemy_spawn_table: Array[Dictionary] = [
 	{"type": "tank", "weight": 12, "min_level": 2},
 	{"type": "ranged", "weight": 26, "min_level": 1},
 	{"type": "weaver", "weight": 12, "min_level": 2},
-	{"type": "turret", "weight": 8, "min_level": 3}
+	{"type": "turret", "weight": 8, "min_level": 3},
+	{"type": "bulwark", "weight": 4, "min_level": 5}
 ]
 
 func _ready() -> void:

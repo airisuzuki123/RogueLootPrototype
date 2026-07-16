@@ -344,22 +344,12 @@ func _center_control(control: Control, desired_size: Vector2, viewport_size: Vec
 		maxf(48.0, viewport_size.y * y_ratio - size.y * 0.5)
 	)
 
-func _toggle_fullscreen() -> void:
-	var window := get_window()
-	if window.mode == Window.MODE_FULLSCREEN:
-		window.mode = Window.MODE_WINDOWED
-	else:
-		window.mode = Window.MODE_FULLSCREEN
-	_layout_for_viewport()
-
 func _unhandled_input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.pressed and not event.echo):
 		return
 	var key_event: InputEventKey = event as InputEventKey
 	if key_event.keycode == KEY_B:
 		GameManager.toggle_inventory_open()
-	elif key_event.keycode == KEY_F11:
-		_toggle_fullscreen()
 	elif key_event.keycode == KEY_ESCAPE and GameManager.is_shop_open:
 		GameManager.close_shop_event()
 	elif key_event.keycode == KEY_ESCAPE and GameManager.is_event_choice_open:

@@ -23,6 +23,7 @@ const CHOICE_EVENT_SCENE := preload("res://scenes/choice_event.tscn")
 var player: CharacterBody2D
 var pending_arena_pattern: Dictionary = {}
 var arena_pattern_index: int = 0
+var windowed_size_before_fullscreen: Vector2i = Vector2i(1600, 900)
 var enemy_spawn_table: Array[Dictionary] = [
 	{"type": "grunt", "weight": 36, "min_level": 1},
 	{"type": "runner", "weight": 16, "min_level": 1},
@@ -51,6 +52,36 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	GameManager.update_run_time(delta)
+
+func _input(event: InputEvent) -> void:
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	var key_event: InputEventKey = event as InputEventKey
+	var is_f11 := key_event.keycode == KEY_F11 or key_event.physical_keycode == KEY_F11
+	var is_alt_enter := key_event.alt_pressed and (key_event.keycode == KEY_ENTER or key_event.physical_keycode == KEY_ENTER)
+	if not is_f11 and not is_alt_enter:
+		return
+	_toggle_fullscreen()
+	get_viewport().set_input_as_handled()
+
+func _toggle_fullscreen() -> void:
+	var current_mode := DisplayServer.window_get_mode()
+	var is_fullscreen := current_mode == DisplayServer.WINDOW_MODE_FULLSCREEN or current_mode == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN
+	if is_fullscreen:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		DisplayServer.window_set_size(windowed_size_before_fullscreen)
+		_center_window()
+	else:
+		windowed_size_before_fullscreen = DisplayServer.window_get_size()
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	_on_viewport_size_changed()
+
+func _center_window() -> void:
+	var screen := DisplayServer.window_get_current_screen()
+	var screen_position := DisplayServer.screen_get_position(screen)
+	var screen_size := DisplayServer.screen_get_size(screen)
+	var window_size := DisplayServer.window_get_size()
+	DisplayServer.window_set_position(screen_position + (screen_size - window_size) / 2)
 
 func _spawn_player() -> void:
 	player = PLAYER_SCENE.instantiate()

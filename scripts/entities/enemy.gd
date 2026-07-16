@@ -351,15 +351,15 @@ func _fire_aimed_pattern(direction: Vector2) -> void:
 
 func _fire_aimed_burst_pattern(direction: Vector2) -> void:
 	var side := direction.orthogonal().normalized()
-	for index in range(3):
-		var offset := side * (float(index) - 1.0) * 12.0
-		var angle := deg_to_rad((float(index) - 1.0) * 5.0)
+	for index in range(2):
+		var offset := side * (float(index) - 0.5) * 16.0
+		var angle := deg_to_rad((float(index) - 0.5) * 7.0)
 		_spawn_enemy_projectile(direction.rotated(angle), offset, Color(1.0, 0.62, 0.28, 1.0), 0.92, 1.08)
 	_show_ranged_burst(Color(1.0, 0.58, 0.2, 0.82), 0.9)
 
 func _fire_fan_pattern(direction: Vector2) -> void:
-	var bullet_count := 5
-	var spread_degrees := 52.0
+	var bullet_count := 4
+	var spread_degrees := 60.0
 	for index in range(bullet_count):
 		var t := 0.0 if bullet_count <= 1 else float(index) / float(bullet_count - 1)
 		var angle := deg_to_rad(lerpf(-spread_degrees * 0.5, spread_degrees * 0.5, t))
@@ -367,7 +367,7 @@ func _fire_fan_pattern(direction: Vector2) -> void:
 	_show_ranged_burst(Color(0.25, 0.85, 1.0, 0.82), 0.95)
 
 func _fire_ring_pattern() -> void:
-	var bullet_count := 12
+	var bullet_count := 9
 	var offset := randf() * TAU
 	for index in range(bullet_count):
 		var angle := offset + TAU * float(index) / float(bullet_count)
@@ -379,22 +379,19 @@ func _fire_cross_pattern(direction: Vector2) -> void:
 	for index in range(4):
 		var angle := base_angle + TAU * float(index) / 4.0
 		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(0.5, 1.0, 0.65, 1.0), 0.9, 1.0)
-	for index in range(4):
-		var angle := base_angle + deg_to_rad(45.0) + TAU * float(index) / 4.0
-		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(0.28, 0.82, 1.0, 1.0), 0.78, 0.78)
 	_show_ranged_burst(Color(0.35, 1.0, 0.75, 0.85), 1.05)
 
 func _fire_spiral_pattern() -> void:
-	var bullet_count := 7
-	spiral_angle = wrapf(spiral_angle + deg_to_rad(34.0), 0.0, TAU)
+	var bullet_count := 5
+	spiral_angle = wrapf(spiral_angle + deg_to_rad(42.0), 0.0, TAU)
 	for index in range(bullet_count):
 		var angle := spiral_angle + TAU * float(index) / float(bullet_count)
 		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(1.0, 0.86, 0.28, 1.0), 0.84)
 	_show_ranged_burst(Color(1.0, 0.75, 0.22, 0.86), 1.15)
 
 func _fire_sweep_pattern(direction: Vector2) -> void:
-	var bullet_count := 6
-	var spread_degrees := 64.0
+	var bullet_count := 4
+	var spread_degrees := 70.0
 	sweep_angle = wrapf(sweep_angle + deg_to_rad(18.0), -PI, PI)
 	var base_direction := direction.rotated(sin(sweep_angle) * deg_to_rad(22.0))
 	for index in range(bullet_count):
@@ -405,19 +402,20 @@ func _fire_sweep_pattern(direction: Vector2) -> void:
 	_show_ranged_burst(Color(0.45, 0.9, 1.0, 0.86), 1.1)
 
 func _fire_double_ring_pattern() -> void:
-	var bullet_count := 10
+	var bullet_count := 8
+	var secondary_count := 4
 	var offset := randf() * TAU
 	for index in range(bullet_count):
 		var angle := offset + TAU * float(index) / float(bullet_count)
 		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(1.0, 0.34, 0.72, 1.0), 0.78, 0.82)
-	for index in range(bullet_count):
-		var angle := offset + PI / float(bullet_count) + TAU * float(index) / float(bullet_count)
+	for index in range(secondary_count):
+		var angle := offset + PI / float(bullet_count) + TAU * float(index) / float(secondary_count)
 		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(0.45, 0.88, 1.0, 1.0), 0.92, 1.12)
 	_show_ranged_burst(Color(0.95, 0.45, 1.0, 0.88), 1.3)
 
 func _fire_pinwheel_pattern() -> void:
-	var bullet_count := 8
-	spiral_angle = wrapf(spiral_angle + deg_to_rad(27.0), 0.0, TAU)
+	var bullet_count := 6
+	spiral_angle = wrapf(spiral_angle + deg_to_rad(32.0), 0.0, TAU)
 	for index in range(bullet_count):
 		var angle := spiral_angle + TAU * float(index) / float(bullet_count)
 		var is_primary := index % 2 == 0
@@ -428,8 +426,8 @@ func _fire_pinwheel_pattern() -> void:
 	_show_ranged_burst(Color(0.9, 0.5, 1.0, 0.9), 1.25)
 
 func _fire_wall_pattern(direction: Vector2) -> void:
-	var bullet_count := 7
-	var spacing := 22.0
+	var bullet_count := 5
+	var spacing := 30.0
 	var side := direction.orthogonal().normalized()
 	for index in range(bullet_count):
 		var offset := side * (float(index) - float(bullet_count - 1) * 0.5) * spacing
@@ -437,7 +435,7 @@ func _fire_wall_pattern(direction: Vector2) -> void:
 	_show_ranged_burst(Color(0.4, 0.62, 1.0, 0.88), 1.25)
 
 func _fire_flower_pattern() -> void:
-	var bullet_count := 16
+	var bullet_count := 12
 	var offset := randf() * TAU
 	for index in range(bullet_count):
 		var angle := offset + TAU * float(index) / float(bullet_count)

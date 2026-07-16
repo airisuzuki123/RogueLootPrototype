@@ -11,6 +11,8 @@ const SPECIAL_NODE_MIN_INTERVAL: float = 22.0
 const BOSS_PREP_LOCKOUT_SECONDS: float = 12.0
 const STAGE_COUNT: int = 10
 const SHOP_REFRESH_BASE_COST: int = 8
+const OVERKILL_BONUS_PER_KILL: int = 2
+const OVERKILL_BONUS_CAP: int = 24
 
 signal gold_changed(total: int)
 signal enemy_killed(total: int)
@@ -472,6 +474,7 @@ var current_phase_warning_sent: bool = false
 var is_between_stages: bool = false
 var next_phase_after_shop: int = 0
 var shop_refresh_count: int = 0
+var last_stage_summary: Dictionary = {}
 var latest_run_time_second: int = -1
 var phase_bullet_pattern_counters := {}
 var graze_charge: int = 0
@@ -594,6 +597,7 @@ func reset_run() -> void:
 	is_between_stages = false
 	next_phase_after_shop = 0
 	shop_refresh_count = 0
+	last_stage_summary.clear()
 	latest_run_time_second = -1
 	phase_bullet_pattern_counters.clear()
 	graze_charge = 0
@@ -1136,10 +1140,13 @@ func _finish_current_combat_stage() -> void:
 	var phase := get_current_run_phase()
 	run_elapsed_time = _get_phase_start_time(current_phase_index) + float(phase.get("duration", 0.0))
 	_emit_run_time_changed(true)
+	var stage_progress := get_current_phase_objective_progress()
+	var stage_target := get_current_phase_objective_target()
 	if not current_phase_objective_completed:
 		current_phase_objective_completed = true
 		_apply_phase_objective_reward()
 		_emit_phase_objective_changed()
+	_apply_stage_clear_bonus(phase, stage_progress, stage_target)
 	if not active_encounter.is_empty():
 		var cleared_encounter := active_encounter.duplicate(true)
 		active_encounter.clear()
@@ -1195,6 +1202,7 @@ func _build_between_stage_shop_event(completed_stage: int) -> Dictionary:
 		"objective": "购买技能或装备，刷新需消耗金币；离开后进入第 %d 关" % next_stage,
 		"complete_message": "离开商店，进入第 %d 关" % next_stage,
 		"completed_stage": completed_stage,
+		"stage_summary": last_stage_summary.duplicate(true),
 		"offers": _roll_between_stage_shop_offers(completed_stage)
 	}
 
@@ -1232,6 +1240,24 @@ func _apply_phase_objective_reward() -> void:
 	var message := "阶段目标完成：%s，%s" % [str(phase.get("name", "未知阶段")), reward_text]
 	_set_loot_message(message)
 	_set_milestone_message(message)
+
+func _apply_stage_clear_bonus(phase: Dictionary, progress: int, target: int) -> void:
+	var overkill := maxi(0, progress - target)
+	var bonus_gold := mini(OVERKILL_BONUS_CAP, overkill * OVERKILL_BONUS_PER_KILL)
+	var gained_gold := 0
+	if bonus_gold > 0:
+		gained_gold = add_gold(bonus_gold)
+	last_stage_summary = {
+		"stage_name": str(phase.get("name", "未知关卡")),
+		"kills": progress,
+		"target": target,
+		"overkill": overkill,
+		"bonus_gold": gained_gold
+	}
+	if gained_gold > 0:
+		var message := "清场奖金：超额击杀 %d，金币 +%d" % [overkill, gained_gold]
+		_set_loot_message(message)
+		_set_milestone_message(message)
 
 func _update_phase_warning() -> void:
 	if current_phase_warning_sent:

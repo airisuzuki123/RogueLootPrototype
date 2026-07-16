@@ -535,9 +535,19 @@ func _on_shop_close_pressed() -> void:
 	GameManager.close_shop_event()
 
 func _update_shop_title() -> void:
-	shop_title_label.text = "%s\n%s\n金币：%d | 刷新：%d" % [
+	var summary: Dictionary = GameManager.active_shop_event.get("stage_summary", {})
+	var summary_text := ""
+	if not summary.is_empty():
+		summary_text = "\n上一关：%d / %d 击杀 | 超额 %d | 奖金 %d" % [
+			int(summary.get("kills", 0)),
+			int(summary.get("target", 0)),
+			int(summary.get("overkill", 0)),
+			int(summary.get("bonus_gold", 0))
+		]
+	shop_title_label.text = "%s\n%s%s\n金币：%d | 刷新：%d" % [
 		str(GameManager.active_shop_event.get("title", "商店")),
 		str(GameManager.active_shop_event.get("objective", "选择一项补给")),
+		summary_text,
 		GameManager.gold,
 		GameManager.get_shop_refresh_cost()
 	]

@@ -3,10 +3,10 @@ extends Node
 const EquipmentFactory := preload("res://scripts/items/equipment_factory.gd")
 
 const GRAZE_REWARD_REQUIRED: int = 6
-const GRAZE_REWARD_HEAL: int = 4
-const GRAZE_REWARD_SHIELD: int = 12
+const GRAZE_REWARD_HEAL: int = 0
+const GRAZE_REWARD_SHIELD: int = 8
 const GRAZE_REWARD_SHIELD_DURATION: float = 2.5
-const GRAZE_REWARD_COOLDOWN: float = 3.5
+const GRAZE_REWARD_COOLDOWN: float = 6.0
 const SPECIAL_NODE_MIN_INTERVAL: float = 22.0
 const BOSS_PREP_LOCKOUT_SECONDS: float = 12.0
 const STAGE_COUNT: int = 10
@@ -50,7 +50,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 1.05,
 		"spawn_count": 1,
 		"enemy_level_bonus": 0,
-		"enemy_weight_bonus": {"grunt": -8, "runner": -8, "ranged": 18},
+		"enemy_weight_bonus": {"grunt": 2, "runner": 0, "ranged": 12},
 		"bullet_pattern": "aimed",
 		"bullet_patterns": ["aimed", "aimed_burst"],
 		"enemy_bullet_patterns": {
@@ -74,7 +74,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.98,
 		"spawn_count": 1,
 		"enemy_level_bonus": 0,
-		"enemy_weight_bonus": {"grunt": -14, "tank": -8, "ranged": 28, "weaver": 18},
+		"enemy_weight_bonus": {"grunt": 4, "runner": 4, "tank": -4, "ranged": 18, "weaver": 12},
 		"bullet_pattern": "fan",
 		"bullet_patterns": ["fan", "aimed_burst"],
 		"enemy_bullet_patterns": {
@@ -89,7 +89,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"kill_target": 12,
 		"reward_gold": 12,
 		"reward_experience": 3,
-		"reward_heal": 10
+		"reward_heal": 4
 	},
 	{
 		"id": "stage_03",
@@ -98,7 +98,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.92,
 		"spawn_count": 1,
 		"enemy_level_bonus": 1,
-		"enemy_weight_bonus": {"grunt": -18, "runner": -8, "tank": -2, "ranged": 26, "weaver": 18, "turret": 12},
+		"enemy_weight_bonus": {"grunt": 6, "runner": 4, "tank": 2, "ranged": 18, "weaver": 12, "turret": 8},
 		"bullet_pattern": "ring",
 		"bullet_patterns": ["ring", "cross", "sweep"],
 		"enemy_bullet_patterns": {
@@ -108,12 +108,12 @@ const RUN_PHASES: Array[Dictionary] = [
 		},
 		"bullet_speed_multiplier": 0.96,
 		"arena_patterns": ["side_curtain", "cross_curtain", "center_pulse"],
-		"arena_pattern_interval": 9.0,
+		"arena_pattern_interval": 11.0,
 		"goal": "观察环形和交叉弹幕缺口，建立第一套构筑",
 		"kill_target": 14,
 		"reward_gold": 16,
 		"reward_experience": 4,
-		"reward_heal": 15
+		"reward_heal": 5
 	},
 	{
 		"id": "stage_04",
@@ -122,7 +122,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 1.10,
 		"spawn_count": 1,
 		"enemy_level_bonus": 1,
-		"enemy_weight_bonus": {"grunt": -30, "runner": -8, "tank": -4, "ranged": 20, "weaver": 24, "turret": 8},
+		"enemy_weight_bonus": {"grunt": 4, "runner": 2, "tank": 0, "ranged": 16, "weaver": 20, "turret": 8},
 		"bullet_pattern": "sweep",
 		"bullet_patterns": ["fan", "sweep", "cross"],
 		"enemy_bullet_patterns": {
@@ -132,12 +132,12 @@ const RUN_PHASES: Array[Dictionary] = [
 		},
 		"bullet_speed_multiplier": 1.00,
 		"arena_patterns": ["cross_curtain", "center_pulse"],
-		"arena_pattern_interval": 9.0,
+		"arena_pattern_interval": 11.0,
 		"goal": "特殊关卡：击败或压低精英，30 秒后清场进商店",
 		"kill_target": 10,
 		"reward_gold": 18,
 		"reward_experience": 5,
-		"reward_heal": 16
+		"reward_heal": 6
 	},
 	{
 		"id": "stage_05",
@@ -146,7 +146,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.84,
 		"spawn_count": 1,
 		"enemy_level_bonus": 2,
-		"enemy_weight_bonus": {"grunt": -24, "runner": -6, "tank": -4, "ranged": 26, "weaver": 20, "turret": 18},
+		"enemy_weight_bonus": {"grunt": 8, "runner": 6, "tank": 0, "ranged": 18, "weaver": 16, "turret": 14},
 		"bullet_pattern": "spiral",
 		"bullet_patterns": ["spiral", "fan", "double_ring", "sweep"],
 		"enemy_bullet_patterns": {
@@ -156,12 +156,12 @@ const RUN_PHASES: Array[Dictionary] = [
 		},
 		"bullet_speed_multiplier": 1.02,
 		"arena_patterns": ["cross_curtain", "alternating_curtain", "center_pulse"],
-		"arena_pattern_interval": 8.0,
+		"arena_pattern_interval": 10.5,
 		"goal": "预判旋转弹幕轨迹，用商店强化后的技能清场",
 		"kill_target": 16,
 		"reward_gold": 20,
 		"reward_experience": 5,
-		"reward_heal": 16
+		"reward_heal": 6
 	},
 	{
 		"id": "stage_06",
@@ -170,7 +170,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.78,
 		"spawn_count": 1,
 		"enemy_level_bonus": 2,
-		"enemy_weight_bonus": {"grunt": -26, "runner": -6, "tank": -4, "ranged": 28, "weaver": 22, "turret": 18},
+		"enemy_weight_bonus": {"grunt": 8, "runner": 6, "tank": 2, "ranged": 20, "weaver": 16, "turret": 14},
 		"bullet_pattern": "wall",
 		"bullet_patterns": ["wall", "cross", "ring"],
 		"enemy_bullet_patterns": {
@@ -180,12 +180,12 @@ const RUN_PHASES: Array[Dictionary] = [
 		},
 		"bullet_speed_multiplier": 1.06,
 		"arena_patterns": ["alternating_curtain", "cross_curtain"],
-		"arena_pattern_interval": 8.0,
+		"arena_pattern_interval": 10.5,
 		"goal": "阅读墙幕缺口，检验穿透、爆裂或多重投射组合",
 		"kill_target": 18,
 		"reward_gold": 22,
 		"reward_experience": 5,
-		"reward_heal": 18
+		"reward_heal": 6
 	},
 	{
 		"id": "stage_07",
@@ -194,7 +194,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 1.02,
 		"spawn_count": 1,
 		"enemy_level_bonus": 3,
-		"enemy_weight_bonus": {"grunt": -32, "runner": -8, "tank": -6, "ranged": 22, "weaver": 16, "turret": 26},
+		"enemy_weight_bonus": {"grunt": 6, "runner": 4, "tank": 0, "ranged": 16, "weaver": 12, "turret": 22},
 		"bullet_pattern": "ring",
 		"bullet_patterns": ["ring", "double_ring", "pinwheel"],
 		"enemy_bullet_patterns": {
@@ -204,12 +204,12 @@ const RUN_PHASES: Array[Dictionary] = [
 		},
 		"bullet_speed_multiplier": 1.08,
 		"arena_patterns": ["center_pulse", "corner_pinwheel"],
-		"arena_pattern_interval": 8.0,
+		"arena_pattern_interval": 10.0,
 		"goal": "特殊关卡：处理炮台精英与环形缺口",
 		"kill_target": 12,
 		"reward_gold": 26,
 		"reward_experience": 6,
-		"reward_heal": 18
+		"reward_heal": 6
 	},
 	{
 		"id": "stage_08",
@@ -218,7 +218,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 1.20,
 		"spawn_count": 1,
 		"enemy_level_bonus": 3,
-		"enemy_weight_bonus": {"grunt": -34, "runner": -8, "tank": -6, "ranged": 20, "weaver": 18, "turret": 24},
+		"enemy_weight_bonus": {"grunt": 4, "runner": 2, "tank": 0, "ranged": 14, "weaver": 14, "turret": 22},
 		"bullet_pattern": "flower",
 		"bullet_patterns": ["wall", "flower", "pinwheel", "double_ring"],
 		"enemy_bullet_patterns": {
@@ -228,12 +228,12 @@ const RUN_PHASES: Array[Dictionary] = [
 		},
 		"bullet_speed_multiplier": 1.12,
 		"arena_patterns": ["alternating_curtain", "corner_pinwheel", "center_pulse"],
-		"arena_pattern_interval": 7.0,
+		"arena_pattern_interval": 9.5,
 		"goal": "特殊 Boss 关：在短窗口内爆发输出并躲避花形弹幕",
 		"kill_target": 10,
 		"reward_gold": 30,
 		"reward_experience": 7,
-		"reward_heal": 20
+		"reward_heal": 7
 	},
 	{
 		"id": "stage_09",
@@ -242,7 +242,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.70,
 		"spawn_count": 2,
 		"enemy_level_bonus": 4,
-		"enemy_weight_bonus": {"grunt": -30, "runner": -8, "tank": -2, "ranged": 32, "weaver": 24, "turret": 26},
+		"enemy_weight_bonus": {"grunt": 10, "runner": 8, "tank": 4, "ranged": 22, "weaver": 18, "turret": 22},
 		"bullet_pattern": "wall",
 		"bullet_patterns": ["wall", "spiral", "flower", "pinwheel"],
 		"enemy_bullet_patterns": {
@@ -252,12 +252,12 @@ const RUN_PHASES: Array[Dictionary] = [
 		},
 		"bullet_speed_multiplier": 1.16,
 		"arena_patterns": ["alternating_curtain", "corner_pinwheel", "center_pulse"],
-		"arena_pattern_interval": 6.5,
+		"arena_pattern_interval": 9.0,
 		"goal": "用成型组合处理高密度弹幕与刷怪",
 		"kill_target": 22,
 		"reward_gold": 32,
 		"reward_experience": 7,
-		"reward_heal": 20
+		"reward_heal": 7
 	},
 	{
 		"id": "stage_10",
@@ -266,7 +266,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.62,
 		"spawn_count": 2,
 		"enemy_level_bonus": 5,
-		"enemy_weight_bonus": {"grunt": -30, "runner": -8, "tank": -2, "ranged": 32, "weaver": 24, "turret": 26},
+		"enemy_weight_bonus": {"grunt": 12, "runner": 8, "tank": 4, "ranged": 22, "weaver": 18, "turret": 22},
 		"bullet_pattern": "wall",
 		"bullet_patterns": ["wall", "spiral", "flower", "pinwheel"],
 		"enemy_bullet_patterns": {
@@ -276,12 +276,12 @@ const RUN_PHASES: Array[Dictionary] = [
 		},
 		"bullet_speed_multiplier": 1.20,
 		"arena_patterns": ["alternating_curtain", "corner_pinwheel", "center_pulse"],
-		"arena_pattern_interval": 6.0,
+		"arena_pattern_interval": 8.5,
 		"goal": "撑过最后 30 秒，完成 10 关试炼",
 		"kill_target": 26,
 		"reward_gold": 40,
 		"reward_experience": 8,
-		"reward_heal": 25
+		"reward_heal": 8
 	}
 ]
 

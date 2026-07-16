@@ -34,6 +34,7 @@ var force_health_bar_visible: bool = false
 var encounter_pattern_counter: int = 0
 var encounter_base_attack_interval: float = 0.8
 var encounter_base_projectile_speed: float = 240.0
+var knockback_resistance: float = 1.0
 var active_boss_phase_index: int = -1
 var active_boss_phase: Dictionary = {}
 @onready var visual: Polygon2D = $Visual
@@ -71,7 +72,7 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO, is_critical: bo
 	if GameManager.is_run_over:
 		return
 	health -= amount
-	knockback_velocity += knockback
+	knockback_velocity += knockback / maxf(0.1, knockback_resistance)
 	_update_boss_phase()
 	_update_health_bar(true)
 	_flash_on_hit()
@@ -177,6 +178,7 @@ func set_movement_bounds(bounds: Rect2) -> void:
 	_clamp_to_movement_bounds()
 
 func _apply_enemy_type(type_id: String) -> void:
+	knockback_resistance = 1.0
 	match type_id:
 		"runner":
 			max_health = 12
@@ -185,6 +187,7 @@ func _apply_enemy_type(type_id: String) -> void:
 			experience_reward = 1
 			visual.color = Color(1, 0.55, 0.2, 1)
 			visual.scale = Vector2(0.85, 0.85)
+			knockback_resistance = 0.75
 		"tank":
 			max_health = 55
 			move_speed = 75.0
@@ -193,6 +196,7 @@ func _apply_enemy_type(type_id: String) -> void:
 			loot_chance = 0.38
 			visual.color = Color(0.75, 0.15, 1, 1)
 			visual.scale = Vector2(1.35, 1.35)
+			knockback_resistance = 1.75
 		"ranged":
 			max_health = 22
 			move_speed = 95.0
@@ -203,6 +207,7 @@ func _apply_enemy_type(type_id: String) -> void:
 			loot_chance = 0.30
 			visual.color = Color(0.15, 0.85, 1.0, 1)
 			visual.scale = Vector2(1.0, 1.0)
+			knockback_resistance = 1.0
 		"weaver":
 			max_health = 20
 			move_speed = 128.0
@@ -215,6 +220,7 @@ func _apply_enemy_type(type_id: String) -> void:
 			loot_chance = 0.28
 			visual.color = Color(0.45, 0.45, 1.0, 1)
 			visual.scale = Vector2(0.95, 0.95)
+			knockback_resistance = 0.9
 		"turret":
 			max_health = 34
 			move_speed = 38.0
@@ -227,6 +233,7 @@ func _apply_enemy_type(type_id: String) -> void:
 			loot_chance = 0.34
 			visual.color = Color(1.0, 0.30, 0.95, 1)
 			visual.scale = Vector2(1.15, 1.15)
+			knockback_resistance = 1.35
 		_:
 			enemy_type = "grunt"
 			max_health = 20
@@ -235,6 +242,7 @@ func _apply_enemy_type(type_id: String) -> void:
 			experience_reward = 1
 			visual.color = Color(1, 0.25, 0.25, 1)
 			visual.scale = Vector2.ONE
+			knockback_resistance = 1.0
 
 func _apply_encounter_config() -> void:
 	if encounter_config.is_empty():
@@ -254,6 +262,7 @@ func _apply_encounter_config() -> void:
 	experience_reward += maxi(0, int(encounter_config.get("extra_experience_reward", 0)))
 	loot_chance = 0.0
 	visual.scale *= float(encounter_config.get("visual_scale", 1.0))
+	knockback_resistance *= maxf(0.1, float(encounter_config.get("visual_scale", 1.0)))
 	visual.color = encounter_config.get("color", visual.color)
 	z_index = 2
 

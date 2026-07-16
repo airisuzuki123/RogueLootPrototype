@@ -228,8 +228,8 @@ func _create_arena_pattern_plan(pattern_id: String) -> Dictionary:
 			return {
 				"id": "curtain",
 				"sides": [
-					_create_curtain_side(first_side, 10, 2),
-					_create_curtain_side((first_side + 1) % 4, 10, 2)
+					_create_curtain_side(first_side, 9, 3),
+					_create_curtain_side((first_side + 1) % 4, 9, 3)
 				]
 			}
 		"alternating_curtain":
@@ -237,8 +237,8 @@ func _create_arena_pattern_plan(pattern_id: String) -> Dictionary:
 			return {
 				"id": "curtain",
 				"sides": [
-					_create_curtain_side(first_side, 12, 2),
-					_create_curtain_side(first_side + 2, 12, 2)
+					_create_curtain_side(first_side, 10, 3),
+					_create_curtain_side(first_side + 2, 10, 3)
 				]
 			}
 		"corner_pinwheel":
@@ -247,7 +247,7 @@ func _create_arena_pattern_plan(pattern_id: String) -> Dictionary:
 			return _create_center_pulse_plan()
 	return {
 		"id": "curtain",
-		"sides": [_create_curtain_side(randi_range(0, 3), 10, 2)]
+		"sides": [_create_curtain_side(randi_range(0, 3), 9, 3)]
 	}
 
 func _create_curtain_side(side: int, bullet_count: int, gap_width: int) -> Dictionary:
@@ -259,8 +259,8 @@ func _create_curtain_side(side: int, bullet_count: int, gap_width: int) -> Dicti
 	}
 
 func _create_center_pulse_plan() -> Dictionary:
-	var bullet_count := 16
-	var gap_width := 3
+	var bullet_count := 14
+	var gap_width := 4
 	return {
 		"id": "center_pulse",
 		"bullet_count": bullet_count,
@@ -317,8 +317,8 @@ func _get_corner_pinwheel_warning_segments() -> Array[Dictionary]:
 	for corner_index in range(corners.size()):
 		var corner: Vector2 = corners[corner_index]
 		var base_direction := corner.direction_to(center)
-		for index in range(5):
-			var angle := deg_to_rad((float(index) - 2.0) * 13.0)
+		for index in range(4):
+			var angle := deg_to_rad((float(index) - 1.5) * 15.0)
 			segments.append({
 				"start": corner,
 				"end": corner + base_direction.rotated(angle) * 260.0,
@@ -339,8 +339,8 @@ func _fire_corner_pinwheel() -> void:
 	for corner_index in range(corners.size()):
 		var corner: Vector2 = corners[corner_index]
 		var base_direction := corner.direction_to(center)
-		for index in range(5):
-			var angle := deg_to_rad((float(index) - 2.0) * 13.0)
+		for index in range(4):
+			var angle := deg_to_rad((float(index) - 1.5) * 15.0)
 			_spawn_arena_projectile(corner, base_direction.rotated(angle), Color(1.0, 0.36, 0.9, 1.0), 0.78, 0.88)
 
 func _get_center_pulse_warning_segments(pattern_plan: Dictionary) -> Array[Dictionary]:

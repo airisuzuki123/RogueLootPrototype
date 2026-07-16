@@ -74,6 +74,11 @@ func _toggle_fullscreen() -> void:
 	else:
 		windowed_size_before_fullscreen = DisplayServer.window_get_size()
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+		await get_tree().process_frame
+		var next_mode := DisplayServer.window_get_mode()
+		if next_mode != DisplayServer.WINDOW_MODE_FULLSCREEN and next_mode != DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN:
+			GameManager.show_milestone_message("当前是编辑器嵌入运行窗口，无法全屏；请切换为浮动/独立运行窗口")
+			return
 	call_deferred("_on_viewport_size_changed")
 
 func _center_window() -> void:

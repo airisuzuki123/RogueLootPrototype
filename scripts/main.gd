@@ -36,6 +36,7 @@ var enemy_spawn_table: Array[Dictionary] = [
 func _ready() -> void:
 	GameManager.reset_run()
 	enemy_spawn_timer.wait_time = 1.25
+	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	_spawn_player()
 	_spawn_hud()
 	enemy_spawn_timer.timeout.connect(_spawn_enemy)
@@ -75,7 +76,7 @@ func _spawn_single_enemy() -> void:
 	var enemy := ENEMY_SCENE.instantiate()
 	enemy.configure(_roll_enemy_type())
 	enemy.target = player
-	enemy.global_position = _random_spawn_position_around(player.global_position, spawn_radius)
+	enemy.global_position = _random_spawn_position_around(player.global_position, _get_dynamic_spawn_radius())
 	if enemy.has_method("set_movement_bounds"):
 		enemy.set_movement_bounds(_get_arena_rect())
 	add_child(enemy)
@@ -118,9 +119,10 @@ func _spawn_stage_event(event: Dictionary) -> void:
 
 func _random_spawn_position_around(center: Vector2, radius: float) -> Vector2:
 	var spawn_rect := _get_spawn_rect()
+	var minimum_distance := _get_dynamic_minimum_spawn_radius()
 	for attempt in range(18):
 		var angle := randf() * TAU
-		var spawn_distance := randf_range(minimum_spawn_radius, radius)
+		var spawn_distance := randf_range(minimum_distance, radius)
 		var position := center + Vector2(cos(angle), sin(angle)) * spawn_distance
 		if spawn_rect.has_point(position):
 			return position
@@ -157,6 +159,16 @@ func _on_combat_cleanup_requested() -> void:
 	if arena_warning.has_method("clear_warning"):
 		arena_warning.clear_warning()
 	_clear_active_combat_nodes()
+
+func _on_viewport_size_changed() -> void:
+	if arena_bounds != null:
+		arena_bounds.queue_redraw()
+	var arena_rect := _get_arena_rect()
+	if player != null and is_instance_valid(player) and player.has_method("set_movement_bounds"):
+		player.set_movement_bounds(arena_rect)
+	for enemy_node in get_tree().get_nodes_in_group("enemies"):
+		if enemy_node != null and is_instance_valid(enemy_node) and enemy_node.has_method("set_movement_bounds"):
+			enemy_node.set_movement_bounds(arena_rect)
 
 func _update_spawn_interval() -> void:
 	var phase_interval := GameManager.get_current_phase_spawn_interval()
@@ -459,6 +471,16 @@ func _get_arena_center() -> Vector2:
 	var rect := _get_arena_rect()
 	return rect.position + rect.size * 0.5
 
+func _get_dynamic_spawn_radius() -> float:
+	var rect := _get_spawn_rect()
+	var diagonal := rect.size.length() * 0.5
+	return maxf(spawn_radius, diagonal)
+
+func _get_dynamic_minimum_spawn_radius() -> float:
+	var rect := _get_spawn_rect()
+	var short_side := minf(rect.size.x, rect.size.y)
+	return minf(maxf(minimum_spawn_radius, short_side * 0.42), maxf(120.0, short_side * 0.72))
+
 func _random_stage_event_position() -> Vector2:
 	var rect := _get_spawn_rect().grow(-64.0)
 	var center := _get_arena_center()
@@ -485,11 +507,12 @@ func _random_position_on_arena_edge(center: Vector2, spawn_rect: Rect2) -> Vecto
 			position = Vector2(randf_range(spawn_rect.position.x, spawn_rect.end.x), spawn_rect.end.y)
 		_:
 			position = Vector2(spawn_rect.position.x, randf_range(spawn_rect.position.y, spawn_rect.end.y))
-	if position.distance_to(center) < minimum_spawn_radius:
+	var minimum_distance := _get_dynamic_minimum_spawn_radius()
+	if position.distance_to(center) < minimum_distance:
 		var fallback_direction := center.direction_to(position)
 		if fallback_direction.is_zero_approx():
 			fallback_direction = Vector2.RIGHT.rotated(randf() * TAU)
-		position = center + fallback_direction * minimum_spawn_radius
+		position = center + fallback_direction * minimum_distance
 		position.x = clampf(position.x, spawn_rect.position.x, spawn_rect.end.x)
 		position.y = clampf(position.y, spawn_rect.position.y, spawn_rect.end.y)
 	return position

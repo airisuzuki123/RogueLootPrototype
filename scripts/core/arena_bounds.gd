@@ -2,13 +2,29 @@ extends Node2D
 
 @export var arena_position: Vector2 = Vector2(80.0, 70.0)
 @export var arena_size: Vector2 = Vector2(1120.0, 580.0)
+@export var use_viewport_size: bool = true
+@export var viewport_margin: Vector2 = Vector2(24.0, 24.0)
 @export var grid_spacing: float = 80.0
 @export var grid_color: Color = Color(0.18, 0.42, 0.58, 0.18)
 @export var fill_color: Color = Color(0.02, 0.035, 0.06, 0.72)
 @export var border_color: Color = Color(0.15, 0.95, 1.0, 0.95)
 @export var inner_border_color: Color = Color(1.0, 0.35, 0.95, 0.55)
 
+func _ready() -> void:
+	get_viewport().size_changed.connect(_on_viewport_size_changed)
+
 func get_arena_rect() -> Rect2:
+	if use_viewport_size:
+		var viewport_size := get_viewport_rect().size
+		var margin := Vector2(
+			minf(viewport_margin.x, viewport_size.x * 0.18),
+			minf(viewport_margin.y, viewport_size.y * 0.18)
+		)
+		var size := Vector2(
+			maxf(320.0, viewport_size.x - margin.x * 2.0),
+			maxf(240.0, viewport_size.y - margin.y * 2.0)
+		)
+		return Rect2(margin, size)
 	return Rect2(arena_position, arena_size)
 
 func get_spawn_rect(margin: float = 24.0) -> Rect2:
@@ -57,3 +73,6 @@ func _draw_corner_marks(rect: Rect2) -> void:
 		var second_direction: Vector2 = directions[index][1]
 		draw_line(corner, corner + first_direction * mark_length, Color(1.0, 1.0, 1.0, 0.82), mark_width)
 		draw_line(corner, corner + second_direction * mark_length, Color(1.0, 1.0, 1.0, 0.82), mark_width)
+
+func _on_viewport_size_changed() -> void:
+	queue_redraw()

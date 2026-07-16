@@ -56,17 +56,21 @@ var event_choice_list: VBoxContainer
 var event_choices: Array = []
 var game_over_label: Label
 var milestone_tween: Tween
+var hud_root: Control
 
 func _ready() -> void:
 	layer = 10
 	_build_ui()
 	_connect_signals()
+	get_viewport().size_changed.connect(_layout_for_viewport)
+	_layout_for_viewport()
 	_refresh_all()
 
 func _build_ui() -> void:
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
+	hud_root = root
 
 	var stats := VBoxContainer.new()
 	stats.position = Vector2(16, 16)
@@ -303,12 +307,59 @@ func _refresh_all() -> void:
 	_on_loot_message_changed(GameManager.latest_loot_message)
 	_on_inventory_changed(GameManager.get_inventory_items())
 
+func _layout_for_viewport() -> void:
+	var viewport_size := get_viewport().get_visible_rect().size
+	if hint_label != null:
+		hint_label.position = Vector2(16.0, maxf(16.0, viewport_size.y - 34.0))
+	if shop_panel != null:
+		_center_control(shop_panel, Vector2(680.0, 560.0), viewport_size, 0.55)
+	if upgrade_panel != null:
+		_center_control(upgrade_panel, Vector2(500.0, 260.0), viewport_size, 0.45)
+	if equipment_choice_panel != null:
+		_center_control(equipment_choice_panel, Vector2(640.0, 380.0), viewport_size, 0.48)
+	if event_choice_panel != null:
+		_center_control(event_choice_panel, Vector2(580.0, 340.0), viewport_size, 0.48)
+	if game_over_label != null:
+		game_over_label.position = viewport_size * 0.5 - Vector2(190.0, 90.0)
+	if milestone_label != null:
+		milestone_label.custom_minimum_size = Vector2(minf(760.0, viewport_size.x - 96.0), 90.0)
+		milestone_label.position = Vector2((viewport_size.x - milestone_label.custom_minimum_size.x) * 0.5, 92.0)
+	if inventory_panel != null:
+		var inventory_size := Vector2(minf(1060.0, viewport_size.x - 96.0), minf(600.0, viewport_size.y - 96.0))
+		inventory_panel.custom_minimum_size = inventory_size
+		inventory_panel.position = (viewport_size - inventory_size) * 0.5
+	if detail_modal_panel != null:
+		var detail_size := Vector2(minf(720.0, viewport_size.x - 120.0), minf(580.0, viewport_size.y - 120.0))
+		detail_modal_panel.custom_minimum_size = detail_size
+		detail_modal_panel.position = (viewport_size - detail_size) * 0.5
+
+func _center_control(control: Control, desired_size: Vector2, viewport_size: Vector2, y_ratio: float) -> void:
+	var size := Vector2(
+		minf(desired_size.x, viewport_size.x - 96.0),
+		minf(desired_size.y, viewport_size.y - 96.0)
+	)
+	control.custom_minimum_size = size
+	control.position = Vector2(
+		(viewport_size.x - size.x) * 0.5,
+		maxf(48.0, viewport_size.y * y_ratio - size.y * 0.5)
+	)
+
+func _toggle_fullscreen() -> void:
+	var window := get_window()
+	if window.mode == Window.MODE_FULLSCREEN:
+		window.mode = Window.MODE_WINDOWED
+	else:
+		window.mode = Window.MODE_FULLSCREEN
+	_layout_for_viewport()
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.pressed and not event.echo):
 		return
 	var key_event: InputEventKey = event as InputEventKey
 	if key_event.keycode == KEY_B:
 		GameManager.toggle_inventory_open()
+	elif key_event.keycode == KEY_F11:
+		_toggle_fullscreen()
 	elif key_event.keycode == KEY_ESCAPE and GameManager.is_shop_open:
 		GameManager.close_shop_event()
 	elif key_event.keycode == KEY_ESCAPE and GameManager.is_event_choice_open:
@@ -519,6 +570,7 @@ func _on_shop_open_changed(is_open: bool, event: Dictionary, offers: Array) -> v
 	shop_panel.visible = is_open
 	if not is_open:
 		return
+	_layout_for_viewport()
 	_update_shop_title()
 	_refresh_shop_panel()
 

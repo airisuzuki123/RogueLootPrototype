@@ -6,7 +6,8 @@ const CombatFeedback := preload("res://scripts/effects/combat_feedback.gd")
 @export var lifetime: float = 3.0
 @export var damage: int = 8
 @export var knockback_force: float = 190.0
-@export var graze_radius: float = 30.0
+@export var graze_radius: float = 24.0
+@export var graze_inner_radius: float = 18.0
 
 var direction: Vector2 = Vector2.RIGHT
 var glow_base_scale: Vector2 = Vector2.ONE
@@ -99,10 +100,13 @@ func _try_graze_player() -> void:
 	if player == null:
 		return
 	var distance := global_position.distance_to(player.global_position)
-	if distance > graze_radius or distance < 16.0:
+	if distance > graze_radius or distance < graze_inner_radius:
 		return
 	has_grazed = true
-	if GameManager.register_graze():
+	var triggered_reward := GameManager.register_graze()
+	CombatFeedback.show_text(get_tree().current_scene, player.global_position, "绝妙", Color(0.65, 0.95, 1.0, 1.0))
+	CombatFeedback.show_burst(get_tree().current_scene, player.global_position, Color(0.42, 0.86, 1.0, 0.55), 0.58)
+	if triggered_reward:
 		CombatFeedback.show_text(get_tree().current_scene, player.global_position, "护盾", Color(0.55, 0.95, 1.0, 1.0))
 		CombatFeedback.show_burst(get_tree().current_scene, player.global_position, Color(0.45, 0.9, 1.0, 0.7), 0.85)
 

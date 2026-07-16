@@ -15,6 +15,7 @@ var explosion_damage: int = 0
 var source_player: Node = null
 var life_steal_percent: int = 0
 var power_tags: Array[String] = []
+var homing_strength: float = 0.0
 var glow_base_scale: Vector2 = Vector2.ONE
 @onready var visual: Polygon2D = $Visual
 @onready var glow: Polygon2D = $Glow
@@ -30,6 +31,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if GameManager.is_run_over or GameManager.is_gameplay_paused():
 		return
+	_update_homing(delta)
 	global_position += direction.normalized() * speed * delta
 	_update_pulse()
 	lifetime -= delta
@@ -72,6 +74,16 @@ func _configure_visuals() -> void:
 		glow_color = Color(0.62, 0.34, 1.0, 0.26)
 		trail_color = Color(0.74, 0.46, 1.0, 0.38)
 		visual_scale += 0.06
+	elif power_tags.has("homing"):
+		projectile_color = Color(0.44, 1.0, 0.92, 1.0)
+		glow_color = Color(0.20, 0.95, 0.82, 0.27)
+		trail_color = Color(0.32, 1.0, 0.84, 0.42)
+		visual_scale += 0.08
+	elif power_tags.has("heavy"):
+		projectile_color = Color(1.0, 0.58, 0.36, 1.0)
+		glow_color = Color(1.0, 0.28, 0.12, 0.3)
+		trail_color = Color(1.0, 0.42, 0.22, 0.42)
+		visual_scale += 0.22
 	elif power_tags.has("pierce"):
 		projectile_color = Color(0.48, 1.0, 0.72, 1.0)
 		glow_color = Color(0.25, 1.0, 0.62, 0.24)
@@ -125,6 +137,29 @@ func _update_pulse() -> void:
 		return
 	var pulse: float = 1.0 + sin(Time.get_ticks_msec() * 0.018) * 0.08
 	glow.scale = glow_base_scale * pulse
+
+func _update_homing(delta: float) -> void:
+	if homing_strength <= 0.0:
+		return
+	var target := _find_nearest_enemy()
+	if target == null:
+		return
+	var desired_direction := global_position.direction_to(target.global_position)
+	direction = direction.normalized().lerp(desired_direction, clampf(homing_strength * delta, 0.0, 1.0)).normalized()
+	_update_visual_rotation()
+
+func _find_nearest_enemy() -> Node2D:
+	var nearest: Node2D = null
+	var nearest_distance := INF
+	for enemy_node in get_tree().get_nodes_in_group("enemies"):
+		var enemy := enemy_node as Node2D
+		if enemy == null or not is_instance_valid(enemy):
+			continue
+		var distance := global_position.distance_squared_to(enemy.global_position)
+		if distance < nearest_distance:
+			nearest_distance = distance
+			nearest = enemy
+	return nearest
 
 func _on_body_entered(body: Node) -> void:
 	if not body.is_in_group("enemies"):

@@ -1113,6 +1113,11 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 	var chain_stacks := int(summary.get("chain_spark_stacks", 0))
 	var orbit_stacks := int(summary.get("orbit_blade_stacks", 0))
 	var overload_stacks := int(summary.get("overload_burst_stacks", 0))
+	var homing_stacks := int(summary.get("homing_shard_stacks", 0))
+	var heavy_stacks := int(summary.get("heavy_shot_stacks", 0))
+	var slash_stacks := int(summary.get("close_slash_stacks", 0))
+	var pulse_stacks := int(summary.get("pulse_field_stacks", 0))
+	var beam_stacks := int(summary.get("channel_beam_stacks", 0))
 	if damage_bonus > 0:
 		parts.append("强击 +%d" % damage_bonus)
 	if attack_speed_stacks > 0:
@@ -1137,6 +1142,16 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 		parts.append("回旋 x%d" % orbit_stacks)
 	if overload_stacks > 0:
 		parts.append("过载 x%d" % overload_stacks)
+	if homing_stacks > 0:
+		parts.append("追踪 x%d" % homing_stacks)
+	if heavy_stacks > 0:
+		parts.append("重弹 x%d" % heavy_stacks)
+	if slash_stacks > 0:
+		parts.append("刀环 x%d" % slash_stacks)
+	if pulse_stacks > 0:
+		parts.append("脉冲 x%d" % pulse_stacks)
+	if beam_stacks > 0:
+		parts.append("光束 x%d" % beam_stacks)
 	return parts
 
 func _format_event_choice_result(choice: Dictionary) -> String:

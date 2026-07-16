@@ -44,7 +44,15 @@ var upgrade_explosion_radius_bonus: float = 0.0
 var chain_spark_stacks: int = 0
 var orbit_blade_stacks: int = 0
 var overload_burst_stacks: int = 0
+var homing_shard_stacks: int = 0
+var heavy_shot_stacks: int = 0
+var close_slash_stacks: int = 0
+var pulse_field_stacks: int = 0
+var channel_beam_stacks: int = 0
 var attack_sequence: int = 0
+var close_slash_cooldown: float = 0.0
+var pulse_field_cooldown: float = 0.0
+var channel_beam_tick_timer: float = 0.0
 var upgrade_stacks := {}
 @onready var visual: Polygon2D = $Visual
 @onready var hit_core: Polygon2D = $HitCore
@@ -59,6 +67,8 @@ func _physics_process(delta: float) -> void:
 		return
 	_update_invulnerability(delta)
 	_update_graze_shield(delta)
+	_update_close_range_skills(delta)
+	_update_channel_skill(delta)
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	velocity = direction * move_speed + knockback_velocity
 	move_and_slide()
@@ -179,6 +189,22 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			orbit_blade_stacks += 1
 		"overload_burst":
 			overload_burst_stacks += 1
+		"homing_shards":
+			homing_shard_stacks += 1
+		"heavy_shot":
+			heavy_shot_stacks += 1
+			upgrade_damage_bonus += 2
+			projectile_damage += 2
+			result["damage_bonus"] = 2
+		"close_slash":
+			close_slash_stacks += 1
+			result["skill_text"] = "近身刀环"
+		"pulse_field":
+			pulse_field_stacks += 1
+			result["skill_text"] = "脉冲场"
+		"channel_beam":
+			channel_beam_stacks += 1
+			result["skill_text"] = "引导光束"
 		"form_focused":
 			upgrade_damage_bonus += 8
 			projectile_damage += 8
@@ -396,6 +422,13 @@ func _spawn_player_projectile(direction: Vector2, damage_multiplier: float = 1.0
 	projectile.source_player = self
 	projectile.life_steal_percent = equipment_life_steal_bonus
 	projectile.power_tags = _get_projectile_power_tags(projectile)
+	if extra_tags.has("homing"):
+		projectile.homing_strength = 4.2 + float(homing_shard_stacks) * 0.65
+		projectile.lifetime = maxf(projectile.lifetime, 1.75)
+	if extra_tags.has("heavy"):
+		projectile.speed *= 0.78
+		projectile.knockback_force *= 1.45 + float(heavy_shot_stacks) * 0.12
+		projectile.lifetime = maxf(projectile.lifetime, 1.65)
 	for tag in extra_tags:
 		if not projectile.power_tags.has(tag):
 			projectile.power_tags.append(tag)
@@ -415,6 +448,87 @@ func _fire_extra_skill_projectiles(base_direction: Vector2) -> void:
 		for index in range(bullet_count):
 			var angle := TAU * float(index) / float(bullet_count)
 			_spawn_player_projectile(Vector2.RIGHT.rotated(angle), 0.58, ["overload", "blast"])
+	if homing_shard_stacks > 0:
+		for index in range(mini(homing_shard_stacks, 3)):
+			var angle := deg_to_rad((float(index) - float(mini(homing_shard_stacks, 3) - 1) * 0.5) * 24.0)
+			_spawn_player_projectile(base_direction.rotated(angle), 0.64, ["homing"])
+	if heavy_shot_stacks > 0 and attack_sequence % 3 == 0:
+		_spawn_player_projectile(base_direction, 1.55 + float(heavy_shot_stacks) * 0.12, ["heavy", "charged"])
+
+func _update_close_range_skills(delta: float) -> void:
+	if close_slash_cooldown > 0.0:
+		close_slash_cooldown -= delta
+	if pulse_field_cooldown > 0.0:
+		pulse_field_cooldown -= delta
+	if close_slash_stacks > 0 and close_slash_cooldown <= 0.0:
+		_fire_close_slash()
+		close_slash_cooldown = maxf(0.62, 1.18 - float(close_slash_stacks) * 0.08)
+	if pulse_field_stacks > 0 and pulse_field_cooldown <= 0.0:
+		_fire_pulse_field()
+		pulse_field_cooldown = maxf(1.15, 2.25 - float(pulse_field_stacks) * 0.12)
+
+func _update_channel_skill(delta: float) -> void:
+	if channel_beam_stacks <= 0:
+		return
+	channel_beam_tick_timer -= delta
+	if channel_beam_tick_timer > 0.0:
+		return
+	channel_beam_tick_timer = maxf(0.12, 0.32 - float(channel_beam_stacks) * 0.025)
+	_fire_channel_beam_tick()
+
+func _fire_close_slash() -> void:
+	var radius := 70.0 + float(close_slash_stacks) * 10.0
+	var damage := maxi(1, int(round(float(_get_base_projectile_damage()) * (0.52 + float(close_slash_stacks) * 0.08))))
+	var hit_count := 0
+	for enemy_node in get_tree().get_nodes_in_group("enemies"):
+		var enemy := enemy_node as Node2D
+		if enemy == null or not is_instance_valid(enemy):
+			continue
+		var distance := global_position.distance_to(enemy.global_position)
+		if distance > radius:
+			continue
+		if enemy.has_method("take_damage"):
+			var knockback := global_position.direction_to(enemy.global_position) * (150.0 + float(close_slash_stacks) * 16.0)
+			enemy.take_damage(damage, knockback)
+			hit_count += 1
+	if hit_count > 0:
+		CombatFeedback.show_text(get_tree().current_scene, global_position, "斩击", Color(0.82, 1.0, 0.72, 1.0))
+	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(0.62, 1.0, 0.58, 0.66), 1.1 + float(close_slash_stacks) * 0.14)
+
+func _fire_pulse_field() -> void:
+	var radius := 96.0 + float(pulse_field_stacks) * 14.0
+	var damage := maxi(1, int(round(float(_get_base_projectile_damage()) * (0.38 + float(pulse_field_stacks) * 0.06))))
+	var hit_count := 0
+	for enemy_node in get_tree().get_nodes_in_group("enemies"):
+		var enemy := enemy_node as Node2D
+		if enemy == null or not is_instance_valid(enemy):
+			continue
+		var distance := global_position.distance_to(enemy.global_position)
+		if distance > radius:
+			continue
+		if enemy.has_method("take_damage"):
+			var knockback := global_position.direction_to(enemy.global_position) * (105.0 + float(pulse_field_stacks) * 12.0)
+			enemy.take_damage(damage, knockback)
+			hit_count += 1
+	if hit_count > 0:
+		CombatFeedback.show_text(get_tree().current_scene, global_position, "脉冲", Color(0.55, 0.9, 1.0, 1.0))
+	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(0.35, 0.82, 1.0, 0.52), 1.45 + float(pulse_field_stacks) * 0.16)
+
+func _fire_channel_beam_tick() -> void:
+	var target := _find_nearest_enemy()
+	if target == null:
+		return
+	var max_range := 330.0 + float(channel_beam_stacks) * 28.0
+	var distance := global_position.distance_to(target.global_position)
+	if distance > max_range:
+		return
+	var damage := maxi(1, int(round(float(_get_base_projectile_damage()) * (0.24 + float(channel_beam_stacks) * 0.045))))
+	if target.has_method("take_damage"):
+		var knockback := global_position.direction_to(target.global_position) * 36.0
+		target.take_damage(damage, knockback)
+	var midpoint := global_position.lerp(target.global_position, 0.52)
+	CombatFeedback.show_line(get_tree().current_scene, global_position, target.global_position, Color(0.55, 0.72, 1.0, 0.58), 3.0 + float(channel_beam_stacks) * 0.45, 0.10)
+	CombatFeedback.show_burst(get_tree().current_scene, midpoint, Color(0.58, 0.72, 1.0, 0.42), 0.42 + float(channel_beam_stacks) * 0.03)
 
 func _fire_upgrade_nova() -> int:
 	var bullet_count := 10
@@ -454,6 +568,11 @@ func _emit_build_summary() -> void:
 		"chain_spark_stacks": chain_spark_stacks,
 		"orbit_blade_stacks": orbit_blade_stacks,
 		"overload_burst_stacks": overload_burst_stacks,
+		"homing_shard_stacks": homing_shard_stacks,
+		"heavy_shot_stacks": heavy_shot_stacks,
+		"close_slash_stacks": close_slash_stacks,
+		"pulse_field_stacks": pulse_field_stacks,
+		"channel_beam_stacks": channel_beam_stacks,
 		"upgrade_stacks": upgrade_stacks.duplicate(true)
 	})
 

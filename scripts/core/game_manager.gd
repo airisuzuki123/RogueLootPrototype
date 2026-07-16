@@ -100,11 +100,11 @@ const RUN_PHASES: Array[Dictionary] = [
 		"enemy_level_bonus": 1,
 		"enemy_weight_bonus": {"grunt": 6, "runner": 4, "tank": 2, "ranged": 18, "weaver": 12, "turret": 8},
 		"bullet_pattern": "ring",
-		"bullet_patterns": ["ring", "cross", "sweep"],
+		"bullet_patterns": ["ring", "cross", "mirror_fan", "sweep"],
 		"enemy_bullet_patterns": {
-			"ranged": ["ring", "cross", "ring"],
-			"weaver": ["cross", "sweep", "cross"],
-			"turret": ["ring", "double_ring", "cross"]
+			"ranged": ["ring", "cross", "mirror_fan"],
+			"weaver": ["cross", "sweep", "mirror_fan"],
+			"turret": ["ring", "double_ring", "diamond"]
 		},
 		"bullet_speed_multiplier": 0.86,
 		"arena_patterns": ["side_curtain", "cross_curtain", "center_pulse"],
@@ -124,11 +124,11 @@ const RUN_PHASES: Array[Dictionary] = [
 		"enemy_level_bonus": 1,
 		"enemy_weight_bonus": {"grunt": 4, "runner": 2, "tank": 0, "ranged": 16, "weaver": 20, "turret": 8},
 		"bullet_pattern": "sweep",
-		"bullet_patterns": ["fan", "sweep", "cross"],
+		"bullet_patterns": ["fan", "mirror_fan", "sweep", "cross"],
 		"enemy_bullet_patterns": {
-			"ranged": ["fan", "aimed_burst"],
-			"weaver": ["sweep", "fan", "cross"],
-			"turret": ["ring", "cross"]
+			"ranged": ["fan", "aimed_burst", "mirror_fan"],
+			"weaver": ["sweep", "mirror_fan", "cross"],
+			"turret": ["ring", "diamond"]
 		},
 		"bullet_speed_multiplier": 0.88,
 		"arena_patterns": ["cross_curtain", "center_pulse"],
@@ -148,11 +148,11 @@ const RUN_PHASES: Array[Dictionary] = [
 		"enemy_level_bonus": 2,
 		"enemy_weight_bonus": {"grunt": 8, "runner": 6, "tank": 0, "ranged": 18, "weaver": 16, "turret": 14},
 		"bullet_pattern": "spiral",
-		"bullet_patterns": ["spiral", "fan", "double_ring", "sweep"],
+		"bullet_patterns": ["spiral", "fan", "mirror_fan", "double_ring", "sweep"],
 		"enemy_bullet_patterns": {
-			"ranged": ["spiral", "fan", "spiral"],
-			"weaver": ["sweep", "fan", "sweep"],
-			"turret": ["spiral", "double_ring", "pinwheel"]
+			"ranged": ["spiral", "fan", "mirror_fan"],
+			"weaver": ["sweep", "fan", "mirror_fan"],
+			"turret": ["spiral", "diamond", "pinwheel"]
 		},
 		"bullet_speed_multiplier": 0.90,
 		"arena_patterns": ["cross_curtain", "alternating_curtain", "center_pulse"],
@@ -172,11 +172,11 @@ const RUN_PHASES: Array[Dictionary] = [
 		"enemy_level_bonus": 2,
 		"enemy_weight_bonus": {"grunt": 8, "runner": 6, "tank": 2, "ranged": 20, "weaver": 16, "turret": 14},
 		"bullet_pattern": "wall",
-		"bullet_patterns": ["wall", "cross", "ring"],
+		"bullet_patterns": ["wall", "diamond", "cross", "ring"],
 		"enemy_bullet_patterns": {
-			"ranged": ["wall", "cross"],
+			"ranged": ["wall", "cross", "mirror_fan"],
 			"weaver": ["wall", "sweep", "fan"],
-			"turret": ["ring", "double_ring", "wall"]
+			"turret": ["ring", "diamond", "wall"]
 		},
 		"bullet_speed_multiplier": 0.92,
 		"arena_patterns": ["alternating_curtain", "cross_curtain"],
@@ -196,11 +196,11 @@ const RUN_PHASES: Array[Dictionary] = [
 		"enemy_level_bonus": 3,
 		"enemy_weight_bonus": {"grunt": 6, "runner": 4, "tank": 0, "ranged": 16, "weaver": 12, "turret": 22},
 		"bullet_pattern": "ring",
-		"bullet_patterns": ["ring", "double_ring", "pinwheel"],
+		"bullet_patterns": ["ring", "diamond", "double_ring", "pinwheel"],
 		"enemy_bullet_patterns": {
-			"ranged": ["ring", "cross"],
-			"weaver": ["cross", "sweep"],
-			"turret": ["ring", "double_ring", "pinwheel"]
+			"ranged": ["ring", "cross", "mirror_fan"],
+			"weaver": ["diamond", "sweep"],
+			"turret": ["ring", "diamond", "pinwheel"]
 		},
 		"bullet_speed_multiplier": 0.94,
 		"arena_patterns": ["center_pulse", "corner_pinwheel"],
@@ -220,11 +220,11 @@ const RUN_PHASES: Array[Dictionary] = [
 		"enemy_level_bonus": 3,
 		"enemy_weight_bonus": {"grunt": 4, "runner": 2, "tank": 0, "ranged": 14, "weaver": 14, "turret": 22},
 		"bullet_pattern": "flower",
-		"bullet_patterns": ["wall", "flower", "pinwheel", "double_ring"],
+		"bullet_patterns": ["wall", "flower", "diamond", "pinwheel", "double_ring"],
 		"enemy_bullet_patterns": {
-			"ranged": ["wall", "spiral"],
+			"ranged": ["wall", "spiral", "mirror_fan"],
 			"weaver": ["wall", "sweep", "fan"],
-			"turret": ["flower", "pinwheel", "double_ring"]
+			"turret": ["flower", "diamond", "pinwheel"]
 		},
 		"bullet_speed_multiplier": 0.96,
 		"arena_patterns": ["alternating_curtain", "corner_pinwheel", "center_pulse"],
@@ -244,11 +244,11 @@ const RUN_PHASES: Array[Dictionary] = [
 		"enemy_level_bonus": 4,
 		"enemy_weight_bonus": {"grunt": 10, "runner": 8, "tank": 4, "ranged": 22, "weaver": 18, "turret": 22},
 		"bullet_pattern": "wall",
-		"bullet_patterns": ["wall", "spiral", "flower", "pinwheel"],
+		"bullet_patterns": ["wall", "spiral", "flower", "diamond", "pinwheel"],
 		"enemy_bullet_patterns": {
-			"ranged": ["wall", "spiral", "wall"],
-			"weaver": ["wall", "sweep", "fan"],
-			"turret": ["flower", "pinwheel", "double_ring"]
+			"ranged": ["wall", "spiral", "mirror_fan"],
+			"weaver": ["wall", "sweep", "diamond"],
+			"turret": ["flower", "pinwheel", "diamond"]
 		},
 		"bullet_speed_multiplier": 0.99,
 		"arena_patterns": ["alternating_curtain", "corner_pinwheel", "center_pulse"],
@@ -268,11 +268,11 @@ const RUN_PHASES: Array[Dictionary] = [
 		"enemy_level_bonus": 5,
 		"enemy_weight_bonus": {"grunt": 12, "runner": 8, "tank": 4, "ranged": 22, "weaver": 18, "turret": 22},
 		"bullet_pattern": "wall",
-		"bullet_patterns": ["wall", "spiral", "flower", "pinwheel"],
+		"bullet_patterns": ["wall", "spiral", "flower", "diamond", "pinwheel"],
 		"enemy_bullet_patterns": {
-			"ranged": ["wall", "spiral", "wall"],
-			"weaver": ["wall", "sweep", "fan"],
-			"turret": ["flower", "pinwheel", "double_ring"]
+			"ranged": ["wall", "spiral", "mirror_fan"],
+			"weaver": ["wall", "sweep", "diamond"],
+			"turret": ["flower", "pinwheel", "diamond"]
 		},
 		"bullet_speed_multiplier": 1.02,
 		"arena_patterns": ["alternating_curtain", "corner_pinwheel", "center_pulse"],
@@ -302,7 +302,7 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 		"projectile_speed_multiplier": 1.05,
 		"visual_scale": 1.45,
 		"color": Color(0.95, 0.48, 1.0, 1.0),
-		"bullet_patterns": ["fan", "sweep", "cross"],
+		"bullet_patterns": ["fan", "mirror_fan", "sweep", "cross"],
 		"reward_gold": 18,
 		"reward_experience": 6,
 		"reward_heal": 18,
@@ -319,7 +319,7 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 				"attack_interval_multiplier": 0.78,
 				"projectile_speed_multiplier": 1.08,
 				"color": Color(0.50, 0.72, 1.0, 1.0),
-				"bullet_patterns": ["cross", "sweep", "aimed_burst"],
+				"bullet_patterns": ["cross", "diamond", "sweep", "aimed_burst"],
 				"reward_gold": 16,
 				"reward_experience": 7,
 				"reward_heal": 12,
@@ -346,7 +346,7 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 		"projectile_speed_multiplier": 1.08,
 		"visual_scale": 1.65,
 		"color": Color(1.0, 0.36, 0.68, 1.0),
-		"bullet_patterns": ["ring", "double_ring", "pinwheel"],
+		"bullet_patterns": ["ring", "diamond", "double_ring", "pinwheel"],
 		"reward_gold": 26,
 		"reward_experience": 8,
 		"reward_heal": 22,
@@ -363,7 +363,7 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 				"attack_interval_multiplier": 0.82,
 				"projectile_speed_multiplier": 1.05,
 				"color": Color(0.42, 1.0, 0.72, 1.0),
-				"bullet_patterns": ["wall", "ring", "pinwheel"],
+				"bullet_patterns": ["wall", "ring", "diamond", "pinwheel"],
 				"reward_gold": 22,
 				"reward_experience": 8,
 				"reward_heal": 18,
@@ -390,13 +390,13 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 		"projectile_speed_multiplier": 1.12,
 		"visual_scale": 2.35,
 		"color": Color(1.0, 0.86, 0.26, 1.0),
-		"bullet_patterns": ["wall", "flower", "pinwheel", "double_ring"],
+		"bullet_patterns": ["wall", "flower", "diamond", "pinwheel", "double_ring"],
 		"boss_phases": [
 			{
 				"threshold": 0.70,
 				"title": "棱镜核心：裂光阶段",
 				"message": "Boss 阶段变化：裂光阶段",
-				"bullet_patterns": ["flower", "double_ring", "pinwheel"],
+				"bullet_patterns": ["flower", "diamond", "double_ring", "pinwheel"],
 				"attack_interval_multiplier": 0.86,
 				"projectile_speed_multiplier": 1.06,
 				"color": Color(1.0, 0.62, 0.28, 1.0),
@@ -406,7 +406,7 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 				"threshold": 0.35,
 				"title": "棱镜核心：终局折射",
 				"message": "Boss 阶段变化：终局折射",
-				"bullet_patterns": ["wall", "pinwheel", "flower", "double_ring"],
+				"bullet_patterns": ["wall", "pinwheel", "flower", "diamond", "double_ring"],
 				"attack_interval_multiplier": 0.72,
 				"projectile_speed_multiplier": 1.14,
 				"color": Color(1.0, 0.32, 0.82, 1.0),
@@ -570,6 +570,31 @@ const UPGRADE_POOL := [
 		"id": "overload_burst",
 		"title": "过载爆发",
 		"description": "每 4 次攻击释放一圈爆裂弹"
+	},
+	{
+		"id": "homing_shards",
+		"title": "寻迹碎片",
+		"description": "每次攻击额外发射会轻微追踪敌人的碎片"
+	},
+	{
+		"id": "heavy_shot",
+		"title": "重压弹芯",
+		"description": "每 3 次攻击发射一枚慢速重弹，伤害和击退更高"
+	},
+	{
+		"id": "close_slash",
+		"title": "近身刀环",
+		"description": "周期性斩击主角周围近距离敌人"
+	},
+	{
+		"id": "pulse_field",
+		"title": "脉冲场",
+		"description": "周期性释放以主角为中心的范围脉冲"
+	},
+	{
+		"id": "channel_beam",
+		"title": "引导光束",
+		"description": "持续锁定最近敌人造成小额连续伤害"
 	}
 ]
 
@@ -1624,6 +1649,51 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"cost": 28 + completed_stage * 3,
 			"reward_upgrade_id": "overload_burst",
 			"reward_upgrade_title": "过载爆发"
+		},
+		{
+			"id": "shop_homing_skill",
+			"title": "技能：寻迹碎片",
+			"category": "形态技能",
+			"description": "每次攻击追加轻微追踪弹，适合补足漏怪",
+			"cost": 24 + completed_stage * 3,
+			"reward_upgrade_id": "homing_shards",
+			"reward_upgrade_title": "寻迹碎片"
+		},
+		{
+			"id": "shop_heavy_skill",
+			"title": "技能：重压弹芯",
+			"category": "形态技能",
+			"description": "周期发射慢速重弹，提升单点伤害和击退",
+			"cost": 26 + completed_stage * 3,
+			"reward_upgrade_id": "heavy_shot",
+			"reward_upgrade_title": "重压弹芯"
+		},
+		{
+			"id": "shop_close_slash_skill",
+			"title": "技能：近身刀环",
+			"category": "身法技能",
+			"description": "周期斩击主角周围敌人，缓解贴脸压力",
+			"cost": 24 + completed_stage * 3,
+			"reward_upgrade_id": "close_slash",
+			"reward_upgrade_title": "近身刀环"
+		},
+		{
+			"id": "shop_pulse_field_skill",
+			"title": "技能：脉冲场",
+			"category": "身法技能",
+			"description": "周期释放中心脉冲，击退并伤害周围敌人",
+			"cost": 25 + completed_stage * 3,
+			"reward_upgrade_id": "pulse_field",
+			"reward_upgrade_title": "脉冲场"
+		},
+		{
+			"id": "shop_channel_beam_skill",
+			"title": "技能：引导光束",
+			"category": "身法技能",
+			"description": "持续锁定最近敌人造成连续伤害",
+			"cost": 28 + completed_stage * 3,
+			"reward_upgrade_id": "channel_beam",
+			"reward_upgrade_title": "引导光束"
 		}
 	]
 	if is_boss_prep or is_final_prep:
@@ -1804,6 +1874,7 @@ func _format_upgrade_result(result: Dictionary) -> String:
 	var volley_projectiles := int(result.get("volley_projectiles", 0))
 	var damage_bonus := int(result.get("damage_bonus", 0))
 	var explosion_radius := int(result.get("explosion_radius", 0))
+	var skill_text := str(result.get("skill_text", ""))
 	if cleared_projectiles > 0:
 		parts.append("清除敌弹 %d" % cleared_projectiles)
 	if shield > 0:
@@ -1816,6 +1887,8 @@ func _format_upgrade_result(result: Dictionary) -> String:
 		parts.append("伤害 +%d" % damage_bonus)
 	if explosion_radius > 0:
 		parts.append("爆裂 +%d" % explosion_radius)
+	if not skill_text.is_empty():
+		parts.append(skill_text)
 	return "，".join(parts)
 
 func _get_phase_index_for_time(elapsed_time: float) -> int:

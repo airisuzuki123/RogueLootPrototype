@@ -27,3 +27,17 @@ static func show_burst(world: Node, position: Vector2, tint: Color = Color(1, 0.
 	burst.global_position = position
 	world.add_child(burst)
 	burst.setup(tint, size)
+
+static func show_line(world: Node, start_position: Vector2, end_position: Vector2, tint: Color, width: float = 3.0, duration: float = 0.08) -> void:
+	if world == null:
+		return
+	var line := Line2D.new()
+	line.global_position = Vector2.ZERO
+	line.points = PackedVector2Array([start_position, end_position])
+	line.width = width
+	line.default_color = tint
+	line.z_index = 4
+	world.add_child(line)
+	var tween := line.create_tween()
+	tween.tween_property(line, "modulate:a", 0.0, duration)
+	tween.tween_callback(Callable(line, "queue_free"))

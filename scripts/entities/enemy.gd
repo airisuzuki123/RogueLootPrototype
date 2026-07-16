@@ -129,10 +129,14 @@ func _try_ranged_attack(direction: Vector2) -> void:
 			_fire_aimed_burst_pattern(direction)
 		"fan":
 			_fire_fan_pattern(direction)
+		"mirror_fan":
+			_fire_mirror_fan_pattern(direction)
 		"ring":
 			_fire_ring_pattern()
 		"cross":
 			_fire_cross_pattern(direction)
+		"diamond":
+			_fire_diamond_pattern(direction)
 		"spiral":
 			_fire_spiral_pattern()
 		"sweep":
@@ -366,6 +370,14 @@ func _fire_fan_pattern(direction: Vector2) -> void:
 		_spawn_enemy_projectile(direction.rotated(angle), Vector2.ZERO, Color(0.35, 0.95, 1.0, 1.0), 0.92)
 	_show_ranged_burst(Color(0.25, 0.85, 1.0, 0.82), 0.95)
 
+func _fire_mirror_fan_pattern(direction: Vector2) -> void:
+	for angle_degrees in [14.0, 34.0]:
+		for side in [-1.0, 1.0]:
+			var angle := deg_to_rad(angle_degrees * side)
+			var speed_scale := 0.88 if angle_degrees > 20.0 else 1.02
+			_spawn_enemy_projectile(direction.rotated(angle), Vector2.ZERO, Color(0.42, 0.92, 1.0, 1.0), 0.84, speed_scale)
+	_show_ranged_burst(Color(0.35, 0.76, 1.0, 0.82), 1.0)
+
 func _fire_ring_pattern() -> void:
 	var bullet_count := 9
 	var offset := randf() * TAU
@@ -380,6 +392,16 @@ func _fire_cross_pattern(direction: Vector2) -> void:
 		var angle := base_angle + TAU * float(index) / 4.0
 		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(0.5, 1.0, 0.65, 1.0), 0.9, 1.0)
 	_show_ranged_burst(Color(0.35, 1.0, 0.75, 0.85), 1.05)
+
+func _fire_diamond_pattern(direction: Vector2) -> void:
+	var base_angle := direction.angle() + deg_to_rad(45.0)
+	for index in range(4):
+		var angle := base_angle + TAU * float(index) / 4.0
+		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(0.72, 1.0, 0.52, 1.0), 0.86, 0.94)
+	for index in range(4):
+		var angle := base_angle + deg_to_rad(22.5) + TAU * float(index) / 4.0
+		_spawn_enemy_projectile(Vector2.RIGHT.rotated(angle), Vector2.ZERO, Color(0.35, 0.88, 1.0, 1.0), 0.68, 0.78)
+	_show_ranged_burst(Color(0.55, 1.0, 0.72, 0.85), 1.12)
 
 func _fire_spiral_pattern() -> void:
 	var bullet_count := 5

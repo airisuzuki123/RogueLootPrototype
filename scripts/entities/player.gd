@@ -135,6 +135,12 @@ func apply_upgrade(upgrade_id: String) -> void:
 			GameManager.update_player_health(health, max_health)
 		"multishot":
 			projectile_count += 1
+		"piercing_rounds":
+			upgrade_pierce_bonus += 1
+		"blast_core":
+			upgrade_explosion_radius_bonus += 36.0
+		"graze_barrier":
+			apply_graze_shield(22, 4.0)
 		"form_focused":
 			projectile_damage += 8
 		"form_scatter":

@@ -44,6 +44,7 @@ func _ready() -> void:
 	GameManager.run_ended.connect(_on_run_ended)
 	GameManager.encounter_requested.connect(_on_encounter_requested)
 	GameManager.stage_event_requested.connect(_on_stage_event_requested)
+	GameManager.combat_cleanup_requested.connect(_on_combat_cleanup_requested)
 	_update_arena_pattern_interval()
 
 func _process(delta: float) -> void:
@@ -137,12 +138,24 @@ func _on_run_phase_changed(_phase: Dictionary) -> void:
 	arena_pattern_index = 0
 	_update_spawn_interval()
 	_update_arena_pattern_interval()
+	if not enemy_spawn_timer.is_stopped():
+		return
+	enemy_spawn_timer.start()
 
 func _on_encounter_requested(encounter: Dictionary) -> void:
 	_spawn_encounter_enemy(encounter)
 
 func _on_stage_event_requested(event: Dictionary) -> void:
 	_spawn_stage_event(event)
+
+func _on_combat_cleanup_requested() -> void:
+	enemy_spawn_timer.stop()
+	arena_pattern_timer.stop()
+	arena_warning_timer.stop()
+	pending_arena_pattern.clear()
+	if arena_warning.has_method("clear_warning"):
+		arena_warning.clear_warning()
+	_clear_active_combat_nodes()
 
 func _update_spawn_interval() -> void:
 	var phase_interval := GameManager.get_current_phase_spawn_interval()

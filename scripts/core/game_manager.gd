@@ -9,6 +9,8 @@ const GRAZE_REWARD_SHIELD_DURATION: float = 2.5
 const GRAZE_REWARD_COOLDOWN: float = 3.5
 const SPECIAL_NODE_MIN_INTERVAL: float = 22.0
 const BOSS_PREP_LOCKOUT_SECONDS: float = 12.0
+const STAGE_COUNT: int = 10
+const SHOP_REFRESH_BASE_COST: int = 8
 
 signal gold_changed(total: int)
 signal enemy_killed(total: int)
@@ -34,14 +36,15 @@ signal stage_event_changed(event: Dictionary, active: bool)
 signal stage_event_completed(event: Dictionary)
 signal shop_open_changed(is_open: bool, event: Dictionary, offers: Array)
 signal event_choice_open_changed(is_open: bool, event: Dictionary, choices: Array)
+signal combat_cleanup_requested()
 
 const MAX_INVENTORY_SIZE: int = 36
 const RUN_PHASES: Array[Dictionary] = [
 	{
-		"id": "opening",
-		"name": "初始清场",
-		"duration": 45.0,
-		"spawn_interval": 1.25,
+		"id": "stage_01",
+		"name": "第 1 关：开场清场",
+		"duration": 30.0,
+		"spawn_interval": 1.05,
 		"spawn_count": 1,
 		"enemy_level_bonus": 0,
 		"enemy_weight_bonus": {"grunt": -8, "runner": -8, "ranged": 18},
@@ -55,17 +58,17 @@ const RUN_PHASES: Array[Dictionary] = [
 		"bullet_speed_multiplier": 0.88,
 		"arena_patterns": [],
 		"arena_pattern_interval": 0.0,
-		"goal": "阅读直线与集束弹道，击杀敌人完成第一轮升级",
-		"kill_target": 10,
+		"goal": "在 30 秒内熟悉直线弹道，尽量多拿金币",
+		"kill_target": 8,
 		"reward_gold": 8,
 		"reward_experience": 2,
 		"reward_heal": 0
 	},
 	{
-		"id": "chase",
-		"name": "追击加压",
-		"duration": 60.0,
-		"spawn_interval": 1.05,
+		"id": "stage_02",
+		"name": "第 2 关：扇形穿行",
+		"duration": 30.0,
+		"spawn_interval": 0.98,
 		"spawn_count": 1,
 		"enemy_level_bonus": 0,
 		"enemy_weight_bonus": {"grunt": -14, "tank": -8, "ranged": 28, "weaver": 18},
@@ -78,18 +81,18 @@ const RUN_PHASES: Array[Dictionary] = [
 		},
 		"bullet_speed_multiplier": 0.95,
 		"arena_patterns": ["side_curtain"],
-		"arena_pattern_interval": 9.0,
-		"goal": "穿过扇形弹幕，保持移动空间",
-		"kill_target": 18,
+		"arena_pattern_interval": 10.0,
+		"goal": "穿过扇形弹幕，保留横向移动空间",
+		"kill_target": 12,
 		"reward_gold": 12,
 		"reward_experience": 3,
 		"reward_heal": 10
 	},
 	{
-		"id": "mixed",
-		"name": "混编压迫",
-		"duration": 75.0,
-		"spawn_interval": 1.00,
+		"id": "stage_03",
+		"name": "第 3 关：环形缺口",
+		"duration": 30.0,
+		"spawn_interval": 0.92,
 		"spawn_count": 1,
 		"enemy_level_bonus": 1,
 		"enemy_weight_bonus": {"grunt": -18, "runner": -8, "tank": -2, "ranged": 26, "weaver": 18, "turret": 12},
@@ -102,20 +105,44 @@ const RUN_PHASES: Array[Dictionary] = [
 		},
 		"bullet_speed_multiplier": 0.96,
 		"arena_patterns": ["side_curtain", "cross_curtain", "center_pulse"],
-		"arena_pattern_interval": 10.0,
-		"goal": "观察环形和交叉弹幕缺口，处理远程压力",
-		"kill_target": 26,
+		"arena_pattern_interval": 9.0,
+		"goal": "观察环形和交叉弹幕缺口，建立第一套构筑",
+		"kill_target": 14,
 		"reward_gold": 16,
 		"reward_experience": 4,
 		"reward_heal": 15
 	},
 	{
-		"id": "surge",
-		"name": "密集来袭",
-		"duration": 90.0,
-		"spawn_interval": 0.88,
+		"id": "stage_04",
+		"name": "第 4 关：精英织弹",
+		"duration": 30.0,
+		"spawn_interval": 1.10,
 		"spawn_count": 1,
 		"enemy_level_bonus": 1,
+		"enemy_weight_bonus": {"grunt": -30, "runner": -8, "tank": -4, "ranged": 20, "weaver": 24, "turret": 8},
+		"bullet_pattern": "sweep",
+		"bullet_patterns": ["fan", "sweep", "cross"],
+		"enemy_bullet_patterns": {
+			"ranged": ["fan", "aimed_burst"],
+			"weaver": ["sweep", "fan", "cross"],
+			"turret": ["ring", "cross"]
+		},
+		"bullet_speed_multiplier": 1.00,
+		"arena_patterns": ["cross_curtain", "center_pulse"],
+		"arena_pattern_interval": 9.0,
+		"goal": "特殊关卡：击败或压低精英，30 秒后清场进商店",
+		"kill_target": 10,
+		"reward_gold": 18,
+		"reward_experience": 5,
+		"reward_heal": 16
+	},
+	{
+		"id": "stage_05",
+		"name": "第 5 关：旋转压力",
+		"duration": 30.0,
+		"spawn_interval": 0.84,
+		"spawn_count": 1,
+		"enemy_level_bonus": 2,
 		"enemy_weight_bonus": {"grunt": -24, "runner": -6, "tank": -4, "ranged": 26, "weaver": 20, "turret": 18},
 		"bullet_pattern": "spiral",
 		"bullet_patterns": ["spiral", "fan", "double_ring", "sweep"],
@@ -126,20 +153,92 @@ const RUN_PHASES: Array[Dictionary] = [
 		},
 		"bullet_speed_multiplier": 1.02,
 		"arena_patterns": ["cross_curtain", "alternating_curtain", "center_pulse"],
-		"arena_pattern_interval": 9.0,
-		"goal": "预判旋转和双层环弹幕轨迹，保持输出空间",
-		"kill_target": 40,
-		"reward_gold": 24,
+		"arena_pattern_interval": 8.0,
+		"goal": "预判旋转弹幕轨迹，用商店强化后的技能清场",
+		"kill_target": 16,
+		"reward_gold": 20,
 		"reward_experience": 5,
+		"reward_heal": 16
+	},
+	{
+		"id": "stage_06",
+		"name": "第 6 关：墙幕切线",
+		"duration": 30.0,
+		"spawn_interval": 0.78,
+		"spawn_count": 1,
+		"enemy_level_bonus": 2,
+		"enemy_weight_bonus": {"grunt": -26, "runner": -6, "tank": -4, "ranged": 28, "weaver": 22, "turret": 18},
+		"bullet_pattern": "wall",
+		"bullet_patterns": ["wall", "cross", "ring"],
+		"enemy_bullet_patterns": {
+			"ranged": ["wall", "cross"],
+			"weaver": ["wall", "sweep", "fan"],
+			"turret": ["ring", "double_ring", "wall"]
+		},
+		"bullet_speed_multiplier": 1.06,
+		"arena_patterns": ["alternating_curtain", "cross_curtain"],
+		"arena_pattern_interval": 8.0,
+		"goal": "阅读墙幕缺口，检验穿透、爆裂或多重投射组合",
+		"kill_target": 18,
+		"reward_gold": 22,
+		"reward_experience": 5,
+		"reward_heal": 18
+	},
+	{
+		"id": "stage_07",
+		"name": "第 7 关：折幕炮台",
+		"duration": 30.0,
+		"spawn_interval": 1.02,
+		"spawn_count": 1,
+		"enemy_level_bonus": 3,
+		"enemy_weight_bonus": {"grunt": -32, "runner": -8, "tank": -6, "ranged": 22, "weaver": 16, "turret": 26},
+		"bullet_pattern": "ring",
+		"bullet_patterns": ["ring", "double_ring", "pinwheel"],
+		"enemy_bullet_patterns": {
+			"ranged": ["ring", "cross"],
+			"weaver": ["cross", "sweep"],
+			"turret": ["ring", "double_ring", "pinwheel"]
+		},
+		"bullet_speed_multiplier": 1.08,
+		"arena_patterns": ["center_pulse", "corner_pinwheel"],
+		"arena_pattern_interval": 8.0,
+		"goal": "特殊关卡：处理炮台精英与环形缺口",
+		"kill_target": 12,
+		"reward_gold": 26,
+		"reward_experience": 6,
+		"reward_heal": 18
+	},
+	{
+		"id": "stage_08",
+		"name": "第 8 关：棱镜核心",
+		"duration": 30.0,
+		"spawn_interval": 1.20,
+		"spawn_count": 1,
+		"enemy_level_bonus": 3,
+		"enemy_weight_bonus": {"grunt": -34, "runner": -8, "tank": -6, "ranged": 20, "weaver": 18, "turret": 24},
+		"bullet_pattern": "flower",
+		"bullet_patterns": ["wall", "flower", "pinwheel", "double_ring"],
+		"enemy_bullet_patterns": {
+			"ranged": ["wall", "spiral"],
+			"weaver": ["wall", "sweep", "fan"],
+			"turret": ["flower", "pinwheel", "double_ring"]
+		},
+		"bullet_speed_multiplier": 1.12,
+		"arena_patterns": ["alternating_curtain", "corner_pinwheel", "center_pulse"],
+		"arena_pattern_interval": 7.0,
+		"goal": "特殊 Boss 关：在短窗口内爆发输出并躲避花形弹幕",
+		"kill_target": 10,
+		"reward_gold": 30,
+		"reward_experience": 7,
 		"reward_heal": 20
 	},
 	{
-		"id": "endless_pressure",
-		"name": "终局试炼",
-		"duration": 75.0,
-		"spawn_interval": 0.65,
+		"id": "stage_09",
+		"name": "第 9 关：组合压迫",
+		"duration": 30.0,
+		"spawn_interval": 0.70,
 		"spawn_count": 2,
-		"enemy_level_bonus": 2,
+		"enemy_level_bonus": 4,
 		"enemy_weight_bonus": {"grunt": -30, "runner": -8, "tank": -2, "ranged": 32, "weaver": 24, "turret": 26},
 		"bullet_pattern": "wall",
 		"bullet_patterns": ["wall", "spiral", "flower", "pinwheel"],
@@ -148,13 +247,37 @@ const RUN_PHASES: Array[Dictionary] = [
 			"weaver": ["wall", "sweep", "fan"],
 			"turret": ["flower", "pinwheel", "double_ring"]
 		},
-		"bullet_speed_multiplier": 1.15,
+		"bullet_speed_multiplier": 1.16,
+		"arena_patterns": ["alternating_curtain", "corner_pinwheel", "center_pulse"],
+		"arena_pattern_interval": 6.5,
+		"goal": "用成型组合处理高密度弹幕与刷怪",
+		"kill_target": 22,
+		"reward_gold": 32,
+		"reward_experience": 7,
+		"reward_heal": 20
+	},
+	{
+		"id": "stage_10",
+		"name": "第 10 关：终局收束",
+		"duration": 30.0,
+		"spawn_interval": 0.62,
+		"spawn_count": 2,
+		"enemy_level_bonus": 5,
+		"enemy_weight_bonus": {"grunt": -30, "runner": -8, "tank": -2, "ranged": 32, "weaver": 24, "turret": 26},
+		"bullet_pattern": "wall",
+		"bullet_patterns": ["wall", "spiral", "flower", "pinwheel"],
+		"enemy_bullet_patterns": {
+			"ranged": ["wall", "spiral", "wall"],
+			"weaver": ["wall", "sweep", "fan"],
+			"turret": ["flower", "pinwheel", "double_ring"]
+		},
+		"bullet_speed_multiplier": 1.20,
 		"arena_patterns": ["alternating_curtain", "corner_pinwheel", "center_pulse"],
 		"arena_pattern_interval": 6.0,
-		"goal": "穿越弹幕墙和花形弹幕，撑过最后一波压力",
-		"kill_target": 60,
-		"reward_gold": 35,
-		"reward_experience": 6,
+		"goal": "撑过最后 30 秒，完成 10 关试炼",
+		"kill_target": 26,
+		"reward_gold": 40,
+		"reward_experience": 8,
 		"reward_heal": 25
 	}
 ]
@@ -164,7 +287,7 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 		"id": "elite_weaver",
 		"kind": "elite",
 		"title": "精英：织弹追猎者",
-		"trigger_time": 82.0,
+		"stage_index": 4,
 		"enemy_type": "weaver",
 		"objective": "击败精英，穿过连续扇形扫射",
 		"spawn_message": "精英遭遇：织弹追猎者正在入场",
@@ -208,7 +331,7 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 		"id": "elite_turret",
 		"kind": "elite",
 		"title": "精英：环阵炮台",
-		"trigger_time": 184.0,
+		"stage_index": 7,
 		"enemy_type": "turret",
 		"objective": "击败精英，观察环形与交叉弹幕缺口",
 		"spawn_message": "精英遭遇：环阵炮台锁定战场",
@@ -251,7 +374,7 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 		"id": "boss_prism_core",
 		"kind": "boss",
 		"title": "Boss：棱镜核心",
-		"trigger_time": 272.0,
+		"stage_index": 8,
 		"enemy_type": "turret",
 		"objective": "击败 Boss，处理墙幕、花形弹幕和旋转缺口",
 		"spawn_message": "Boss 遭遇：棱镜核心展开",
@@ -292,238 +415,11 @@ const ENCOUNTER_SCHEDULE: Array[Dictionary] = [
 		"reward_heal": 35,
 		"reward_equipment_count": 2,
 		"reward_level_bonus": 3,
-		"complete_run_on_defeat": true
+		"complete_run_on_defeat": false
 	}
 ]
 
-const STAGE_EVENT_SCHEDULE: Array[Dictionary] = [
-	{
-		"id": "opening_chest",
-		"kind": "chest",
-		"title": "宝箱：清场补给",
-		"trigger_time": 50.0,
-		"objective": "触碰宝箱，获得一份早期构筑补给",
-		"spawn_message": "宝箱事件：清场补给已出现",
-		"complete_message": "宝箱已开启：清场补给",
-		"reward_gold": 10,
-		"reward_experience": 3,
-		"reward_heal": 12,
-		"reward_equipment_count": 1,
-		"reward_level_bonus": 1,
-		"variants": [
-			{
-				"id": "opening_cache",
-				"title": "宝箱：巡路者藏匿",
-				"objective": "触碰宝箱，获得移动与生存补给",
-				"spawn_message": "宝箱事件：巡路者藏匿已出现",
-				"complete_message": "宝箱已开启：巡路者藏匿",
-				"reward_gold": 6,
-				"reward_experience": 2,
-				"reward_heal": 8,
-				"reward_graze_shield": 12,
-				"reward_graze_shield_duration": 3.0,
-				"reward_equipment_count": 1,
-				"reward_level_bonus": 1
-			}
-		]
-	},
-	{
-		"id": "midrun_chest",
-		"kind": "chest",
-		"title": "宝箱：弹幕间隙",
-		"trigger_time": 142.0,
-		"objective": "在弹幕压力中触碰宝箱，补强当前装备",
-		"spawn_message": "宝箱事件：弹幕间隙已出现",
-		"complete_message": "宝箱已开启：弹幕间隙",
-		"reward_gold": 18,
-		"reward_experience": 5,
-		"reward_heal": 18,
-		"reward_equipment_count": 1,
-		"reward_level_bonus": 2,
-		"variants": [
-			{
-				"id": "midrun_cache",
-				"title": "宝箱：裂隙储备",
-				"objective": "触碰宝箱，清理周围弹幕并获得装备补强",
-				"spawn_message": "宝箱事件：裂隙储备已出现",
-				"complete_message": "宝箱已开启：裂隙储备",
-				"reward_gold": 14,
-				"reward_experience": 4,
-				"reward_heal": 12,
-				"reward_clear_projectiles": true,
-				"reward_equipment_count": 1,
-				"reward_level_bonus": 2
-			}
-		]
-	},
-	{
-		"id": "volatile_shrine",
-		"kind": "choice",
-		"title": "随机事件：不稳定圣坛",
-		"trigger_time": 164.0,
-		"objective": "触碰圣坛，在风险和奖励中选择一项",
-		"spawn_message": "随机事件：不稳定圣坛已出现",
-		"complete_message": "随机事件已结束：不稳定圣坛",
-		"choices": [
-			{
-				"id": "shrine_power",
-				"title": "汲取能量",
-				"description": "承受 18 伤害，获得大量经验",
-				"penalty_damage": 18,
-				"reward_experience": 10
-			},
-			{
-				"id": "shrine_equipment",
-				"title": "献上金币",
-				"description": "花费 20 金币，获得一件更高等级装备",
-				"cost_gold": 20,
-				"reward_equipment_count": 1,
-				"reward_level_bonus": 3
-			},
-			{
-				"id": "shrine_safe",
-				"title": "稳妥补给",
-				"description": "获得少量金币和生命恢复",
-				"reward_gold": 10,
-				"reward_heal": 18
-			}
-		],
-		"variants": [
-			{
-				"id": "volatile_mirror",
-				"title": "随机事件：裂隙镜面",
-				"objective": "触碰镜面，在战斗收益和生存补给中选择一项",
-				"spawn_message": "随机事件：裂隙镜面已出现",
-				"complete_message": "随机事件已结束：裂隙镜面",
-				"choices": [
-					{
-						"id": "mirror_focus",
-						"title": "凝视裂光",
-						"description": "承受 14 伤害，获得经验并清除场上敌弹",
-						"penalty_damage": 14,
-						"reward_experience": 8,
-						"reward_clear_projectiles": true
-					},
-					{
-						"id": "mirror_guard",
-						"title": "折射护壁",
-						"description": "获得短暂护盾和少量生命恢复",
-						"reward_heal": 10,
-						"reward_graze_shield": 18,
-						"reward_graze_shield_duration": 4.0
-					},
-					{
-						"id": "mirror_trade",
-						"title": "投入金币",
-						"description": "花费 16 金币，获得一件装备",
-						"cost_gold": 16,
-						"reward_equipment_count": 1,
-						"reward_level_bonus": 2
-					}
-				]
-			}
-		]
-	},
-	{
-		"id": "midrun_shop",
-		"kind": "shop",
-		"title": "商店：临时补给站",
-		"trigger_time": 212.0,
-		"objective": "触碰商店，用金币购买一项补给",
-		"spawn_message": "商店事件：临时补给站已出现",
-		"complete_message": "商店已离开：临时补给站",
-		"offers": [
-			{
-				"id": "shop_heal",
-				"title": "应急治疗",
-				"description": "恢复 45 生命",
-				"cost": 18,
-				"reward_heal": 45
-			},
-			{
-				"id": "shop_training",
-				"title": "战斗训练",
-				"description": "获得 8 经验",
-				"cost": 22,
-				"reward_experience": 8
-			},
-			{
-				"id": "shop_equipment",
-				"title": "鉴定装备",
-				"description": "获得 1 件高一级装备",
-				"cost": 32,
-				"reward_equipment_count": 1,
-				"reward_level_bonus": 2
-			}
-		],
-		"variants": [
-			{
-				"id": "shield_vendor",
-				"title": "商店：护盾工坊",
-				"objective": "触碰商店，用金币购买护盾、清弹或装备整备",
-				"spawn_message": "商店事件：护盾工坊已出现",
-				"complete_message": "商店已离开：护盾工坊",
-				"offers": [
-					{
-						"id": "shop_shield",
-						"title": "护盾电容",
-						"description": "获得 22 点短暂护盾",
-						"cost": 20,
-						"reward_graze_shield": 22,
-						"reward_graze_shield_duration": 4.0
-					},
-					{
-						"id": "shop_clear",
-						"title": "清场符标",
-						"description": "清除场上敌方弹体，并恢复少量生命",
-						"cost": 24,
-						"reward_heal": 12,
-						"reward_clear_projectiles": true
-					},
-					{
-						"id": "shop_boss_prep",
-						"title": "Boss 前整备",
-						"description": "获得装备和少量经验",
-						"cost": 36,
-						"reward_experience": 5,
-						"reward_equipment_count": 1,
-						"reward_level_bonus": 3
-					}
-				]
-			}
-		]
-	},
-	{
-		"id": "preboss_chest",
-		"kind": "chest",
-		"title": "宝箱：终局整备",
-		"trigger_time": 240.0,
-		"objective": "终局前打开宝箱，获得 Boss 前补给",
-		"spawn_message": "宝箱事件：终局整备已出现",
-		"complete_message": "宝箱已开启：终局整备",
-		"reward_gold": 28,
-		"reward_experience": 7,
-		"reward_heal": 28,
-		"reward_equipment_count": 1,
-		"reward_level_bonus": 3,
-		"variants": [
-			{
-				"id": "preboss_focus_cache",
-				"title": "宝箱：折光整备",
-				"objective": "Boss 前打开宝箱，获得护盾和装备补给",
-				"spawn_message": "宝箱事件：折光整备已出现",
-				"complete_message": "宝箱已开启：折光整备",
-				"reward_gold": 20,
-				"reward_experience": 5,
-				"reward_heal": 18,
-				"reward_graze_shield": 20,
-				"reward_graze_shield_duration": 4.0,
-				"reward_equipment_count": 1,
-				"reward_level_bonus": 3
-			}
-		]
-	}
-]
+const STAGE_EVENT_SCHEDULE: Array[Dictionary] = []
 
 var gold: int = 0
 var kills: int = 0
@@ -571,6 +467,9 @@ var current_phase_index: int = 0
 var current_phase_kill_start: int = 0
 var current_phase_objective_completed: bool = false
 var current_phase_warning_sent: bool = false
+var is_between_stages: bool = false
+var next_phase_after_shop: int = 0
+var shop_refresh_count: int = 0
 var latest_run_time_second: int = -1
 var phase_bullet_pattern_counters := {}
 var graze_charge: int = 0
@@ -616,6 +515,21 @@ const UPGRADE_POOL := [
 		"id": "multishot",
 		"title": "分裂射击",
 		"description": "每次攻击投射物 +1"
+	},
+	{
+		"id": "piercing_rounds",
+		"title": "穿透弹芯",
+		"description": "投射物穿透 +1"
+	},
+	{
+		"id": "blast_core",
+		"title": "爆裂核心",
+		"description": "投射物命中时获得爆裂范围"
+	},
+	{
+		"id": "graze_barrier",
+		"title": "折光护盾",
+		"description": "立即获得 22 点短暂护盾"
 	}
 ]
 
@@ -659,6 +573,9 @@ func reset_run() -> void:
 	current_phase_kill_start = 0
 	current_phase_objective_completed = false
 	current_phase_warning_sent = false
+	is_between_stages = false
+	next_phase_after_shop = 0
+	shop_refresh_count = 0
 	latest_run_time_second = -1
 	phase_bullet_pattern_counters.clear()
 	graze_charge = 0
@@ -681,18 +598,15 @@ func reset_run() -> void:
 	_emit_phase_objective_changed()
 
 func update_run_time(delta: float) -> void:
-	if is_run_over or is_gameplay_paused():
+	if is_run_over or is_gameplay_paused() or is_between_stages:
 		return
 	_update_graze_reward_cooldown(delta)
 	run_elapsed_time += delta
-	_update_run_phase()
+	if _is_current_stage_time_complete():
+		_finish_current_combat_stage()
+		return
 	_update_encounter_schedule()
 	_update_stage_event_schedule()
-	if _is_run_duration_complete():
-		run_elapsed_time = _get_total_run_duration()
-		_emit_run_time_changed(true)
-		complete_run()
-		return
 	_update_phase_warning()
 	_emit_run_time_changed(false)
 
@@ -757,7 +671,7 @@ func is_current_phase_objective_completed() -> bool:
 	return current_phase_objective_completed
 
 func get_next_run_phase() -> Dictionary:
-	var next_index := current_phase_index + 1
+	var next_index := next_phase_after_shop if is_between_stages else current_phase_index + 1
 	if next_index < 0 or next_index >= RUN_PHASES.size():
 		return {}
 	return RUN_PHASES[next_index].duplicate(true)
@@ -812,6 +726,13 @@ func close_shop_event() -> void:
 	is_shop_open = false
 	active_shop_event.clear()
 	shop_offers.clear()
+	if is_between_stages:
+		var message := str(completed_event.get("complete_message", "商店已离开"))
+		_set_loot_message(message)
+		_set_milestone_message(message)
+		shop_open_changed.emit(is_shop_open, active_shop_event, shop_offers)
+		_advance_after_stage_shop()
+		return
 	if not completed_event.is_empty() and str(active_stage_event.get("id", "")) == str(completed_event.get("id", "")):
 		active_stage_event.clear()
 		stage_event_completed.emit(completed_event)
@@ -820,6 +741,25 @@ func close_shop_event() -> void:
 		_set_loot_message(message)
 		_set_milestone_message(message)
 	shop_open_changed.emit(is_shop_open, active_shop_event, shop_offers)
+
+func refresh_shop_offers() -> bool:
+	if not is_shop_open:
+		return false
+	var cost := get_shop_refresh_cost()
+	if not spend_gold(cost):
+		return false
+	shop_refresh_count += 1
+	if active_shop_event.has("completed_stage"):
+		active_shop_event["offers"] = _roll_between_stage_shop_offers(int(active_shop_event.get("completed_stage", 1)))
+	shop_offers = _build_shop_offers(active_shop_event)
+	var message := "刷新商店：花费 %d 金币" % cost
+	_set_loot_message(message)
+	_set_milestone_message(message)
+	shop_open_changed.emit(is_shop_open, active_shop_event, shop_offers)
+	return true
+
+func get_shop_refresh_cost() -> int:
+	return SHOP_REFRESH_BASE_COST + shop_refresh_count * 4
 
 func open_choice_event(event_id: String) -> bool:
 	if is_run_over or is_event_choice_open:
@@ -1151,6 +1091,7 @@ func end_run(completed: bool = false) -> void:
 		return
 	is_run_over = true
 	is_run_completed = completed
+	is_between_stages = false
 	set_inventory_open(false)
 	close_shop_event()
 	close_choice_event()
@@ -1161,22 +1102,78 @@ func end_run(completed: bool = false) -> void:
 func complete_run() -> void:
 	end_run(true)
 
-func _update_run_phase() -> void:
-	var new_phase_index := _get_phase_index_for_time(run_elapsed_time)
-	if new_phase_index == current_phase_index:
+func _is_current_stage_time_complete() -> bool:
+	var duration := float(get_current_run_phase().get("duration", -1.0))
+	if duration < 0.0:
+		return false
+	var stage_elapsed := run_elapsed_time - _get_phase_start_time(current_phase_index)
+	return stage_elapsed >= duration
+
+func _finish_current_combat_stage() -> void:
+	var phase := get_current_run_phase()
+	run_elapsed_time = _get_phase_start_time(current_phase_index) + float(phase.get("duration", 0.0))
+	_emit_run_time_changed(true)
+	if not current_phase_objective_completed:
+		current_phase_objective_completed = true
+		_apply_phase_objective_reward()
+		_emit_phase_objective_changed()
+	if not active_encounter.is_empty():
+		var cleared_encounter := active_encounter.duplicate(true)
+		active_encounter.clear()
+		encounter_changed.emit(active_encounter, false)
+		_set_loot_message("%s 已随关卡清场结束" % str(cleared_encounter.get("title", "遭遇")))
+	if not active_stage_event.is_empty():
+		active_stage_event.clear()
+		stage_event_changed.emit(active_stage_event, false)
+	combat_cleanup_requested.emit()
+	var completed_stage := current_phase_index + 1
+	if completed_stage >= STAGE_COUNT or current_phase_index >= RUN_PHASES.size() - 1:
+		_set_milestone_message("第 10 关完成，试炼结束")
+		complete_run()
 		return
-	current_phase_index = new_phase_index
+	is_between_stages = true
+	next_phase_after_shop = current_phase_index + 1
+	_open_between_stage_shop(completed_stage)
+
+func _advance_after_stage_shop() -> void:
+	if not is_between_stages:
+		return
+	is_between_stages = false
+	shop_refresh_count = 0
+	current_phase_index = clampi(next_phase_after_shop, 0, RUN_PHASES.size() - 1)
 	current_phase_kill_start = kills
 	current_phase_objective_completed = false
 	current_phase_warning_sent = false
 	phase_bullet_pattern_counters.clear()
 	var phase := get_current_run_phase()
 	run_phase_changed.emit(phase)
-	var message := "进入阶段：%s - %s" % [str(phase.get("name", "未知阶段")), str(phase.get("goal", ""))]
+	var message := "进入关卡：%s - %s" % [str(phase.get("name", "未知阶段")), str(phase.get("goal", ""))]
 	_set_loot_message(message)
 	_set_milestone_message(message)
 	_emit_run_time_changed(true)
 	_emit_phase_objective_changed()
+
+func _open_between_stage_shop(completed_stage: int) -> void:
+	shop_refresh_count = 0
+	active_shop_event = _build_between_stage_shop_event(completed_stage)
+	shop_offers = _build_shop_offers(active_shop_event)
+	is_shop_open = true
+	var message := "第 %d 关结束，清场后进入商店" % completed_stage
+	_set_loot_message(message)
+	_set_milestone_message(message)
+	shop_open_changed.emit(is_shop_open, active_shop_event, shop_offers)
+
+func _build_between_stage_shop_event(completed_stage: int) -> Dictionary:
+	var next_stage := completed_stage + 1
+	return {
+		"id": "between_stage_shop_%02d" % completed_stage,
+		"kind": "shop",
+		"title": "关间商店：第 %d 关后" % completed_stage,
+		"objective": "购买技能或装备，刷新需消耗金币；离开后进入第 %d 关" % next_stage,
+		"complete_message": "离开商店，进入第 %d 关" % next_stage,
+		"completed_stage": completed_stage,
+		"offers": _roll_between_stage_shop_offers(completed_stage)
+	}
 
 func _update_current_phase_objective() -> void:
 	if current_phase_objective_completed:
@@ -1223,9 +1220,9 @@ func _update_phase_warning() -> void:
 	var next_phase := get_next_run_phase()
 	var message := ""
 	if next_phase.is_empty():
-		message = "终局试炼即将完成，坚持最后 %d 秒" % remaining_seconds
+		message = "第 10 关即将完成，坚持最后 %d 秒" % remaining_seconds
 	else:
-		message = "%d 秒后进入：%s" % [remaining_seconds, str(next_phase.get("name", "下一阶段"))]
+		message = "%d 秒后清场并进入商店" % remaining_seconds
 	_set_milestone_message(message)
 
 func _update_encounter_schedule() -> void:
@@ -1237,7 +1234,7 @@ func _update_encounter_schedule() -> void:
 		var encounter_id := str(encounter.get("id", ""))
 		if encounter_id.is_empty() or triggered_encounter_ids.has(encounter_id):
 			continue
-		if run_elapsed_time < float(encounter.get("trigger_time", 0.0)):
+		if int(encounter.get("stage_index", -1)) != current_phase_index + 1:
 			continue
 		_start_encounter(encounter)
 		return
@@ -1317,8 +1314,92 @@ func _get_next_untriggered_boss_time() -> float:
 		var encounter_id := str(encounter.get("id", ""))
 		if triggered_encounter_ids.has(encounter_id):
 			continue
-		return float(encounter.get("trigger_time", -1.0))
+		var stage_index := int(encounter.get("stage_index", -1))
+		if stage_index < 0:
+			return -1.0
+		return _get_phase_start_time(stage_index - 1)
 	return -1.0
+
+func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
+	var pool: Array[Dictionary] = [
+		{
+			"id": "shop_heal",
+			"title": "应急治疗",
+			"description": "恢复 45 生命",
+			"cost": 12 + completed_stage * 2,
+			"reward_heal": 45
+		},
+		{
+			"id": "shop_shield",
+			"title": "折光护盾",
+			"description": "获得 24 点短暂护盾",
+			"cost": 14 + completed_stage * 2,
+			"reward_graze_shield": 24,
+			"reward_graze_shield_duration": 4.0
+		},
+		{
+			"id": "shop_equipment",
+			"title": "鉴定装备",
+			"description": "获得 1 件当前关卡等级装备",
+			"cost": 18 + completed_stage * 3,
+			"reward_equipment_count": 1,
+			"reward_level_bonus": 1
+		},
+		{
+			"id": "shop_damage_skill",
+			"title": "技能：强击弹体",
+			"description": "投射物伤害 +5，适合暴击和穿透",
+			"cost": 16 + completed_stage * 2,
+			"reward_upgrade_id": "damage",
+			"reward_upgrade_title": "强击弹体"
+		},
+		{
+			"id": "shop_attack_speed_skill",
+			"title": "技能：急速施放",
+			"description": "射击间隔缩短，提升所有投射组合频率",
+			"cost": 18 + completed_stage * 2,
+			"reward_upgrade_id": "attack_speed",
+			"reward_upgrade_title": "急速施放"
+		},
+		{
+			"id": "shop_multishot_skill",
+			"title": "技能：分裂射击",
+			"description": "每次攻击投射物 +1，适合爆裂和暴击",
+			"cost": 22 + completed_stage * 3,
+			"reward_upgrade_id": "multishot",
+			"reward_upgrade_title": "分裂射击"
+		},
+		{
+			"id": "shop_pierce_skill",
+			"title": "技能：穿透弹芯",
+			"description": "投射物穿透 +1，适合多投射和直线清场",
+			"cost": 20 + completed_stage * 3,
+			"reward_upgrade_id": "piercing_rounds",
+			"reward_upgrade_title": "穿透弹芯"
+		},
+		{
+			"id": "shop_blast_skill",
+			"title": "技能：爆裂核心",
+			"description": "命中时产生范围爆裂，适合聚怪清场",
+			"cost": 24 + completed_stage * 3,
+			"reward_upgrade_id": "blast_core",
+			"reward_upgrade_title": "爆裂核心"
+		}
+	]
+	if completed_stage >= 4:
+		pool.append({
+			"id": "shop_clear",
+			"title": "清场符标",
+			"description": "清除敌弹并恢复少量生命",
+			"cost": 20 + completed_stage * 2,
+			"reward_heal": 12,
+			"reward_clear_projectiles": true
+		})
+	pool.shuffle()
+	var offers: Array[Dictionary] = []
+	for index in range(min(4, pool.size())):
+		offers.append(pool[index])
+	return offers
 
 func _build_shop_offers(event: Dictionary) -> Array[Dictionary]:
 	var offers: Array[Dictionary] = []
@@ -1373,6 +1454,7 @@ func _apply_reward_bundle(source: Dictionary) -> String:
 	var reward_heal := maxi(0, int(source.get("reward_heal", 0)))
 	var reward_equipment_count := maxi(0, int(source.get("reward_equipment_count", 0)))
 	var reward_graze_shield := maxi(0, int(source.get("reward_graze_shield", 0)))
+	var reward_upgrade_id := str(source.get("reward_upgrade_id", ""))
 	if reward_gold > 0:
 		var gained_gold := add_gold(reward_gold)
 		reward_parts.append("金币 +%d" % gained_gold)
@@ -1390,6 +1472,9 @@ func _apply_reward_bundle(source: Dictionary) -> String:
 	if bool(source.get("reward_clear_projectiles", false)):
 		var cleared_projectiles := _clear_enemy_projectiles()
 		reward_parts.append("清除敌弹 %d" % cleared_projectiles)
+	if not reward_upgrade_id.is_empty() and player != null and player.has_method("apply_upgrade"):
+		player.apply_upgrade(reward_upgrade_id)
+		reward_parts.append("技能：%s" % str(source.get("reward_upgrade_title", _get_upgrade_title(reward_upgrade_id))))
 	if reward_equipment_count > 0:
 		var reward_level := maxi(1, level + get_current_phase_enemy_level_bonus() + int(source.get("reward_level_bonus", 0)))
 		var equipment_added := 0
@@ -1403,6 +1488,15 @@ func _apply_reward_bundle(source: Dictionary) -> String:
 		if equipment_added > 0:
 			reward_parts.append("装备 +%d" % equipment_added)
 	return "，".join(reward_parts) if not reward_parts.is_empty() else "无额外奖励"
+
+func _get_upgrade_title(upgrade_id: String) -> String:
+	for upgrade in UPGRADE_POOL:
+		if str(upgrade.get("id", "")) == upgrade_id:
+			return str(upgrade.get("title", "强化"))
+	var form_upgrade := _get_current_form_upgrade_choice()
+	if str(form_upgrade.get("id", "")) == upgrade_id:
+		return str(form_upgrade.get("title", "强化"))
+	return "强化"
 
 func _clear_enemy_projectiles() -> int:
 	var cleared_count := 0

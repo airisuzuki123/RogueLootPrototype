@@ -47,6 +47,7 @@ var upgrade_list: VBoxContainer
 var shop_panel: PanelContainer
 var shop_title_label: Label
 var shop_offer_list: VBoxContainer
+var shop_refresh_button: Button
 var shop_offers: Array = []
 var event_choice_panel: PanelContainer
 var event_choice_title_label: Label
@@ -194,6 +195,11 @@ func _build_ui() -> void:
 	shop_offer_list = VBoxContainer.new()
 	shop_offer_list.add_theme_constant_override("separation", 8)
 	shop_root.add_child(shop_offer_list)
+
+	shop_refresh_button = Button.new()
+	shop_refresh_button.custom_minimum_size = Vector2(180, 40)
+	shop_refresh_button.pressed.connect(_on_shop_refresh_pressed)
+	shop_root.add_child(shop_refresh_button)
 
 	var shop_close_button := Button.new()
 	shop_close_button.text = "离开商店"
@@ -467,6 +473,10 @@ func _on_shop_open_changed(is_open: bool, event: Dictionary, offers: Array) -> v
 func _refresh_shop_panel() -> void:
 	for child in shop_offer_list.get_children():
 		child.queue_free()
+	if shop_refresh_button != null:
+		var refresh_cost := GameManager.get_shop_refresh_cost()
+		shop_refresh_button.text = "刷新商品（%d 金币）" % refresh_cost
+		shop_refresh_button.disabled = GameManager.gold < refresh_cost
 	for index in range(shop_offers.size()):
 		var offer: Dictionary = shop_offers[index]
 		var button := Button.new()
@@ -485,6 +495,9 @@ func _refresh_shop_panel() -> void:
 
 func _on_shop_offer_pressed(index: int) -> void:
 	GameManager.buy_shop_offer(index)
+
+func _on_shop_refresh_pressed() -> void:
+	GameManager.refresh_shop_offers()
 
 func _on_shop_close_pressed() -> void:
 	GameManager.close_shop_event()
@@ -1003,6 +1016,7 @@ func _build_reward_parts(source: Dictionary) -> Array[String]:
 	var reward_heal := maxi(0, int(source.get("reward_heal", 0)))
 	var reward_graze_shield := maxi(0, int(source.get("reward_graze_shield", 0)))
 	var reward_equipment_count := maxi(0, int(source.get("reward_equipment_count", 0)))
+	var reward_upgrade_title := str(source.get("reward_upgrade_title", ""))
 	if reward_gold > 0:
 		parts.append("金币 +%d" % reward_gold)
 	if reward_experience > 0:
@@ -1015,4 +1029,6 @@ func _build_reward_parts(source: Dictionary) -> Array[String]:
 		parts.append("清除敌弹")
 	if reward_equipment_count > 0:
 		parts.append("装备 +%d" % reward_equipment_count)
+	if not reward_upgrade_title.is_empty():
+		parts.append("技能：%s" % reward_upgrade_title)
 	return parts

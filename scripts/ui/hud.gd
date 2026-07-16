@@ -482,11 +482,23 @@ func _on_run_ended(kills: int, gold: int) -> void:
 		event_choice_panel.visible = false
 	game_over_label.visible = true
 	var title := "试炼完成" if GameManager.is_run_completed else "本局结束"
-	game_over_label.text = "%s\n时间：%s\n击杀：%d\n金币：%d" % [
+	var summary := GameManager.get_run_summary()
+	var stage_line := "完成关卡：%d / 10 | 最高到达：第 %d 关" % [
+		int(summary.get("completed_stage_count", 0)),
+		int(summary.get("highest_stage_reached", 1))
+	]
+	var shop_line := "商店：购买 %d 次 | 刷新 %d 次 | 花费 %d 金币" % [
+		int(summary.get("shop_purchases", 0)),
+		int(summary.get("shop_refreshes", 0)),
+		int(summary.get("shop_gold_spent", 0))
+	]
+	game_over_label.text = "%s\n时间：%s\n击杀：%d\n金币：%d\n%s\n%s" % [
 		title,
 		_format_time(GameManager.get_run_elapsed_seconds()),
 		kills,
-		gold
+		gold,
+		stage_line,
+		shop_line
 	]
 
 func _on_shop_open_changed(is_open: bool, event: Dictionary, offers: Array) -> void:

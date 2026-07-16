@@ -475,6 +475,11 @@ var is_between_stages: bool = false
 var next_phase_after_shop: int = 0
 var shop_refresh_count: int = 0
 var last_stage_summary: Dictionary = {}
+var completed_stage_count: int = 0
+var highest_stage_reached: int = 1
+var run_shop_purchases: int = 0
+var run_shop_refreshes: int = 0
+var run_shop_gold_spent: int = 0
 var latest_run_time_second: int = -1
 var phase_bullet_pattern_counters := {}
 var graze_charge: int = 0
@@ -613,6 +618,11 @@ func reset_run() -> void:
 	next_phase_after_shop = 0
 	shop_refresh_count = 0
 	last_stage_summary.clear()
+	completed_stage_count = 0
+	highest_stage_reached = 1
+	run_shop_purchases = 0
+	run_shop_refreshes = 0
+	run_shop_gold_spent = 0
 	latest_run_time_second = -1
 	phase_bullet_pattern_counters.clear()
 	graze_charge = 0
@@ -786,6 +796,8 @@ func refresh_shop_offers() -> bool:
 	var cost := get_shop_refresh_cost()
 	if not spend_gold(cost):
 		return false
+	run_shop_gold_spent += cost
+	run_shop_refreshes += 1
 	shop_refresh_count += 1
 	if active_shop_event.has("completed_stage"):
 		active_shop_event["offers"] = _roll_between_stage_shop_offers(int(active_shop_event.get("completed_stage", 1)))
@@ -798,6 +810,16 @@ func refresh_shop_offers() -> bool:
 
 func get_shop_refresh_cost() -> int:
 	return SHOP_REFRESH_BASE_COST + shop_refresh_count * 4
+
+func get_run_summary() -> Dictionary:
+	return {
+		"completed_stage_count": completed_stage_count,
+		"highest_stage_reached": highest_stage_reached,
+		"shop_purchases": run_shop_purchases,
+		"shop_refreshes": run_shop_refreshes,
+		"shop_gold_spent": run_shop_gold_spent,
+		"last_stage_summary": last_stage_summary.duplicate(true)
+	}
 
 func open_choice_event(event_id: String) -> bool:
 	if is_run_over or is_event_choice_open:
@@ -901,6 +923,8 @@ func buy_shop_offer(offer_index: int) -> bool:
 	var cost := maxi(0, int(offer.get("cost", 0)))
 	if not spend_gold(cost):
 		return false
+	run_shop_gold_spent += cost
+	run_shop_purchases += 1
 	var reward_text := _apply_reward_bundle(offer)
 	offer["sold"] = true
 	shop_offers[offer_index] = offer
@@ -1181,6 +1205,7 @@ func _finish_current_combat_stage() -> void:
 		stage_event_changed.emit(active_stage_event, false)
 	combat_cleanup_requested.emit()
 	var completed_stage := current_phase_index + 1
+	completed_stage_count = maxi(completed_stage_count, completed_stage)
 	if completed_stage >= STAGE_COUNT or current_phase_index >= RUN_PHASES.size() - 1:
 		_set_milestone_message("第 10 关完成，试炼结束")
 		complete_run()
@@ -1195,6 +1220,7 @@ func _advance_after_stage_shop() -> void:
 	is_between_stages = false
 	shop_refresh_count = 0
 	current_phase_index = clampi(next_phase_after_shop, 0, RUN_PHASES.size() - 1)
+	highest_stage_reached = maxi(highest_stage_reached, current_phase_index + 1)
 	current_phase_kill_start = kills
 	current_phase_objective_completed = false
 	current_phase_warning_sent = false

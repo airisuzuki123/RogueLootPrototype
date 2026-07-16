@@ -12,6 +12,7 @@ const CombatFeedback := preload("res://scripts/effects/combat_feedback.gd")
 var direction: Vector2 = Vector2.RIGHT
 var glow_base_scale: Vector2 = Vector2.ONE
 var has_grazed: bool = false
+var previous_position: Vector2 = Vector2.ZERO
 @onready var visual: Polygon2D = $Visual
 @onready var glow: Polygon2D = $Glow
 @onready var trail: Line2D = $Trail
@@ -21,6 +22,7 @@ var has_grazed: bool = false
 func _ready() -> void:
 	add_to_group("enemy_projectiles")
 	body_entered.connect(_on_body_entered)
+	previous_position = global_position
 	_update_visual_rotation()
 
 func configure(new_direction: Vector2, new_damage: int, new_speed: float, color: Color, scale_multiplier: float = 1.0) -> void:
@@ -69,6 +71,7 @@ func configure(new_direction: Vector2, new_damage: int, new_speed: float, color:
 func _physics_process(delta: float) -> void:
 	if GameManager.is_run_over or GameManager.is_gameplay_paused():
 		return
+	previous_position = global_position
 	global_position += direction.normalized() * speed * delta
 	_update_pulse()
 	_try_graze_player()
@@ -99,8 +102,12 @@ func _try_graze_player() -> void:
 	var player := GameManager.player as Node2D
 	if player == null:
 		return
-	var distance := global_position.distance_to(player.global_position)
-	if distance > graze_radius or distance < graze_inner_radius:
+	var player_position := player.global_position
+	var closest_point := Geometry2D.get_closest_point_to_segment(player_position, previous_position, global_position)
+	var graze_distance := closest_point.distance_to(player_position)
+	if graze_distance > graze_radius or graze_distance < graze_inner_radius:
+		return
+	if not _has_safely_passed_player(player_position, closest_point):
 		return
 	has_grazed = true
 	var triggered_reward := GameManager.register_graze()
@@ -109,6 +116,22 @@ func _try_graze_player() -> void:
 	if triggered_reward:
 		CombatFeedback.show_text(get_tree().current_scene, player.global_position, "护盾", Color(0.55, 0.95, 1.0, 1.0))
 		CombatFeedback.show_burst(get_tree().current_scene, player.global_position, Color(0.45, 0.9, 1.0, 0.7), 0.85)
+
+func _has_safely_passed_player(player_position: Vector2, closest_point: Vector2) -> bool:
+	var travel := global_position - previous_position
+	if travel.length_squared() <= 0.001:
+		return false
+	var travel_direction := travel.normalized()
+	var to_player_from_previous := player_position - previous_position
+	var along_track := to_player_from_previous.dot(travel_direction)
+	var track_length := travel.length()
+	if along_track > track_length:
+		return false
+	var to_player_now := player_position - global_position
+	var moving_toward_player := direction.normalized().dot(to_player_now.normalized()) > 0.18
+	if moving_toward_player and global_position.distance_to(player_position) > closest_point.distance_to(player_position):
+		return false
+	return true
 
 func _on_body_entered(body: Node) -> void:
 	if body.name != "Player":

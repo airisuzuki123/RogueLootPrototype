@@ -544,9 +544,25 @@ func _fire_pulse_field() -> void:
 			var knockback := global_position.direction_to(enemy.global_position) * (105.0 + float(pulse_field_stacks) * 12.0)
 			enemy.take_damage(damage, knockback)
 			hit_count += 1
+	_show_pulse_field_effect(radius)
 	if hit_count > 0:
 		CombatFeedback.show_text(get_tree().current_scene, global_position, "脉冲", Color(0.55, 0.9, 1.0, 1.0))
 	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(0.35, 0.82, 1.0, 0.52), 1.45 + float(pulse_field_stacks) * 0.16)
+
+func _show_pulse_field_effect(radius: float) -> void:
+	var world := get_tree().current_scene
+	var outer_width := 4.0 + float(pulse_field_stacks) * 0.35
+	CombatFeedback.show_ring(world, global_position, radius, Color(0.34, 0.86, 1.0, 0.72), outer_width, 0.24)
+	CombatFeedback.show_ring(world, global_position, radius * 0.58, Color(0.66, 0.96, 1.0, 0.44), 2.4 + float(pulse_field_stacks) * 0.22, 0.18)
+	CombatFeedback.show_ring(world, global_position, radius * 0.28, Color(0.92, 1.0, 1.0, 0.34), 1.6 + float(pulse_field_stacks) * 0.16, 0.14)
+	var ray_count := mini(12, 5 + pulse_field_stacks)
+	var rotation_offset := float(Time.get_ticks_msec() % 1000) / 1000.0 * TAU
+	for index in range(ray_count):
+		var angle := rotation_offset + TAU * float(index) / float(ray_count)
+		var direction := Vector2.RIGHT.rotated(angle)
+		var start := global_position + direction * radius * 0.18
+		var end := global_position + direction * radius
+		CombatFeedback.show_line(world, start, end, Color(0.42, 0.92, 1.0, 0.48), 2.0 + float(pulse_field_stacks) * 0.16, 0.18)
 
 func _fire_channel_beam_tick() -> void:
 	var target := _find_nearest_enemy()

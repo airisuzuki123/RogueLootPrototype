@@ -1918,7 +1918,7 @@ func _annotate_shop_offer_context(offer: Dictionary) -> Dictionary:
 	if reward_upgrade_id.is_empty():
 		return offer
 	var current_stack := _get_upgrade_stack_count(reward_upgrade_id)
-	offer["stack_preview"] = "当前 %d 层，购买后 %d 层" % [current_stack, current_stack + 1]
+	offer["stack_preview"] = "当前 %d 层，获得后 %d 层" % [current_stack, current_stack + 1]
 	var purchase_preview := _get_upgrade_purchase_preview(reward_upgrade_id, current_stack)
 	if not purchase_preview.is_empty():
 		offer["purchase_preview"] = purchase_preview
@@ -2043,9 +2043,22 @@ func _append_upgrade_choice_from_pool(pool: Array[Dictionary], used_ids: Diction
 		selected["build_route_role"] = role
 	if not route_id.is_empty():
 		selected = _annotate_build_route_context(selected, route_id, role)
+	selected = _annotate_upgrade_choice_context(selected)
 	pending_upgrade_choices.append(selected)
 	used_ids[str(selected.get("id", ""))] = true
 	return true
+
+func _annotate_upgrade_choice_context(choice: Dictionary) -> Dictionary:
+	var annotated := choice.duplicate(true)
+	var upgrade_id := str(annotated.get("id", ""))
+	if upgrade_id.is_empty():
+		return annotated
+	var current_stack := _get_upgrade_stack_count(upgrade_id)
+	annotated["stack_preview"] = "当前 %d 层，选择后 %d 层" % [current_stack, current_stack + 1]
+	var upgrade_preview := _get_upgrade_purchase_preview(upgrade_id, current_stack)
+	if not upgrade_preview.is_empty():
+		annotated["upgrade_preview"] = upgrade_preview
+	return annotated
 
 func _build_upgrade_utility_pool() -> Array[Dictionary]:
 	var utility_ids := ["damage", "attack_speed", "move_speed", "max_health", "graze_barrier", "clear_barrier"]
@@ -2057,40 +2070,54 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 	var next_stack := current_stack + 1
 	match upgrade_id:
 		"damage":
-			return "本层伤害 +5，购买后强击层数 %d" % next_stack
+			return "本层伤害 +5，获得后强击层数 %d" % next_stack
 		"attack_speed":
-			return "本层射击间隔 -18%，购买后急速层数 %d" % next_stack
+			return "本层射击间隔 -18%，获得后急速层数 %d" % next_stack
+		"move_speed":
+			return "本层移动速度 +35，获得后迅捷层数 %d" % next_stack
+		"max_health":
+			return "本层最大生命 +25，并回复 25 生命；获得后生命强化层数 %d" % next_stack
+		"heal":
+			return "本层回复 40 生命；获得后治疗层数 %d" % next_stack
+		"strong_heal":
+			return "本层回复 70 生命；获得后紧急治疗层数 %d" % next_stack
+		"recovery_training":
+			return "本层最大生命 +12，并回复 45 生命；获得后复苏层数 %d" % next_stack
 		"multishot":
-			return "本层投射物 +1，玩家体积 +20%（最高 +240%），当前移速 -18%（最低 80）；购买后分裂层数 %d" % next_stack
+			return "本层投射物 +1，玩家体积 +20%（最高 +240%），当前移速 -18%（最低 80）；获得后分裂层数 %d" % next_stack
 		"mass_resonance":
-			return "每层：玩家体积每 +10%，投射物伤害 +6%，无层数上限；购买后体积共鸣层数 %d" % next_stack
+			return "每层：玩家体积每 +10%，投射物伤害 +6%，无层数上限；获得后体积共鸣层数 %d" % next_stack
 		"slow_resonance":
-			return "每层：当前移速每低于初始值 10%，投射物伤害 +8%，无层数上限；购买后迟缓共鸣层数 %d" % next_stack
+			return "每层：当前移速每低于初始值 10%，投射物伤害 +8%，无层数上限；获得后迟缓共鸣层数 %d" % next_stack
 		"still_focus":
-			return "静止每 0.7 秒暴击率 +8%，最多 12 层专注；购买后静立技能层数 %d" % next_stack
+			return "静止每 0.7 秒暴击率 +8%，最多 12 层专注；获得后静立技能层数 %d" % next_stack
 		"piercing_rounds":
-			return "本层穿透 +1，购买后穿透层数 %d" % next_stack
+			return "本层穿透 +1，获得后穿透层数 %d" % next_stack
 		"blast_core":
-			return "本层爆裂范围 +36、玩家体积 +10%（最高 +240%），购买后爆裂层数 %d" % next_stack
+			return "本层爆裂范围 +36、玩家体积 +10%（最高 +240%），获得后爆裂层数 %d" % next_stack
+		"graze_barrier":
+			return "本层护盾 +22，持续 4 秒；获得后折光层数 %d" % next_stack
+		"clear_barrier":
+			return "本层立即清除敌弹，护盾 +16，持续 3.5 秒；获得后清弹层数 %d" % next_stack
 		"chain_spark":
-			return "购买后每次攻击追加 %d 枚连锁弹，单枚伤害 %d%%，寿命 +%.2f 秒" % [
+			return "获得后每次攻击追加 %d 枚连锁弹，单枚伤害 %d%%，寿命 +%.2f 秒" % [
 				next_stack,
 				66 + maxi(0, next_stack - 1) * 6,
 				next_stack * 0.08
 			]
 		"orbit_blade":
-			return "购买后每次攻击两侧各追加 %d 枚回旋弹，单枚伤害 %d%%，寿命 +%.2f 秒" % [
+			return "获得后每次攻击两侧各追加 %d 枚回旋弹，单枚伤害 %d%%，寿命 +%.2f 秒" % [
 				next_stack,
 				54 + maxi(0, next_stack - 1) * 8,
 				next_stack * 0.08
 			]
 		"overload_burst":
-			return "购买后每 4 次攻击释放 %d 枚爆裂弹，单枚伤害 %d%%" % [
+			return "获得后每 4 次攻击释放 %d 枚爆裂弹，单枚伤害 %d%%" % [
 				6 + next_stack * 2,
 				50 + next_stack * 8
 			]
 		"homing_shards":
-			return "购买后每次攻击追加 %d 枚追踪碎片，单枚伤害 %d%%，追踪强度 %.2f" % [
+			return "获得后每次攻击追加 %d 枚追踪碎片，单枚伤害 %d%%，追踪强度 %.2f" % [
 				next_stack,
 				56 + maxi(0, next_stack - 1) * 8,
 				4.2 + float(next_stack) * 0.65
@@ -2098,42 +2125,50 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 		"heavy_shot":
 			return "本层伤害 +2、玩家体积 +6%（最高 +240%）；每 3 次攻击发射 1 枚重弹，击退 +45%"
 		"close_slash":
-			return "购买后刀环半径 %d，冷却 %.2f 秒" % [
+			return "获得后刀环半径 %d，冷却 %.2f 秒" % [
 				int(round(72.0 + float(next_stack) * 13.0)),
 				maxf(0.22, 1.18 - float(next_stack) * 0.09)
 			]
 		"pulse_field":
-			return "购买后脉冲半径 %d，冷却 %.2f 秒" % [
+			return "获得后脉冲半径 %d，冷却 %.2f 秒" % [
 				int(round(96.0 + float(next_stack) * 14.0)),
 				maxf(0.55, 2.25 - float(next_stack) * 0.12)
 			]
 		"channel_beam":
-			return "购买后光束射程 %d，跳伤间隔 %.2f 秒，单跳伤害 %.1f%% 投射物伤害" % [
+			return "获得后光束射程 %d，跳伤间隔 %.2f 秒，单跳伤害 %.1f%% 投射物伤害" % [
 				int(round(330.0 + float(next_stack) * 28.0)),
 				maxf(0.05, 0.32 - float(next_stack) * 0.025),
 				(0.24 + float(next_stack) * 0.045) * 100.0
 			]
 		"shatter_blast":
-			return "购买后爆裂伤害 +%d%%，爆裂范围 +%d" % [
+			return "获得后爆裂伤害 +%d%%，爆裂范围 +%d" % [
 				next_stack * 12,
 				next_stack * 18
 			]
 		"pierce_amp":
-			return "购买后穿透 +%d，投射物伤害 +%d%%" % [
+			return "获得后穿透 +%d，投射物伤害 +%d%%" % [
 				next_stack,
 				next_stack * 5
 			]
 		"conduit_coil":
-			return "购买后光束伤害 +%d%%，连锁/追踪伤害 +%d%%，光束间隔 -%.2f 秒" % [
+			return "获得后光束伤害 +%d%%，连锁/追踪伤害 +%d%%，光束间隔 -%.2f 秒" % [
 				next_stack * 10,
 				next_stack * 6,
 				next_stack * 0.01
 			]
 		"guard_blade":
-			return "购买后近身伤害 +%d%%，立即护盾 +%d，近身命中每层护盾 +2" % [
+			return "获得后近身伤害 +%d%%，立即护盾 +%d，近身命中每层护盾 +2" % [
 				next_stack * 10,
 				8 + next_stack * 2
 			]
+		"form_focused":
+			return "本层投射物伤害 +8，获得后聚能专精层数 %d" % next_stack
+		"form_scatter":
+			return "本层每次攻击投射物 +1，获得后散射专精层数 %d" % next_stack
+		"form_piercing":
+			return "本层投射物穿透 +1，获得后穿透专精层数 %d" % next_stack
+		"form_burst":
+			return "本层爆裂范围 +28，获得后爆裂专精层数 %d" % next_stack
 	return ""
 
 func _build_event_choices(event: Dictionary) -> Array[Dictionary]:
@@ -2359,13 +2394,15 @@ func _request_upgrade_choices() -> void:
 	var form_upgrade := _get_current_form_upgrade_choice()
 	var should_offer_form_upgrade := not form_upgrade.is_empty() and randf() < 0.45
 	if should_offer_form_upgrade and pending_upgrade_choices.size() < 3:
-		pending_upgrade_choices.append(form_upgrade)
-		used_ids[str(form_upgrade.get("id", ""))] = true
+		var annotated_form_upgrade := _annotate_upgrade_choice_context(form_upgrade)
+		pending_upgrade_choices.append(annotated_form_upgrade)
+		used_ids[str(annotated_form_upgrade.get("id", ""))] = true
 	if pending_upgrade_choices.size() < 3:
 		_append_upgrade_choice_from_pool(_build_upgrade_utility_pool(), used_ids, "", "通用补强")
 	if not should_offer_form_upgrade and not form_upgrade.is_empty() and pending_upgrade_choices.size() < 3:
-		pending_upgrade_choices.append(form_upgrade)
-		used_ids[str(form_upgrade.get("id", ""))] = true
+		var annotated_form_upgrade := _annotate_upgrade_choice_context(form_upgrade)
+		pending_upgrade_choices.append(annotated_form_upgrade)
+		used_ids[str(annotated_form_upgrade.get("id", ""))] = true
 	var fallback_pool := UPGRADE_POOL.duplicate(true)
 	fallback_pool.shuffle()
 	while pending_upgrade_choices.size() < 3 and _append_upgrade_choice_from_pool(fallback_pool, used_ids):

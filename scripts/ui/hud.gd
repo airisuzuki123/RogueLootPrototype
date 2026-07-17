@@ -522,10 +522,8 @@ func _on_upgrade_choices_requested(choices: Array) -> void:
 	for index in range(choices.size()):
 		var choice: Dictionary = choices[index]
 		var button := Button.new()
-		var route_context := _format_build_route_context(choice)
-		var context_line := "%s\n" % route_context if not route_context.is_empty() else ""
-		button.text = "%s%s\n%s" % [context_line, choice["title"], choice["description"]]
-		button.custom_minimum_size = Vector2(460, 52)
+		button.text = _format_upgrade_choice_text(choice)
+		button.custom_minimum_size = Vector2(460, 92)
 		button.pressed.connect(_on_upgrade_button_pressed.bind(index))
 		upgrade_list.add_child(button)
 	upgrade_panel.visible = true
@@ -533,6 +531,23 @@ func _on_upgrade_choices_requested(choices: Array) -> void:
 func _on_upgrade_button_pressed(index: int) -> void:
 	upgrade_panel.visible = false
 	GameManager.apply_upgrade(index)
+
+func _format_upgrade_choice_text(choice: Dictionary) -> String:
+	var lines: Array[String] = []
+	var route_context := _format_build_route_context(choice)
+	if not route_context.is_empty():
+		lines.append(route_context)
+	lines.append(str(choice.get("title", "强化")))
+	var description := str(choice.get("description", ""))
+	if not description.is_empty():
+		lines.append(description)
+	var stack_preview := str(choice.get("stack_preview", ""))
+	if not stack_preview.is_empty():
+		lines.append(stack_preview)
+	var upgrade_preview := str(choice.get("upgrade_preview", ""))
+	if not upgrade_preview.is_empty():
+		lines.append(upgrade_preview)
+	return "\n".join(lines)
 
 func _on_run_ended(kills: int, gold: int) -> void:
 	inventory_panel.visible = false

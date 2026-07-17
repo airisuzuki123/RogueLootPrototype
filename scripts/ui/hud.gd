@@ -47,7 +47,7 @@ var upgrade_panel: PanelContainer
 var upgrade_list: VBoxContainer
 var shop_panel: PanelContainer
 var shop_title_label: Label
-var shop_offer_list: VBoxContainer
+var shop_offer_list: GridContainer
 var shop_refresh_button: Button
 var shop_offers: Array = []
 var event_choice_panel: PanelContainer
@@ -190,25 +190,29 @@ func _build_ui() -> void:
 	shop_panel = PanelContainer.new()
 	shop_panel.visible = false
 	shop_panel.position = Vector2(300, 70)
-	shop_panel.custom_minimum_size = Vector2(680, 560)
+	shop_panel.custom_minimum_size = Vector2(980, 640)
 	root.add_child(shop_panel)
 
 	var shop_root := VBoxContainer.new()
-	shop_root.add_theme_constant_override("separation", 10)
+	shop_root.add_theme_constant_override("separation", 12)
 	shop_panel.add_child(shop_root)
 
 	shop_title_label = Label.new()
 	shop_title_label.text = "商店"
 	shop_title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	shop_title_label.custom_minimum_size = Vector2(620, 0)
+	shop_title_label.custom_minimum_size = Vector2(900, 0)
+	shop_title_label.add_theme_font_size_override("font_size", 18)
 	shop_root.add_child(shop_title_label)
 
 	var shop_offer_scroll := ScrollContainer.new()
-	shop_offer_scroll.custom_minimum_size = Vector2(620, 270)
+	shop_offer_scroll.custom_minimum_size = Vector2(900, 430)
+	shop_offer_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	shop_root.add_child(shop_offer_scroll)
 
-	shop_offer_list = VBoxContainer.new()
-	shop_offer_list.add_theme_constant_override("separation", 8)
+	shop_offer_list = GridContainer.new()
+	shop_offer_list.columns = 2
+	shop_offer_list.add_theme_constant_override("h_separation", 12)
+	shop_offer_list.add_theme_constant_override("v_separation", 12)
 	shop_offer_scroll.add_child(shop_offer_list)
 
 	var shop_button_row := HBoxContainer.new()
@@ -217,13 +221,17 @@ func _build_ui() -> void:
 
 	shop_refresh_button = Button.new()
 	shop_refresh_button.text = "刷新商品"
-	shop_refresh_button.custom_minimum_size = Vector2(220, 44)
+	shop_refresh_button.custom_minimum_size = Vector2(220, 48)
 	shop_refresh_button.pressed.connect(_on_shop_refresh_pressed)
 	shop_button_row.add_child(shop_refresh_button)
 
+	var shop_button_spacer := Control.new()
+	shop_button_spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	shop_button_row.add_child(shop_button_spacer)
+
 	var shop_close_button := Button.new()
 	shop_close_button.text = "关闭商店"
-	shop_close_button.custom_minimum_size = Vector2(180, 44)
+	shop_close_button.custom_minimum_size = Vector2(180, 48)
 	shop_close_button.pressed.connect(_on_shop_close_pressed)
 	shop_button_row.add_child(shop_close_button)
 
@@ -312,7 +320,7 @@ func _layout_for_viewport() -> void:
 	if hint_label != null:
 		hint_label.position = Vector2(16.0, maxf(16.0, viewport_size.y - 34.0))
 	if shop_panel != null:
-		_center_control(shop_panel, Vector2(680.0, 560.0), viewport_size, 0.55)
+		_center_control(shop_panel, Vector2(980.0, 640.0), viewport_size, 0.52)
 	if upgrade_panel != null:
 		_center_control(upgrade_panel, Vector2(500.0, 260.0), viewport_size, 0.45)
 	if equipment_choice_panel != null:
@@ -615,7 +623,9 @@ func _refresh_shop_panel() -> void:
 			cost,
 			reward_text
 		]
-		button.custom_minimum_size = Vector2(520, 116)
+		button.custom_minimum_size = Vector2(438, 168)
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		button.disabled = sold or GameManager.gold < cost
 		_apply_rarity_button_style(button, offer)
 		button.pressed.connect(_on_shop_offer_pressed.bind(index))
@@ -641,13 +651,13 @@ func _update_shop_title() -> void:
 			int(summary.get("bonus_gold", 0))
 		]
 	var preview_text := _format_shop_next_stage_preview(GameManager.active_shop_event.get("next_stage_preview", {}))
-	shop_title_label.text = "%s\n%s%s%s\n金币：%d | 刷新：%d" % [
+	shop_title_label.text = "%s | 金币：%d | 刷新：%d\n%s%s%s" % [
 		str(GameManager.active_shop_event.get("title", "商店")),
+		GameManager.gold,
+		GameManager.get_shop_refresh_cost(),
 		str(GameManager.active_shop_event.get("objective", "选择一项补给")),
 		summary_text,
-		preview_text,
-		GameManager.gold,
-		GameManager.get_shop_refresh_cost()
+		preview_text
 	]
 
 func _on_event_choice_open_changed(is_open: bool, event: Dictionary, choices: Array) -> void:
@@ -1174,7 +1184,7 @@ func _format_shop_offer_reward(offer: Dictionary) -> String:
 	elif not description.is_empty():
 		lines.append(description)
 	var reward_parts := _build_reward_parts(offer)
-	if not reward_parts.is_empty():
+	if not reward_parts.is_empty() and purchase_preview.is_empty() and description.is_empty():
 		lines.append("奖励：" + "，".join(reward_parts))
 	if lines.is_empty():
 		return "无直接奖励"

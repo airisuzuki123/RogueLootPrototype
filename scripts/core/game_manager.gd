@@ -2073,7 +2073,6 @@ func _annotate_shop_offer_context(offer: Dictionary) -> Dictionary:
 		return offer
 	_apply_skill_rarity_metadata(offer, reward_upgrade_id)
 	var current_stack := _get_upgrade_stack_count(reward_upgrade_id)
-	offer["stack_preview"] = "当前 %d 层，获得后 %d 层" % [current_stack, current_stack + 1]
 	var purchase_preview := _get_upgrade_purchase_preview(reward_upgrade_id, current_stack)
 	if not purchase_preview.is_empty():
 		offer["purchase_preview"] = purchase_preview
@@ -2231,7 +2230,6 @@ func _annotate_upgrade_choice_context(choice: Dictionary) -> Dictionary:
 		return annotated
 	var current_stack := _get_upgrade_stack_count(upgrade_id)
 	_apply_skill_rarity_metadata(annotated, upgrade_id)
-	annotated["stack_preview"] = "当前 %d 层，选择后 %d 层" % [current_stack, current_stack + 1]
 	var upgrade_preview := _get_upgrade_purchase_preview(upgrade_id, current_stack)
 	if not upgrade_preview.is_empty():
 		annotated["upgrade_preview"] = upgrade_preview
@@ -2429,15 +2427,12 @@ func _apply_reward_bundle(source: Dictionary) -> String:
 		if upgrade_result is Dictionary:
 			upgrade_result_dictionary = upgrade_result
 		var upgrade_effect_text := _format_upgrade_result(upgrade_result_dictionary)
-		var upgrade_stack_text := _format_upgrade_stack_result(reward_upgrade_id)
-		if upgrade_effect_text.is_empty() and upgrade_stack_text.is_empty():
+		if upgrade_effect_text.is_empty():
 			reward_parts.append("技能：%s" % upgrade_title)
 		else:
 			var upgrade_details: Array[String] = []
 			if not upgrade_effect_text.is_empty():
 				upgrade_details.append(upgrade_effect_text)
-			if not upgrade_stack_text.is_empty():
-				upgrade_details.append(upgrade_stack_text)
 			reward_parts.append("技能：%s（%s）" % [upgrade_title, "，".join(upgrade_details)])
 	if reward_equipment_count > 0:
 		var reward_level := maxi(1, level + get_current_phase_enemy_level_bonus() + int(source.get("reward_level_bonus", 0)))
@@ -2514,12 +2509,6 @@ func _format_upgrade_result(result: Dictionary) -> String:
 	if not skill_text.is_empty():
 		parts.append(skill_text)
 	return "，".join(parts)
-
-func _format_upgrade_stack_result(upgrade_id: String) -> String:
-	var stack_count := _get_upgrade_stack_count(upgrade_id)
-	if stack_count <= 0:
-		return ""
-	return "已到 %d 层" % stack_count
 
 func _get_phase_index_for_time(elapsed_time: float) -> int:
 	var cursor := 0.0

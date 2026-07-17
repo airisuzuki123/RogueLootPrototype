@@ -479,9 +479,6 @@ func _on_build_summary_changed(summary: Dictionary) -> void:
 	var skill_parts := _format_skill_stack_parts(summary)
 	if not skill_parts.is_empty():
 		lines.append("技能：" + "，".join(skill_parts))
-	var route_mastery_text := _format_route_mastery_text(summary)
-	if not route_mastery_text.is_empty():
-		lines.append(route_mastery_text)
 	build_summary_label.text = "\n".join(lines)
 
 func _on_loot_message_changed(message: String) -> void:
@@ -550,9 +547,6 @@ func _format_upgrade_choice_text(choice: Dictionary) -> String:
 	var upgrade_preview := str(choice.get("upgrade_preview", ""))
 	if not upgrade_preview.is_empty():
 		lines.append(upgrade_preview)
-	var route_mastery_preview := str(choice.get("route_mastery_preview", ""))
-	if not route_mastery_preview.is_empty():
-		lines.append(route_mastery_preview)
 	return "\n".join(lines)
 
 func _on_run_ended(kills: int, gold: int) -> void:
@@ -1178,9 +1172,6 @@ func _format_shop_offer_reward(offer: Dictionary) -> String:
 	var purchase_preview := str(offer.get("purchase_preview", ""))
 	if not purchase_preview.is_empty():
 		lines.append(purchase_preview)
-	var route_mastery_preview := str(offer.get("route_mastery_preview", ""))
-	if not route_mastery_preview.is_empty():
-		lines.append(route_mastery_preview)
 	var reward_parts := _build_reward_parts(offer)
 	if not reward_parts.is_empty():
 		lines.append("奖励：" + "，".join(reward_parts))
@@ -1198,24 +1189,6 @@ func _format_build_route_context(data: Dictionary) -> String:
 	if role.is_empty():
 		return "构筑路线：%s" % route_label
 	return "%s：%s" % [role, route_label]
-
-func _format_route_mastery_text(summary: Dictionary) -> String:
-	var route_mastery: Dictionary = summary.get("route_mastery_tiers", {})
-	var parts: Array[String] = []
-	var route_labels := {
-		"bulk": "体积",
-		"pierce": "穿透",
-		"blast": "爆裂",
-		"chain": "连锁",
-		"close": "近身"
-	}
-	for route_id in ["bulk", "pierce", "blast", "chain", "close"]:
-		var tier := int(route_mastery.get(route_id, 0))
-		if tier > 0:
-			parts.append("%s %d" % [str(route_labels.get(route_id, route_id)), tier])
-	if parts.is_empty():
-		return ""
-	return "路线专精：" + "，".join(parts)
 
 func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 	var parts: Array[String] = []

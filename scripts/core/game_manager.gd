@@ -12,8 +12,6 @@ const STAGE_COUNT: int = 10
 const SHOP_REFRESH_BASE_COST: int = 6
 const OVERKILL_BONUS_PER_KILL: int = 2
 const OVERKILL_BONUS_CAP: int = 24
-const BUILD_ROUTE_MASTERY_STEP: int = 3
-const BUILD_ROUTE_MASTERY_CAP: int = 3
 
 signal gold_changed(total: int)
 signal enemy_killed(total: int)
@@ -490,12 +488,12 @@ const UPGRADE_POOL := [
 	{
 		"id": "damage",
 		"title": "强化弹体",
-		"description": "投射物伤害 +5"
+		"description": "投射物伤害 +7，射击间隔 +6%"
 	},
 	{
 		"id": "attack_speed",
 		"title": "快速施放",
-		"description": "射击间隔 -18%"
+		"description": "射击间隔 -18%，投射物伤害 -1（最低 1）"
 	},
 	{
 		"id": "move_speed",
@@ -545,12 +543,12 @@ const UPGRADE_POOL := [
 	{
 		"id": "piercing_rounds",
 		"title": "穿透弹芯",
-		"description": "投射物穿透 +1"
+		"description": "投射物穿透 +1，投射物伤害 -1（最低 1）"
 	},
 	{
 		"id": "blast_core",
 		"title": "爆裂核心",
-		"description": "爆裂范围 +36，玩家体积 +10%（最高 +240%）"
+		"description": "爆裂范围 +36，玩家体积 +10%（最高 +240%），射击间隔 +8%"
 	},
 	{
 		"id": "graze_barrier",
@@ -565,7 +563,7 @@ const UPGRADE_POOL := [
 	{
 		"id": "chain_spark",
 		"title": "连锁电弧",
-		"description": "每次攻击连锁弹 +1，单枚伤害 66%；每层伤害 +6%"
+		"description": "每次攻击连锁弹 +1，单枚伤害 66%；每层伤害 +6%，投射物伤害 -1（最低 1）"
 	},
 	{
 		"id": "orbit_blade",
@@ -580,12 +578,12 @@ const UPGRADE_POOL := [
 	{
 		"id": "homing_shards",
 		"title": "寻迹碎片",
-		"description": "每次攻击追踪碎片 +1，单枚伤害 56%；每层伤害 +8%"
+		"description": "每次攻击追踪碎片 +1，单枚伤害 56%；每层伤害 +8%，当前移速 -6%（最低 80）"
 	},
 	{
 		"id": "heavy_shot",
 		"title": "重压弹芯",
-		"description": "每 3 次攻击发射 1 枚重弹，伤害 +2，击退 +45%，玩家体积 +6%（最高 +240%）"
+		"description": "每 3 次攻击发射 1 枚重弹，伤害 +3，击退 +45%，玩家体积 +8%（最高 +240%），射击间隔 +5%"
 	},
 	{
 		"id": "close_slash",
@@ -600,7 +598,7 @@ const UPGRADE_POOL := [
 	{
 		"id": "channel_beam",
 		"title": "引导光束",
-		"description": "每 0.32 秒对 330 范围内最近敌人造成 24% 投射物伤害；每层射程 +28、伤害 +4.5%、间隔 -0.025 秒"
+		"description": "每 0.32 秒对 330 范围内最近敌人造成 24% 投射物伤害；每层射程 +28、伤害 +4.5%、间隔 -0.025 秒，当前移速 -5%（最低 80）"
 	},
 	{
 		"id": "shatter_blast",
@@ -1667,7 +1665,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_damage_skill",
 			"title": "技能：强击弹体",
 			"category": "基础技能",
-			"description": "投射物伤害 +5，适合暴击和穿透",
+			"description": "投射物伤害 +7，射击间隔 +6%",
 			"cost": 16 + completed_stage * 2,
 			"reward_upgrade_id": "damage",
 			"reward_upgrade_title": "强击弹体"
@@ -1676,7 +1674,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_attack_speed_skill",
 			"title": "技能：急速施放",
 			"category": "基础技能",
-			"description": "射击间隔 -18%",
+			"description": "射击间隔 -18%，投射物伤害 -1（最低 1）",
 			"cost": 18 + completed_stage * 2,
 			"reward_upgrade_id": "attack_speed",
 			"reward_upgrade_title": "急速施放"
@@ -1721,7 +1719,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_pierce_skill",
 			"title": "技能：穿透弹芯",
 			"category": "基础技能",
-			"description": "投射物穿透 +1，适合多投射和直线清场",
+			"description": "投射物穿透 +1，投射物伤害 -1（最低 1）",
 			"cost": 20 + completed_stage * 3,
 			"reward_upgrade_id": "piercing_rounds",
 			"reward_upgrade_title": "穿透弹芯"
@@ -1732,7 +1730,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_blast_skill",
 			"title": "技能：爆裂核心",
 			"category": "形态技能",
-			"description": "爆裂范围 +36，玩家体积 +10%（最高 +240%）",
+			"description": "爆裂范围 +36，玩家体积 +10%（最高 +240%），射击间隔 +8%",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "blast_core",
 			"reward_upgrade_title": "爆裂核心"
@@ -1741,7 +1739,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_chain_skill",
 			"title": "技能：连锁电弧",
 			"category": "形态技能",
-			"description": "每次攻击连锁弹 +1，单枚伤害 66%；每层伤害 +6%",
+			"description": "每次攻击连锁弹 +1，单枚伤害 66%；每层伤害 +6%，投射物伤害 -1（最低 1）",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "chain_spark",
 			"reward_upgrade_title": "连锁电弧"
@@ -1768,7 +1766,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_homing_skill",
 			"title": "技能：寻迹碎片",
 			"category": "形态技能",
-			"description": "每次攻击追踪碎片 +1，单枚伤害 56%；每层伤害 +8%",
+			"description": "每次攻击追踪碎片 +1，单枚伤害 56%；每层伤害 +8%，当前移速 -6%（最低 80）",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "homing_shards",
 			"reward_upgrade_title": "寻迹碎片"
@@ -1777,7 +1775,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_heavy_skill",
 			"title": "技能：重压弹芯",
 			"category": "形态技能",
-			"description": "每 3 次攻击发射 1 枚重弹，伤害 +2，击退 +45%，玩家体积 +6%（最高 +240%）",
+			"description": "每 3 次攻击发射 1 枚重弹，伤害 +3，击退 +45%，玩家体积 +8%（最高 +240%），射击间隔 +5%",
 			"cost": 26 + completed_stage * 3,
 			"reward_upgrade_id": "heavy_shot",
 			"reward_upgrade_title": "重压弹芯"
@@ -1804,7 +1802,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_channel_beam_skill",
 			"title": "技能：引导光束",
 			"category": "身法技能",
-			"description": "每 0.32 秒对 330 范围内最近敌人造成 24% 投射物伤害；每层射程 +28、伤害 +4.5%、间隔 -0.025 秒",
+			"description": "每 0.32 秒对 330 范围内最近敌人造成 24% 投射物伤害；每层射程 +28、伤害 +4.5%、间隔 -0.025 秒，当前移速 -5%（最低 80）",
 			"cost": 28 + completed_stage * 3,
 			"reward_upgrade_id": "channel_beam",
 			"reward_upgrade_title": "引导光束"
@@ -1967,35 +1965,10 @@ func _annotate_shop_offer_context(offer: Dictionary) -> Dictionary:
 	var purchase_preview := _get_upgrade_purchase_preview(reward_upgrade_id, current_stack)
 	if not purchase_preview.is_empty():
 		offer["purchase_preview"] = purchase_preview
-	var mastery_preview := _get_route_mastery_preview_for_choice(offer)
-	if not mastery_preview.is_empty():
-		offer["route_mastery_preview"] = mastery_preview
 	return offer
 
 func get_build_route_label(route_id: String) -> String:
 	return str(BUILD_ROUTE_LABELS.get(route_id, ""))
-
-func get_build_route_mastery_tier(route_id: String) -> int:
-	var route_scores := _get_active_build_route_scores()
-	return _get_build_route_mastery_tier_for_score(int(route_scores.get(route_id, 0)))
-
-func get_build_route_mastery_description(route_id: String, tier: int) -> String:
-	var clamped_tier := clampi(tier, 1, BUILD_ROUTE_MASTERY_CAP)
-	match route_id:
-		"bulk":
-			return "联动伤害 +%d%%" % (clamped_tier * 6)
-		"pierce":
-			return "有穿透时投射物伤害 +%d%%" % (clamped_tier * 6)
-		"blast":
-			return "爆裂伤害 +%d%%" % (clamped_tier * 6)
-		"chain":
-			return "连锁、回旋和追踪伤害 +%d%%" % (clamped_tier * 5)
-		"close":
-			return "近身刀环、脉冲场和光束伤害 +%d%%" % (clamped_tier * 6)
-	return ""
-
-func _get_build_route_mastery_tier_for_score(score: int) -> int:
-	return clampi(int(floor(float(maxi(0, score)) / float(BUILD_ROUTE_MASTERY_STEP))), 0, BUILD_ROUTE_MASTERY_CAP)
 
 func _annotate_build_route_context(data: Dictionary, route_id: String, role: String) -> Dictionary:
 	var annotated := data.duplicate(true)
@@ -2128,26 +2101,7 @@ func _annotate_upgrade_choice_context(choice: Dictionary) -> Dictionary:
 	var upgrade_preview := _get_upgrade_purchase_preview(upgrade_id, current_stack)
 	if not upgrade_preview.is_empty():
 		annotated["upgrade_preview"] = upgrade_preview
-	var mastery_preview := _get_route_mastery_preview_for_choice(annotated)
-	if not mastery_preview.is_empty():
-		annotated["route_mastery_preview"] = mastery_preview
 	return annotated
-
-func _get_route_mastery_preview_for_choice(data: Dictionary) -> String:
-	var route_id := str(data.get("build_route_id", ""))
-	if route_id.is_empty():
-		return ""
-	var route_scores := _get_active_build_route_scores()
-	var current_score := int(route_scores.get(route_id, 0))
-	var current_mastery := _get_build_route_mastery_tier_for_score(current_score)
-	var next_mastery := _get_build_route_mastery_tier_for_score(current_score + 1)
-	if next_mastery <= current_mastery:
-		return ""
-	return "将激活%s专精 %d：%s" % [
-		get_build_route_label(route_id),
-		next_mastery,
-		get_build_route_mastery_description(route_id, next_mastery)
-	]
 
 func _build_upgrade_utility_pool() -> Array[Dictionary]:
 	var utility_ids := ["damage", "attack_speed", "move_speed", "max_health", "graze_barrier", "clear_barrier"]
@@ -2159,9 +2113,9 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 	var next_stack := current_stack + 1
 	match upgrade_id:
 		"damage":
-			return "本层伤害 +5，获得后强击层数 %d" % next_stack
+			return "本层投射物伤害 +7，射击间隔 +6%；获得后强击层数 %d" % next_stack
 		"attack_speed":
-			return "本层射击间隔 -18%，获得后急速层数 %d" % next_stack
+			return "本层射击间隔 -18%，投射物伤害 -1（最低 1）；获得后急速层数 %d" % next_stack
 		"move_speed":
 			return "本层移动速度 +35，获得后迅捷层数 %d" % next_stack
 		"max_health":
@@ -2181,15 +2135,15 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 		"still_focus":
 			return "静止每 0.7 秒暴击率 +8%，最多 12 层专注；获得后静立技能层数 %d" % next_stack
 		"piercing_rounds":
-			return "本层穿透 +1，获得后穿透层数 %d" % next_stack
+			return "本层穿透 +1，投射物伤害 -1（最低 1）；获得后穿透层数 %d" % next_stack
 		"blast_core":
-			return "本层爆裂范围 +36、玩家体积 +10%（最高 +240%），获得后爆裂层数 %d" % next_stack
+			return "本层爆裂范围 +36、玩家体积 +10%（最高 +240%）、射击间隔 +8%；获得后爆裂层数 %d" % next_stack
 		"graze_barrier":
 			return "本层护盾 +22，持续 4 秒；获得后折光层数 %d" % next_stack
 		"clear_barrier":
 			return "本层立即清除敌弹，护盾 +16，持续 3.5 秒；获得后清弹层数 %d" % next_stack
 		"chain_spark":
-			return "获得后每次攻击追加 %d 枚连锁弹，单枚伤害 %d%%，寿命 +%.2f 秒" % [
+			return "获得后每次攻击追加 %d 枚连锁弹，单枚伤害 %d%%，寿命 +%.2f 秒，投射物伤害 -1（最低 1）" % [
 				next_stack,
 				66 + maxi(0, next_stack - 1) * 6,
 				next_stack * 0.08
@@ -2206,13 +2160,13 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 				50 + next_stack * 8
 			]
 		"homing_shards":
-			return "获得后每次攻击追加 %d 枚追踪碎片，单枚伤害 %d%%，追踪强度 %.2f" % [
+			return "获得后每次攻击追加 %d 枚追踪碎片，单枚伤害 %d%%，追踪强度 %.2f，当前移速 -6%（最低 80）" % [
 				next_stack,
 				56 + maxi(0, next_stack - 1) * 8,
 				4.2 + float(next_stack) * 0.65
 			]
 		"heavy_shot":
-			return "本层伤害 +2、玩家体积 +6%（最高 +240%）；每 3 次攻击发射 1 枚重弹，击退 +45%"
+			return "本层伤害 +3、玩家体积 +8%（最高 +240%）、射击间隔 +5%；每 3 次攻击发射 1 枚重弹，击退 +45%"
 		"close_slash":
 			return "获得后刀环半径 %d，冷却 %.2f 秒" % [
 				int(round(72.0 + float(next_stack) * 13.0)),
@@ -2224,7 +2178,7 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 				maxf(0.55, 2.25 - float(next_stack) * 0.12)
 			]
 		"channel_beam":
-			return "获得后光束射程 %d，跳伤间隔 %.2f 秒，单跳伤害 %.1f%% 投射物伤害" % [
+			return "获得后光束射程 %d，跳伤间隔 %.2f 秒，单跳伤害 %.1f%% 投射物伤害，当前移速 -5%（最低 80）" % [
 				int(round(330.0 + float(next_stack) * 28.0)),
 				maxf(0.05, 0.32 - float(next_stack) * 0.025),
 				(0.24 + float(next_stack) * 0.045) * 100.0
@@ -2251,13 +2205,13 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 				8 + next_stack * 2
 			]
 		"form_focused":
-			return "本层投射物伤害 +8，获得后聚能专精层数 %d" % next_stack
+			return "本层投射物伤害 +8，获得后聚能强化层数 %d" % next_stack
 		"form_scatter":
-			return "本层每次攻击投射物 +1，获得后散射专精层数 %d" % next_stack
+			return "本层每次攻击投射物 +1，获得后散射强化层数 %d" % next_stack
 		"form_piercing":
-			return "本层投射物穿透 +1，获得后穿透专精层数 %d" % next_stack
+			return "本层投射物穿透 +1，获得后穿透强化层数 %d" % next_stack
 		"form_burst":
-			return "本层爆裂范围 +28，获得后爆裂专精层数 %d" % next_stack
+			return "本层爆裂范围 +28，获得后爆裂强化层数 %d" % next_stack
 	return ""
 
 func _build_event_choices(event: Dictionary) -> Array[Dictionary]:
@@ -2505,25 +2459,25 @@ func _get_current_form_upgrade_choice() -> Dictionary:
 		"focused":
 			return {
 				"id": "form_focused",
-				"title": "聚能专精",
+				"title": "聚能强化",
 				"description": "当前武器为聚能法杖：投射物伤害 +8"
 			}
 		"scatter":
 			return {
 				"id": "form_scatter",
-				"title": "散射专精",
+				"title": "散射强化",
 				"description": "当前武器为散射法杖：每次攻击投射物 +1"
 			}
 		"piercing":
 			return {
 				"id": "form_piercing",
-				"title": "穿透专精",
+				"title": "穿透强化",
 				"description": "当前武器为穿透法杖：投射物穿透 +1"
 			}
 		"burst":
 			return {
 				"id": "form_burst",
-				"title": "爆裂专精",
+				"title": "爆裂强化",
 				"description": "当前武器为爆裂法杖：爆裂范围 +28"
 			}
 	return {}

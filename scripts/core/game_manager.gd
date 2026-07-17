@@ -12,6 +12,52 @@ const STAGE_COUNT: int = 10
 const SHOP_REFRESH_BASE_COST: int = 6
 const OVERKILL_BONUS_PER_KILL: int = 2
 const OVERKILL_BONUS_CAP: int = 24
+const SKILL_RARITY_ORDER := ["green", "blue", "purple", "gold"]
+const SKILL_RARITY_DEFINITIONS := {
+	"green": {"label": "绿色", "weight": 58, "shop_weight": 52},
+	"blue": {"label": "蓝色", "weight": 30, "shop_weight": 32},
+	"purple": {"label": "紫色", "weight": 10, "shop_weight": 13},
+	"gold": {"label": "金色", "weight": 2, "shop_weight": 3}
+}
+const UPGRADE_RARITY_BY_ID := {
+	"damage": "green",
+	"attack_speed": "green",
+	"move_speed": "green",
+	"max_health": "green",
+	"heal": "green",
+	"strong_heal": "green",
+	"recovery_training": "green",
+	"light_frame": "green",
+	"piercing_rounds": "green",
+	"graze_barrier": "green",
+	"clear_barrier": "green",
+	"mass_resonance": "blue",
+	"light_resonance": "blue",
+	"slow_resonance": "blue",
+	"haste_resonance": "blue",
+	"still_focus": "blue",
+	"motion_focus": "blue",
+	"shatter_blast": "blue",
+	"pierce_amp": "blue",
+	"guard_blade": "blue",
+	"multishot": "purple",
+	"blast_core": "purple",
+	"chain_spark": "purple",
+	"orbit_blade": "purple",
+	"homing_shards": "purple",
+	"heavy_shot": "purple",
+	"close_slash": "purple",
+	"pulse_field": "purple",
+	"channel_beam": "purple",
+	"rapid_resonance": "purple",
+	"blood_pact": "purple",
+	"overload_burst": "gold",
+	"conduit_coil": "gold",
+	"form_focused": "blue",
+	"form_scatter": "blue",
+	"form_piercing": "blue",
+	"form_burst": "blue"
+}
 
 signal gold_changed(total: int)
 signal enemy_killed(total: int)
@@ -1685,7 +1731,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 	var core_skill_pool: Array[Dictionary] = [
 		{
 			"id": "shop_damage_skill",
-			"title": "技能：强击弹体",
+			"title": "强击弹体",
 			"description": "投射物伤害 +7，射击间隔 +6%",
 			"cost": 16 + completed_stage * 2,
 			"reward_upgrade_id": "damage",
@@ -1693,7 +1739,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_attack_speed_skill",
-			"title": "技能：急速施放",
+			"title": "急速施放",
 			"description": "射击间隔 -18%，投射物伤害 -1（最低 1）",
 			"cost": 18 + completed_stage * 2,
 			"reward_upgrade_id": "attack_speed",
@@ -1701,7 +1747,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_multishot_skill",
-			"title": "技能：分裂射击",
+			"title": "分裂射击",
 			"description": "投射物 +1，玩家体积 +20%（最高 +240%），当前移速 -18%（最低 80）",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "multishot",
@@ -1709,7 +1755,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_mass_resonance_skill",
-			"title": "技能：体积共鸣",
+			"title": "体积共鸣",
 			"description": "每层：玩家体积每 +10%，投射物伤害 +6%，无层数上限",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "mass_resonance",
@@ -1717,7 +1763,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_light_frame_skill",
-			"title": "技能：轻装骨架",
+			"title": "轻装骨架",
 			"description": "玩家体积 -8%（最低 -40%），移动速度 +18",
 			"cost": 20 + completed_stage * 3,
 			"reward_upgrade_id": "light_frame",
@@ -1725,7 +1771,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_light_resonance_skill",
-			"title": "技能：轻盈共鸣",
+			"title": "轻盈共鸣",
 			"description": "每层：玩家体积每低于 100% 10%，投射物伤害 +3%、暴击率 +6%",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "light_resonance",
@@ -1733,7 +1779,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_slow_resonance_skill",
-			"title": "技能：迟缓共鸣",
+			"title": "迟缓共鸣",
 			"description": "每层：当前移速每低于初始值 10%，投射物伤害 +8%，无层数上限",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "slow_resonance",
@@ -1741,7 +1787,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_haste_resonance_skill",
-			"title": "技能：疾行共鸣",
+			"title": "疾行共鸣",
 			"description": "每层：当前移速每高于初始值 10%，投射物伤害 +4%、暴击率 +3%",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "haste_resonance",
@@ -1749,7 +1795,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_rapid_resonance_skill",
-			"title": "技能：速射共鸣",
+			"title": "速射共鸣",
 			"description": "每层：射击间隔每低于初始值 10%，连锁、回旋、追踪和过载伤害 +6%",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "rapid_resonance",
@@ -1757,7 +1803,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_blood_pact_skill",
-			"title": "技能：血潮契约",
+			"title": "血潮契约",
 			"description": "当前生命 -12（最低 1）；每层：生命每损失 10%，投射物伤害 +5%、暴击率 +4%",
 			"cost": 18 + completed_stage * 3,
 			"reward_upgrade_id": "blood_pact",
@@ -1765,7 +1811,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_still_focus_skill",
-			"title": "技能：静立聚焦",
+			"title": "静立聚焦",
 			"description": "静止每 0.7 秒暴击率 +8%，最多 12 层专注；技能可重复提高每层暴击",
 			"cost": 20 + completed_stage * 3,
 			"reward_upgrade_id": "still_focus",
@@ -1773,7 +1819,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_motion_focus_skill",
-			"title": "技能：游走聚焦",
+			"title": "游走聚焦",
 			"description": "移动每 0.6 秒游走伤害 +3%、暴击率 +3%，最多 10 层游走；技能可重复提高每层收益",
 			"cost": 20 + completed_stage * 3,
 			"reward_upgrade_id": "motion_focus",
@@ -1781,7 +1827,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_pierce_skill",
-			"title": "技能：穿透弹芯",
+			"title": "穿透弹芯",
 			"description": "投射物穿透 +1，投射物伤害 -1（最低 1）",
 			"cost": 20 + completed_stage * 3,
 			"reward_upgrade_id": "piercing_rounds",
@@ -1791,7 +1837,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 	var shape_skill_pool: Array[Dictionary] = [
 		{
 			"id": "shop_blast_skill",
-			"title": "技能：爆裂核心",
+			"title": "爆裂核心",
 			"description": "爆裂范围 +36，玩家体积 +10%（最高 +240%），射击间隔 +8%",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "blast_core",
@@ -1799,7 +1845,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_chain_skill",
-			"title": "技能：连锁电弧",
+			"title": "连锁电弧",
 			"description": "每次攻击连锁弹 +1，单枚伤害 66%；每层伤害 +6%，投射物伤害 -1（最低 1）",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "chain_spark",
@@ -1807,7 +1853,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_orbit_skill",
-			"title": "技能：回旋刃",
+			"title": "回旋刃",
 			"description": "每次攻击两侧回旋弹各 +1，单枚伤害 54%；每层伤害 +8%",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "orbit_blade",
@@ -1815,7 +1861,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_overload_skill",
-			"title": "技能：过载爆发",
+			"title": "过载爆发",
 			"description": "每 4 次攻击释放 8 枚爆裂弹，每层 +2 枚，无弹数上限",
 			"cost": 28 + completed_stage * 3,
 			"reward_upgrade_id": "overload_burst",
@@ -1823,7 +1869,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_homing_skill",
-			"title": "技能：寻迹碎片",
+			"title": "寻迹碎片",
 			"description": "每次攻击追踪碎片 +1，单枚伤害 56%；每层伤害 +8%，当前移速 -6%（最低 80）",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "homing_shards",
@@ -1831,7 +1877,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_heavy_skill",
-			"title": "技能：重压弹芯",
+			"title": "重压弹芯",
 			"description": "每 3 次攻击发射 1 枚重弹，伤害 +3，击退 +45%，玩家体积 +8%（最高 +240%），射击间隔 +5%",
 			"cost": 26 + completed_stage * 3,
 			"reward_upgrade_id": "heavy_shot",
@@ -1839,7 +1885,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_close_slash_skill",
-			"title": "技能：近身刀环",
+			"title": "近身刀环",
 			"description": "每 1.18 秒斩击半径 85；每层半径 +13，冷却 -0.09 秒，最低 0.22 秒",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "close_slash",
@@ -1847,7 +1893,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_pulse_field_skill",
-			"title": "技能：脉冲场",
+			"title": "脉冲场",
 			"description": "每 2.25 秒释放半径 110 脉冲；每层半径 +14，冷却 -0.12 秒，最低 0.55 秒",
 			"cost": 25 + completed_stage * 3,
 			"reward_upgrade_id": "pulse_field",
@@ -1855,7 +1901,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_channel_beam_skill",
-			"title": "技能：引导光束",
+			"title": "引导光束",
 			"description": "每 0.32 秒对 330 范围内最近敌人造成 24% 投射物伤害；每层射程 +28、伤害 +4.5%、间隔 -0.025 秒，当前移速 -5%（最低 80）",
 			"cost": 28 + completed_stage * 3,
 			"reward_upgrade_id": "channel_beam",
@@ -1863,7 +1909,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_shatter_blast_skill",
-			"title": "技能：裂片爆破",
+			"title": "裂片爆破",
 			"description": "爆裂伤害 +12%，爆裂范围 +18",
 			"cost": 25 + completed_stage * 3,
 			"reward_upgrade_id": "shatter_blast",
@@ -1871,7 +1917,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_pierce_amp_skill",
-			"title": "技能：贯穿增幅",
+			"title": "贯穿增幅",
 			"description": "穿透 +1，投射物伤害 +5%",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "pierce_amp",
@@ -1879,7 +1925,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_conduit_coil_skill",
-			"title": "技能：超导线圈",
+			"title": "超导线圈",
 			"description": "光束伤害 +10%，连锁弹和追踪碎片伤害 +6%，光束间隔 -0.01 秒",
 			"cost": 26 + completed_stage * 3,
 			"reward_upgrade_id": "conduit_coil",
@@ -1887,7 +1933,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		},
 		{
 			"id": "shop_guard_blade_skill",
-			"title": "技能：护身锋刃",
+			"title": "护身锋刃",
 			"description": "近身刀环和脉冲场伤害 +10%，获得护盾 +10；近身命中时每层护盾 +2",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "guard_blade",
@@ -1948,8 +1994,7 @@ func _get_survival_preferred_shop_offer(is_high_pressure_prep: bool) -> String:
 func _roll_shop_offer_from_pool(pool: Array[Dictionary]) -> Dictionary:
 	if pool.is_empty():
 		return {}
-	var index := randi_range(0, pool.size() - 1)
-	return pool[index].duplicate(true)
+	return _roll_weighted_shop_offer(pool)
 
 func _roll_shop_offer_from_pool_excluding(pool: Array[Dictionary], excluded_ids: Dictionary) -> Dictionary:
 	var available: Array[Dictionary] = []
@@ -1960,8 +2005,7 @@ func _roll_shop_offer_from_pool_excluding(pool: Array[Dictionary], excluded_ids:
 		available.append(offer)
 	if available.is_empty():
 		return {}
-	var index := randi_range(0, available.size() - 1)
-	return available[index].duplicate(true)
+	return _roll_weighted_shop_offer(available)
 
 func _roll_stage_shop_offer(pool: Array[Dictionary], preferred_id: String = "", preferred_chance: float = 0.65) -> Dictionary:
 	if pool.is_empty():
@@ -1984,11 +2028,34 @@ func _roll_shop_offer_for_route(pool: Array[Dictionary], route_id: String, exclu
 		if route_offer_ids.has(offer_id):
 			route_pool.append(offer)
 	if not route_pool.is_empty():
-		var route_index := randi_range(0, route_pool.size() - 1)
-		var selected := route_pool[route_index].duplicate(true)
+		var selected := _roll_weighted_shop_offer(route_pool)
 		selected["build_route_id"] = route_id
 		return selected
 	return _roll_shop_offer_from_pool_excluding(pool, excluded_ids)
+
+func _roll_weighted_shop_offer(pool: Array[Dictionary]) -> Dictionary:
+	if pool.is_empty():
+		return {}
+	var total_weight := 0
+	for offer in pool:
+		total_weight += _get_shop_offer_weight(offer)
+	if total_weight <= 0:
+		return pool[randi_range(0, pool.size() - 1)].duplicate(true)
+	var roll := randi_range(1, total_weight)
+	var cursor := 0
+	for offer in pool:
+		cursor += _get_shop_offer_weight(offer)
+		if roll <= cursor:
+			return offer.duplicate(true)
+	return pool[pool.size() - 1].duplicate(true)
+
+func _get_shop_offer_weight(offer: Dictionary) -> int:
+	var reward_upgrade_id := str(offer.get("reward_upgrade_id", ""))
+	if reward_upgrade_id.is_empty():
+		return 100
+	var rarity := _get_upgrade_rarity(reward_upgrade_id)
+	var definition: Dictionary = SKILL_RARITY_DEFINITIONS.get(rarity, SKILL_RARITY_DEFINITIONS["green"])
+	return maxi(1, int(definition.get("shop_weight", 1)))
 
 func _build_shop_offers(event: Dictionary) -> Array[Dictionary]:
 	var offers: Array[Dictionary] = []
@@ -2004,6 +2071,7 @@ func _annotate_shop_offer_context(offer: Dictionary) -> Dictionary:
 	var reward_upgrade_id := str(offer.get("reward_upgrade_id", ""))
 	if reward_upgrade_id.is_empty():
 		return offer
+	_apply_skill_rarity_metadata(offer, reward_upgrade_id)
 	var current_stack := _get_upgrade_stack_count(reward_upgrade_id)
 	offer["stack_preview"] = "当前 %d 层，获得后 %d 层" % [current_stack, current_stack + 1]
 	var purchase_preview := _get_upgrade_purchase_preview(reward_upgrade_id, current_stack)
@@ -2018,8 +2086,26 @@ func _get_upgrade_stack_count(upgrade_id: String) -> int:
 func _get_upgrade_by_id(upgrade_id: String) -> Dictionary:
 	for upgrade in UPGRADE_POOL:
 		if str(upgrade.get("id", "")) == upgrade_id:
-			return upgrade.duplicate(true)
+			var upgrade_data: Dictionary = upgrade.duplicate(true)
+			_apply_skill_rarity_metadata(upgrade_data, upgrade_id)
+			return upgrade_data
 	return {}
+
+func _get_upgrade_rarity(upgrade_id: String) -> String:
+	return str(UPGRADE_RARITY_BY_ID.get(upgrade_id, "green"))
+
+func _get_skill_rarity_label(rarity: String) -> String:
+	var definition: Dictionary = SKILL_RARITY_DEFINITIONS.get(rarity, SKILL_RARITY_DEFINITIONS["green"])
+	return str(definition.get("label", "绿色"))
+
+func _get_skill_rarity_weight(rarity: String) -> int:
+	var definition: Dictionary = SKILL_RARITY_DEFINITIONS.get(rarity, SKILL_RARITY_DEFINITIONS["green"])
+	return maxi(1, int(definition.get("weight", 1)))
+
+func _apply_skill_rarity_metadata(data: Dictionary, upgrade_id: String) -> void:
+	var rarity := _get_upgrade_rarity(upgrade_id)
+	data["rarity"] = rarity
+	data["rarity_label"] = _get_skill_rarity_label(rarity)
 
 func _get_upgrade_pool_for_ids(upgrade_ids: Array) -> Array[Dictionary]:
 	var pool: Array[Dictionary] = []
@@ -2116,12 +2202,27 @@ func _append_upgrade_choice_from_pool(pool: Array[Dictionary], used_ids: Diction
 		available.append(upgrade)
 	if available.is_empty():
 		return false
-	available.shuffle()
-	var selected := available[0].duplicate(true)
+	var selected := _roll_weighted_upgrade_choice(available)
 	selected = _annotate_upgrade_choice_context(selected)
 	pending_upgrade_choices.append(selected)
 	used_ids[str(selected.get("id", ""))] = true
 	return true
+
+func _roll_weighted_upgrade_choice(pool: Array[Dictionary]) -> Dictionary:
+	if pool.is_empty():
+		return {}
+	var total_weight := 0
+	for upgrade in pool:
+		total_weight += _get_skill_rarity_weight(str(upgrade.get("rarity", _get_upgrade_rarity(str(upgrade.get("id", ""))))))
+	if total_weight <= 0:
+		return pool[randi_range(0, pool.size() - 1)].duplicate(true)
+	var roll := randi_range(1, total_weight)
+	var cursor := 0
+	for upgrade in pool:
+		cursor += _get_skill_rarity_weight(str(upgrade.get("rarity", _get_upgrade_rarity(str(upgrade.get("id", ""))))))
+		if roll <= cursor:
+			return upgrade.duplicate(true)
+	return pool[pool.size() - 1].duplicate(true)
 
 func _annotate_upgrade_choice_context(choice: Dictionary) -> Dictionary:
 	var annotated := choice.duplicate(true)
@@ -2129,6 +2230,7 @@ func _annotate_upgrade_choice_context(choice: Dictionary) -> Dictionary:
 	if upgrade_id.is_empty():
 		return annotated
 	var current_stack := _get_upgrade_stack_count(upgrade_id)
+	_apply_skill_rarity_metadata(annotated, upgrade_id)
 	annotated["stack_preview"] = "当前 %d 层，选择后 %d 层" % [current_stack, current_stack + 1]
 	var upgrade_preview := _get_upgrade_purchase_preview(upgrade_id, current_stack)
 	if not upgrade_preview.is_empty():

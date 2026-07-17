@@ -527,6 +527,7 @@ func _on_upgrade_choices_requested(choices: Array) -> void:
 		var button := Button.new()
 		button.text = _format_upgrade_choice_text(choice)
 		button.custom_minimum_size = Vector2(460, 92)
+		_apply_rarity_button_style(button, choice)
 		button.pressed.connect(_on_upgrade_button_pressed.bind(index))
 		upgrade_list.add_child(button)
 	upgrade_panel.visible = true
@@ -537,7 +538,12 @@ func _on_upgrade_button_pressed(index: int) -> void:
 
 func _format_upgrade_choice_text(choice: Dictionary) -> String:
 	var lines: Array[String] = []
-	lines.append(str(choice.get("title", "强化")))
+	var rarity_label := str(choice.get("rarity_label", ""))
+	var title := str(choice.get("title", "强化"))
+	if rarity_label.is_empty():
+		lines.append(title)
+	else:
+		lines.append("【%s】%s" % [rarity_label, title])
 	var description := str(choice.get("description", ""))
 	if not description.is_empty():
 		lines.append(description)
@@ -602,14 +608,19 @@ func _refresh_shop_panel() -> void:
 		var cost := maxi(0, int(offer.get("cost", 0)))
 		var sold := bool(offer.get("sold", false))
 		var reward_text := _format_shop_offer_reward(offer)
+		var rarity_label := str(offer.get("rarity_label", ""))
+		var title := str(offer.get("title", "商品"))
+		if not rarity_label.is_empty():
+			title = "【%s】%s" % [rarity_label, title]
 		button.text = "%s%s\n价格：%d 金币\n%s" % [
-			str(offer.get("title", "商品")),
+			title,
 			"（已购买）" if sold else "",
 			cost,
 			reward_text
 		]
 		button.custom_minimum_size = Vector2(520, 116)
 		button.disabled = sold or GameManager.gold < cost
+		_apply_rarity_button_style(button, offer)
 		button.pressed.connect(_on_shop_offer_pressed.bind(index))
 		shop_offer_list.add_child(button)
 
@@ -1174,6 +1185,27 @@ func _format_shop_offer_reward(offer: Dictionary) -> String:
 	if lines.is_empty():
 		return "无直接奖励"
 	return "\n".join(lines)
+
+func _apply_rarity_button_style(button: Button, data: Dictionary) -> void:
+	var rarity := str(data.get("rarity", ""))
+	if rarity.is_empty():
+		return
+	var color := _get_rarity_color(rarity)
+	button.add_theme_color_override("font_color", color)
+	button.add_theme_color_override("font_hover_color", color.lightened(0.12))
+	button.add_theme_color_override("font_pressed_color", color.darkened(0.08))
+
+func _get_rarity_color(rarity: String) -> Color:
+	match rarity:
+		"green":
+			return Color(0.48, 0.95, 0.58, 1.0)
+		"blue":
+			return Color(0.45, 0.72, 1.0, 1.0)
+		"purple":
+			return Color(0.78, 0.52, 1.0, 1.0)
+		"gold":
+			return Color(1.0, 0.78, 0.28, 1.0)
+	return Color.WHITE
 
 func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 	var parts: Array[String] = []

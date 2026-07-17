@@ -2247,47 +2247,47 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 	var next_stack := current_stack + 1
 	match upgrade_id:
 		"damage":
-			return "本层投射物伤害 +7，射击间隔 +6%；获得后强击层数 " + str(next_stack)
+			return "本层：投射物伤害 +7，射击间隔 +6%"
 		"attack_speed":
-			return "本层射击间隔 -18%，投射物伤害 -1（最低 1）；获得后急速层数 " + str(next_stack)
+			return "本层：射击间隔 -18%，投射物伤害 -1（最低 1）"
 		"move_speed":
-			return "本层移动速度 +35，获得后迅捷层数 " + str(next_stack)
+			return "本层：移动速度 +35"
 		"max_health":
-			return "本层最大生命 +25，并回复 25 生命；获得后生命强化层数 " + str(next_stack)
+			return "本层：最大生命 +25，并回复 25 生命"
 		"heal":
-			return "本层回复 40 生命；获得后治疗层数 " + str(next_stack)
+			return "本层：回复 40 生命"
 		"strong_heal":
-			return "本层回复 70 生命；获得后紧急治疗层数 " + str(next_stack)
+			return "本层：回复 70 生命"
 		"recovery_training":
-			return "本层最大生命 +12，并回复 45 生命；获得后复苏层数 " + str(next_stack)
+			return "本层：最大生命 +12，并回复 45 生命"
 		"multishot":
-			return "本层投射物 +1，玩家体积 +20%（最高 +240%），当前移速 -18%（最低 80）；获得后分裂层数 " + str(next_stack)
+			return "本层：投射物 +1，玩家体积 +20%（最高 +240%），当前移速 -18%（最低 80）"
 		"mass_resonance":
-			return "每层：玩家体积每 +10%，投射物伤害 +6%，无层数上限；获得后体积共鸣层数 " + str(next_stack)
+			return "每层：玩家体积每 +10%，投射物伤害 +6%，无层数上限"
 		"light_frame":
-			return "本层玩家体积 -8%（最低 -40%），移动速度 +18；获得后轻装层数 " + str(next_stack)
+			return "本层：玩家体积 -8%（最低 -40%），移动速度 +18"
 		"light_resonance":
-			return "每层：玩家体积每低于 100% 10%，投射物伤害 +3%、暴击率 +6%；获得后轻盈共鸣层数 " + str(next_stack)
+			return "每层：玩家体积每低于 100% 10%，投射物伤害 +3%、暴击率 +6%"
 		"slow_resonance":
-			return "每层：当前移速每低于初始值 10%，投射物伤害 +8%，无层数上限；获得后迟缓共鸣层数 " + str(next_stack)
+			return "每层：当前移速每低于初始值 10%，投射物伤害 +8%，无层数上限"
 		"haste_resonance":
-			return "每层：当前移速每高于初始值 10%，投射物伤害 +4%、暴击率 +3%；获得后疾行共鸣层数 " + str(next_stack)
+			return "每层：当前移速每高于初始值 10%，投射物伤害 +4%、暴击率 +3%"
 		"rapid_resonance":
-			return "每层：射击间隔每低于初始值 10%，连锁、回旋、追踪和过载伤害 +6%；获得后速射共鸣层数 " + str(next_stack)
+			return "每层：射击间隔每低于初始值 10%，连锁、回旋、追踪和过载伤害 +6%"
 		"blood_pact":
-			return "本层当前生命 -12（最低 1）；每层：生命每损失 10%，投射物伤害 +5%、暴击率 +4%；获得后血潮层数 " + str(next_stack)
+			return "本层：当前生命 -12（最低 1）；每层：生命每损失 10%，投射物伤害 +5%、暴击率 +4%"
 		"still_focus":
-			return "静止每 0.7 秒暴击率 +8%，最多 12 层专注；获得后静立技能层数 " + str(next_stack)
+			return "每层：静止每 0.7 秒暴击率 +8%，最多 12 层专注"
 		"motion_focus":
-			return "移动每 0.6 秒游走伤害 +3%、暴击率 +3%，最多 10 层游走；获得后游走技能层数 " + str(next_stack)
+			return "每层：移动每 0.6 秒游走伤害 +3%、暴击率 +3%，最多 10 层游走"
 		"piercing_rounds":
-			return "本层穿透 +1，投射物伤害 -1（最低 1）；获得后穿透层数 " + str(next_stack)
+			return "本层：穿透 +1，投射物伤害 -1（最低 1）"
 		"blast_core":
-			return "本层爆裂范围 +36、玩家体积 +10%（最高 +240%）、射击间隔 +8%；获得后爆裂层数 " + str(next_stack)
+			return "本层：爆裂范围 +36、玩家体积 +10%（最高 +240%）、射击间隔 +8%"
 		"graze_barrier":
-			return "本层护盾 +22，持续 4 秒；获得后折光层数 " + str(next_stack)
+			return "本层：护盾 +22，持续 4 秒"
 		"clear_barrier":
-			return "本层立即清除敌弹，护盾 +16，持续 3.5 秒；获得后清弹层数 " + str(next_stack)
+			return "本层：立即清除敌弹，护盾 +16，持续 3.5 秒"
 		"chain_spark":
 			return "获得后每次攻击追加 %d 枚连锁弹，单枚伤害 %d%%，寿命 +%.2f 秒，投射物伤害 -1（最低 1）" % [
 				next_stack,
@@ -2312,7 +2312,7 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 				4.2 + float(next_stack) * 0.65
 			]
 		"heavy_shot":
-			return "本层伤害 +3、玩家体积 +8%（最高 +240%）、射击间隔 +5%；每 3 次攻击发射 1 枚重弹，击退 +45%"
+			return "本层：伤害 +3、玩家体积 +8%（最高 +240%）、射击间隔 +5%；每 3 次攻击发射 1 枚重弹，击退 +45%"
 		"close_slash":
 			return "获得后刀环半径 %d，冷却 %.2f 秒" % [
 				int(round(72.0 + float(next_stack) * 13.0)),
@@ -2351,13 +2351,13 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 				8 + next_stack * 2
 			]
 		"form_focused":
-			return "本层投射物伤害 +8，获得后聚能强化层数 " + str(next_stack)
+			return "本层：投射物伤害 +8"
 		"form_scatter":
-			return "本层每次攻击投射物 +1，获得后散射强化层数 " + str(next_stack)
+			return "本层：每次攻击投射物 +1"
 		"form_piercing":
-			return "本层投射物穿透 +1，获得后穿透强化层数 " + str(next_stack)
+			return "本层：投射物穿透 +1"
 		"form_burst":
-			return "本层爆裂范围 +28，获得后爆裂强化层数 " + str(next_stack)
+			return "本层：爆裂范围 +28"
 	return ""
 
 func _build_event_choices(event: Dictionary) -> Array[Dictionary]:

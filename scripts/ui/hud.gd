@@ -545,14 +545,14 @@ func _format_upgrade_choice_text(choice: Dictionary) -> String:
 	else:
 		lines.append("【%s】%s" % [rarity_label, title])
 	var description := str(choice.get("description", ""))
-	if not description.is_empty():
-		lines.append(description)
 	var stack_preview := str(choice.get("stack_preview", ""))
 	if not stack_preview.is_empty():
 		lines.append(stack_preview)
 	var upgrade_preview := str(choice.get("upgrade_preview", ""))
 	if not upgrade_preview.is_empty():
 		lines.append(upgrade_preview)
+	elif not description.is_empty():
+		lines.append(description)
 	return "\n".join(lines)
 
 func _on_run_ended(kills: int, gold: int) -> void:
@@ -1171,14 +1171,14 @@ func _format_stage_event_reward(event: Dictionary) -> String:
 func _format_shop_offer_reward(offer: Dictionary) -> String:
 	var lines: Array[String] = []
 	var description := str(offer.get("description", ""))
-	if not description.is_empty():
-		lines.append(description)
 	var stack_preview := str(offer.get("stack_preview", ""))
 	if not stack_preview.is_empty():
 		lines.append(stack_preview)
 	var purchase_preview := str(offer.get("purchase_preview", ""))
 	if not purchase_preview.is_empty():
 		lines.append(purchase_preview)
+	elif not description.is_empty():
+		lines.append(description)
 	var reward_parts := _build_reward_parts(offer)
 	if not reward_parts.is_empty():
 		lines.append("奖励：" + "，".join(reward_parts))

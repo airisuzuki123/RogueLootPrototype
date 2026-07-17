@@ -1,0 +1,434 @@
+extends RefCounted
+
+const SKILL_RARITY_ORDER := ["green", "blue", "purple", "gold"]
+const SKILL_RARITY_DEFINITIONS := {
+	"green": {"label": "绿色", "weight": 58, "shop_weight": 52},
+	"blue": {"label": "蓝色", "weight": 30, "shop_weight": 32},
+	"purple": {"label": "紫色", "weight": 10, "shop_weight": 13},
+	"gold": {"label": "金色", "weight": 2, "shop_weight": 3}
+}
+
+const BUILD_ROUTE_ORDER := ["bulk", "agile", "pierce", "blast", "chain", "close"]
+const BUILD_ROUTE_DEFINITIONS := {
+	"bulk": {
+		"upgrades": ["multishot", "mass_resonance", "slow_resonance", "still_focus", "heavy_shot", "blast_core"],
+		"shop_offers": ["shop_multishot_skill", "shop_mass_resonance_skill", "shop_slow_resonance_skill", "shop_still_focus_skill", "shop_heavy_skill", "shop_blast_skill"]
+	},
+	"agile": {
+		"upgrades": ["light_frame", "light_resonance", "haste_resonance", "motion_focus", "attack_speed", "orbit_blade"],
+		"shop_offers": ["shop_light_frame_skill", "shop_light_resonance_skill", "shop_haste_resonance_skill", "shop_motion_focus_skill", "shop_attack_speed_skill", "shop_orbit_skill"]
+	},
+	"pierce": {
+		"upgrades": ["piercing_rounds", "pierce_amp", "damage", "attack_speed", "multishot"],
+		"shop_offers": ["shop_pierce_skill", "shop_pierce_amp_skill", "shop_damage_skill", "shop_attack_speed_skill", "shop_multishot_skill"]
+	},
+	"blast": {
+		"upgrades": ["blast_core", "shatter_blast", "overload_burst", "heavy_shot", "damage"],
+		"shop_offers": ["shop_blast_skill", "shop_shatter_blast_skill", "shop_overload_skill", "shop_heavy_skill", "shop_damage_skill"]
+	},
+	"chain": {
+		"upgrades": ["chain_spark", "homing_shards", "orbit_blade", "conduit_coil", "channel_beam", "attack_speed", "rapid_resonance"],
+		"shop_offers": ["shop_chain_skill", "shop_homing_skill", "shop_orbit_skill", "shop_conduit_coil_skill", "shop_channel_beam_skill", "shop_attack_speed_skill", "shop_rapid_resonance_skill"]
+	},
+	"close": {
+		"upgrades": ["close_slash", "pulse_field", "guard_blade", "blood_pact", "graze_barrier", "clear_barrier", "move_speed"],
+		"shop_offers": ["shop_close_slash_skill", "shop_pulse_field_skill", "shop_guard_blade_skill", "shop_blood_pact_skill"]
+	}
+}
+
+const ROUTE_SIGNATURE_UPGRADES := {
+	"bulk": ["multishot", "mass_resonance", "slow_resonance", "still_focus", "heavy_shot", "blast_core"],
+	"agile": ["light_frame", "light_resonance", "haste_resonance", "motion_focus"],
+	"pierce": ["piercing_rounds", "pierce_amp"],
+	"blast": ["blast_core", "shatter_blast", "overload_burst", "heavy_shot"],
+	"chain": ["chain_spark", "homing_shards", "orbit_blade", "conduit_coil", "channel_beam", "rapid_resonance"],
+	"close": ["close_slash", "pulse_field", "guard_blade", "blood_pact"]
+}
+
+const UPGRADE_DEFINITIONS := {
+	"damage": {
+		"title": "强击弹体",
+		"description": "投射物伤害 +25%，射击间隔 +10%",
+		"preview": "本层：投射物伤害 +25%，射击间隔 +10%",
+		"rarity": "green"
+	},
+	"attack_speed": {
+		"title": "急速施放",
+		"description": "射击间隔 -25%，投射物伤害 -10%",
+		"preview": "本层：射击间隔 -25%，投射物伤害 -10%",
+		"rarity": "green"
+	},
+	"move_speed": {
+		"title": "迅捷步伐",
+		"description": "移动速度 +70，玩家体积 +5%（最高 +240%）",
+		"preview": "本层：移动速度 +70，玩家体积 +5%（最高 +240%）",
+		"rarity": "green"
+	},
+	"max_health": {
+		"title": "生命强化",
+		"description": "最大生命 +30，并回复 30 生命，当前移速 -5%（最低 80）",
+		"preview": "本层：最大生命 +30，并回复 30 生命，当前移速 -5%（最低 80）",
+		"rarity": "green"
+	},
+	"heal": {
+		"title": "喘息之机",
+		"description": "回复 40 生命",
+		"preview": "本层：回复 40 生命",
+		"rarity": "green"
+	},
+	"strong_heal": {
+		"title": "紧急治疗",
+		"description": "回复 70 生命",
+		"preview": "本层：回复 70 生命",
+		"rarity": "green"
+	},
+	"recovery_training": {
+		"title": "复苏训练",
+		"description": "最大生命 +25，并回复 60 生命，当前移速 -5%（最低 80）",
+		"preview": "本层：最大生命 +25，并回复 60 生命，当前移速 -5%（最低 80）",
+		"rarity": "green"
+	},
+	"multishot": {
+		"title": "分裂射击",
+		"description": "投射物 +1，玩家体积 +30%（最高 +240%），当前移速 -25%（最低 80）",
+		"preview": "本层：投射物 +1，玩家体积 +30%（最高 +240%），当前移速 -25%（最低 80）",
+		"rarity": "purple"
+	},
+	"mass_resonance": {
+		"title": "体积共鸣",
+		"description": "每层：玩家体积每 +10%，投射物伤害 +16%，无层数上限",
+		"preview": "每层：玩家体积每 +10%，投射物伤害 +16%，无层数上限",
+		"rarity": "blue"
+	},
+	"light_frame": {
+		"title": "轻装骨架",
+		"description": "玩家体积 -12%（最低 -40%），移动速度 +70，投射物伤害 -10%",
+		"preview": "本层：玩家体积 -12%（最低 -40%），移动速度 +70，投射物伤害 -10%",
+		"rarity": "green"
+	},
+	"light_resonance": {
+		"title": "轻盈共鸣",
+		"description": "每层：玩家体积每低于 100% 10%，投射物伤害 +8%、暴击率 +10%",
+		"preview": "每层：玩家体积每低于 100% 10%，投射物伤害 +8%、暴击率 +10%",
+		"rarity": "blue"
+	},
+	"slow_resonance": {
+		"title": "迟缓共鸣",
+		"description": "每层：当前移速每低于初始值 10%，投射物伤害 +18%，无层数上限",
+		"preview": "每层：当前移速每低于初始值 10%，投射物伤害 +18%，无层数上限",
+		"rarity": "blue"
+	},
+	"haste_resonance": {
+		"title": "疾行共鸣",
+		"description": "每层：当前移速每高于初始值 10%，投射物伤害 +10%、暴击率 +8%",
+		"preview": "每层：当前移速每高于初始值 10%，投射物伤害 +10%、暴击率 +8%",
+		"rarity": "blue"
+	},
+	"rapid_resonance": {
+		"title": "速射共鸣",
+		"description": "每层：射击间隔每低于初始值 10%，连锁、回旋、追踪和过载伤害 +22%",
+		"preview": "每层：射击间隔每低于初始值 10%，连锁、回旋、追踪和过载伤害 +22%",
+		"rarity": "purple"
+	},
+	"blood_pact": {
+		"title": "血潮契约",
+		"description": "当前生命 -22（最低 1）；每层：生命每损失 10%，投射物伤害 +16%、暴击率 +10%",
+		"preview": "本层：当前生命 -22（最低 1）；每层：生命每损失 10%，投射物伤害 +16%、暴击率 +10%",
+		"rarity": "purple"
+	},
+	"still_focus": {
+		"title": "静立聚焦",
+		"description": "静止每 0.7 秒暴击率 +10%，最多 12 层专注；技能可重复提高每层暴击",
+		"preview": "每层：静止每 0.7 秒暴击率 +10%，最多 12 层专注",
+		"rarity": "blue"
+	},
+	"motion_focus": {
+		"title": "游走聚焦",
+		"description": "移动每 0.6 秒游走伤害 +8%、暴击率 +5%，最多 10 层游走；技能可重复提高每层收益",
+		"preview": "每层：移动每 0.6 秒游走伤害 +8%、暴击率 +5%，最多 10 层游走",
+		"rarity": "blue"
+	},
+	"piercing_rounds": {
+		"title": "穿透弹芯",
+		"description": "投射物穿透 +1，投射物伤害 -10%",
+		"preview": "本层：穿透 +1，投射物伤害 -10%",
+		"rarity": "green"
+	},
+	"blast_core": {
+		"title": "爆裂核心",
+		"description": "爆裂范围 +70，玩家体积 +20%（最高 +240%），射击间隔 +15%",
+		"preview": "本层：爆裂范围 +70、玩家体积 +20%（最高 +240%）、射击间隔 +15%",
+		"rarity": "purple"
+	},
+	"graze_barrier": {
+		"title": "折光护盾",
+		"description": "护盾 +22，持续 4 秒",
+		"preview": "本层：护盾 +22，持续 4 秒",
+		"rarity": "green"
+	},
+	"clear_barrier": {
+		"title": "清弹屏障",
+		"description": "立即清除敌弹，护盾 +16，持续 3.5 秒",
+		"preview": "本层：立即清除敌弹，护盾 +16，持续 3.5 秒",
+		"rarity": "green"
+	},
+	"chain_spark": {
+		"title": "连锁电弧",
+		"description": "每次攻击连锁弹 +1，单枚伤害 115%；每层伤害 +20%，投射物伤害 -12%",
+		"preview": "本层：连锁弹 +1，单枚伤害 115%，重复拿取独立 x1.20，寿命每次 +0.08 秒，投射物伤害 -12%",
+		"rarity": "purple"
+	},
+	"orbit_blade": {
+		"title": "回旋刃",
+		"description": "每次攻击两侧回旋弹各 +1，单枚伤害 105%；每层伤害 +18%",
+		"preview": "本层：两侧回旋弹各 +1，单枚伤害 105%，重复拿取独立 x1.18，寿命每次 +0.08 秒",
+		"rarity": "purple"
+	},
+	"overload_burst": {
+		"title": "过载爆发",
+		"description": "每 4 次攻击释放 8 枚爆裂弹，单枚伤害 250%；每层 +2 枚、单枚伤害 +25%，无弹数上限",
+		"preview": "本层：每 4 次攻击爆裂弹 +2，单枚伤害 250%，重复拿取独立 x1.25",
+		"rarity": "gold"
+	},
+	"homing_shards": {
+		"title": "寻迹碎片",
+		"description": "每次攻击追踪碎片 +1，单枚伤害 115%；每层伤害 +20%，当前移速 -12%（最低 80）",
+		"preview": "本层：追踪碎片 +1，单枚伤害 115%，重复拿取独立 x1.20，追踪强度 4.8 且每次 +0.85，当前移速 -12%（最低 80）",
+		"rarity": "purple"
+	},
+	"heavy_shot": {
+		"title": "重压弹芯",
+		"description": "投射物伤害 +20%；每 3 次攻击发射 1 枚 220% 重弹，击退 +45%，玩家体积 +15%（最高 +240%），射击间隔 +10%",
+		"preview": "本层：投射物伤害 +20%、玩家体积 +15%（最高 +240%）、射击间隔 +10%；每 3 次攻击发射 1 枚 220% 重弹，击退 +45%",
+		"rarity": "purple"
+	},
+	"close_slash": {
+		"title": "近身刀环",
+		"description": "每 1.18 秒造成 120% 近身斩击；每层半径 +22，伤害 +25%，冷却 -0.12 秒，最低 0.22 秒",
+		"preview": "本层：刀环伤害 120%，重复拿取独立 x1.25，半径 +22，冷却 -0.12 秒，最低 0.22 秒",
+		"rarity": "purple"
+	},
+	"pulse_field": {
+		"title": "脉冲场",
+		"description": "每 2.25 秒造成 100% 脉冲；每层半径 +24，伤害 +20%，冷却 -0.18 秒，最低 0.55 秒",
+		"preview": "本层：脉冲伤害 100%，重复拿取独立 x1.20，半径 +24，冷却 -0.18 秒，最低 0.55 秒",
+		"rarity": "purple"
+	},
+	"channel_beam": {
+		"title": "引导光束",
+		"description": "每 0.32 秒对 330 范围内最近敌人造成 85% 投射物伤害；每层射程 +28、伤害 +18%、间隔 -0.035 秒，当前移速 -10%（最低 80）",
+		"preview": "本层：光束单跳伤害 85%，重复拿取独立 x1.18，射程 +28，间隔 -0.035 秒，当前移速 -10%（最低 80）",
+		"rarity": "purple"
+	},
+	"shatter_blast": {
+		"title": "裂片爆破",
+		"description": "爆裂伤害 +55%，爆裂范围 +32",
+		"preview": "本层：爆裂伤害独立 x1.55，爆裂范围 +32",
+		"rarity": "blue"
+	},
+	"pierce_amp": {
+		"title": "贯穿增幅",
+		"description": "穿透 +1，投射物伤害 +55%",
+		"preview": "本层：穿透 +1，投射物伤害独立 x1.55",
+		"rarity": "blue"
+	},
+	"conduit_coil": {
+		"title": "超导线圈",
+		"description": "光束伤害 +150%，连锁弹和追踪碎片伤害 +75%，光束间隔 -0.03 秒",
+		"preview": "本层：光束伤害独立 x2.50，连锁/追踪伤害独立 x1.75，光束间隔 -0.03 秒",
+		"rarity": "gold"
+	},
+	"guard_blade": {
+		"title": "护身锋刃",
+		"description": "近身刀环和脉冲场伤害 +55%，获得护盾 +20；近身命中时每层护盾 +4",
+		"preview": "本层：近身伤害独立 x1.55，立即护盾至少 +20 且每次 +4，近身命中护盾 +4",
+		"rarity": "blue"
+	},
+	"form_focused": {
+		"title": "聚能强化",
+		"description": "当前武器为聚能法杖：投射物伤害 +8",
+		"preview": "本层：投射物伤害 +8",
+		"rarity": "blue"
+	},
+	"form_scatter": {
+		"title": "散射强化",
+		"description": "当前武器为散射法杖：每次攻击投射物 +1",
+		"preview": "本层：每次攻击投射物 +1",
+		"rarity": "blue"
+	},
+	"form_piercing": {
+		"title": "穿透强化",
+		"description": "当前武器为穿透法杖：投射物穿透 +1",
+		"preview": "本层：投射物穿透 +1",
+		"rarity": "blue"
+	},
+	"form_burst": {
+		"title": "爆裂强化",
+		"description": "当前武器为爆裂法杖：爆裂范围 +28",
+		"preview": "本层：爆裂范围 +28",
+		"rarity": "blue"
+	}
+}
+
+const UPGRADE_ORDER := [
+	"damage", "attack_speed", "move_speed", "max_health", "heal", "strong_heal", "recovery_training",
+	"multishot", "mass_resonance", "light_frame", "light_resonance", "slow_resonance", "haste_resonance",
+	"rapid_resonance", "blood_pact", "still_focus", "motion_focus", "piercing_rounds", "blast_core",
+	"graze_barrier", "clear_barrier", "chain_spark", "orbit_blade", "overload_burst", "homing_shards",
+	"heavy_shot", "close_slash", "pulse_field", "channel_beam", "shatter_blast", "pierce_amp",
+	"conduit_coil", "guard_blade"
+]
+
+const SHOP_SKILL_OFFERS := {
+	"shop_damage_skill": {"title": "强击弹体", "reward_upgrade_id": "damage", "base_cost": 16, "stage_cost": 2},
+	"shop_attack_speed_skill": {"title": "急速施放", "reward_upgrade_id": "attack_speed", "base_cost": 18, "stage_cost": 2},
+	"shop_multishot_skill": {"title": "分裂射击", "reward_upgrade_id": "multishot", "base_cost": 22, "stage_cost": 3},
+	"shop_mass_resonance_skill": {"title": "体积共鸣", "reward_upgrade_id": "mass_resonance", "base_cost": 22, "stage_cost": 3},
+	"shop_light_frame_skill": {"title": "轻装骨架", "reward_upgrade_id": "light_frame", "base_cost": 20, "stage_cost": 3},
+	"shop_light_resonance_skill": {"title": "轻盈共鸣", "reward_upgrade_id": "light_resonance", "base_cost": 22, "stage_cost": 3},
+	"shop_slow_resonance_skill": {"title": "迟缓共鸣", "reward_upgrade_id": "slow_resonance", "base_cost": 22, "stage_cost": 3},
+	"shop_haste_resonance_skill": {"title": "疾行共鸣", "reward_upgrade_id": "haste_resonance", "base_cost": 22, "stage_cost": 3},
+	"shop_rapid_resonance_skill": {"title": "速射共鸣", "reward_upgrade_id": "rapid_resonance", "base_cost": 22, "stage_cost": 3},
+	"shop_blood_pact_skill": {"title": "血潮契约", "reward_upgrade_id": "blood_pact", "base_cost": 18, "stage_cost": 3},
+	"shop_still_focus_skill": {"title": "静立聚焦", "reward_upgrade_id": "still_focus", "base_cost": 20, "stage_cost": 3},
+	"shop_motion_focus_skill": {"title": "游走聚焦", "reward_upgrade_id": "motion_focus", "base_cost": 20, "stage_cost": 3},
+	"shop_pierce_skill": {"title": "穿透弹芯", "reward_upgrade_id": "piercing_rounds", "base_cost": 20, "stage_cost": 3},
+	"shop_blast_skill": {"title": "爆裂核心", "reward_upgrade_id": "blast_core", "base_cost": 24, "stage_cost": 3},
+	"shop_chain_skill": {"title": "连锁电弧", "reward_upgrade_id": "chain_spark", "base_cost": 24, "stage_cost": 3},
+	"shop_orbit_skill": {"title": "回旋刃", "reward_upgrade_id": "orbit_blade", "base_cost": 22, "stage_cost": 3},
+	"shop_overload_skill": {"title": "过载爆发", "reward_upgrade_id": "overload_burst", "base_cost": 28, "stage_cost": 3},
+	"shop_homing_skill": {"title": "寻迹碎片", "reward_upgrade_id": "homing_shards", "base_cost": 24, "stage_cost": 3},
+	"shop_heavy_skill": {"title": "重压弹芯", "reward_upgrade_id": "heavy_shot", "base_cost": 26, "stage_cost": 3},
+	"shop_close_slash_skill": {"title": "近身刀环", "reward_upgrade_id": "close_slash", "base_cost": 24, "stage_cost": 3},
+	"shop_pulse_field_skill": {"title": "脉冲场", "reward_upgrade_id": "pulse_field", "base_cost": 25, "stage_cost": 3},
+	"shop_channel_beam_skill": {"title": "引导光束", "reward_upgrade_id": "channel_beam", "base_cost": 28, "stage_cost": 3},
+	"shop_shatter_blast_skill": {"title": "裂片爆破", "reward_upgrade_id": "shatter_blast", "base_cost": 25, "stage_cost": 3},
+	"shop_pierce_amp_skill": {"title": "贯穿增幅", "reward_upgrade_id": "pierce_amp", "base_cost": 24, "stage_cost": 3},
+	"shop_conduit_coil_skill": {"title": "超导线圈", "reward_upgrade_id": "conduit_coil", "base_cost": 26, "stage_cost": 3},
+	"shop_guard_blade_skill": {"title": "护身锋刃", "reward_upgrade_id": "guard_blade", "base_cost": 24, "stage_cost": 3}
+}
+
+const UPGRADE_VALUES := {
+	"damage": {"projectile_damage_percent": 0.25, "fire_interval_multiplier": 1.10},
+	"attack_speed": {"fire_interval_multiplier": 0.75, "projectile_damage_penalty": 0.10},
+	"move_speed": {"move_speed_bonus": 70.0, "player_size_bonus": 0.05},
+	"max_health": {"max_health_bonus": 30, "heal": 30, "move_speed_multiplier": 0.95},
+	"heal": {"heal": 40},
+	"strong_heal": {"heal": 70},
+	"recovery_training": {"max_health_bonus": 25, "heal": 60, "move_speed_multiplier": 0.95},
+	"multishot": {"projectile_count_bonus": 1, "player_size_bonus": 0.30, "move_speed_multiplier": 0.75},
+	"mass_resonance": {"damage_per_10_percent": 0.16},
+	"light_frame": {"player_size_reduction": 0.12, "move_speed_bonus": 70.0, "projectile_damage_penalty": 0.10},
+	"light_resonance": {"damage_per_10_percent": 0.08, "crit_per_10_percent": 10},
+	"slow_resonance": {"damage_per_10_percent": 0.18},
+	"haste_resonance": {"damage_per_10_percent": 0.10, "crit_per_10_percent": 8},
+	"rapid_resonance": {"skill_damage_per_10_percent": 0.22},
+	"blood_pact": {"health_cost": 22, "damage_per_10_percent": 0.16, "crit_per_10_percent": 10},
+	"still_focus": {"interval": 0.70, "crit_per_tier": 10, "max_tier": 12},
+	"motion_focus": {"interval": 0.60, "damage_per_tier": 0.08, "crit_per_tier": 5, "max_tier": 10},
+	"piercing_rounds": {"pierce_bonus": 1, "projectile_damage_penalty": 0.10},
+	"blast_core": {"explosion_radius": 70.0, "player_size_bonus": 0.20, "fire_interval_multiplier": 1.15},
+	"graze_barrier": {"shield": 22, "shield_duration": 4.0},
+	"clear_barrier": {"shield": 16, "shield_duration": 3.5},
+	"chain_spark": {"projectile_damage_penalty": 0.12, "base_damage_multiplier": 1.15, "damage_per_extra_stack": 0.20, "lifetime_bonus": 0.08},
+	"orbit_blade": {"base_damage_multiplier": 1.05, "damage_per_extra_stack": 0.18, "lifetime_bonus": 0.08},
+	"overload_burst": {"base_projectiles": 6, "projectiles_per_stack": 2, "base_damage_multiplier": 2.50, "damage_per_extra_stack": 0.25},
+	"homing_shards": {"move_speed_multiplier": 0.88, "base_damage_multiplier": 1.15, "damage_per_extra_stack": 0.20, "base_tracking": 4.8, "tracking_per_stack": 0.85},
+	"heavy_shot": {"projectile_damage_percent": 0.20, "player_size_bonus": 0.15, "fire_interval_multiplier": 1.10, "damage_multiplier": 2.20, "damage_per_extra_stack": 0.25, "knockback_bonus": 0.45},
+	"close_slash": {"base_radius": 72.0, "radius_per_stack": 22.0, "base_cooldown": 1.18, "cooldown_reduction": 0.12, "min_cooldown": 0.22, "base_damage_multiplier": 1.20, "damage_per_extra_stack": 0.25},
+	"pulse_field": {"base_radius": 96.0, "radius_per_stack": 24.0, "base_cooldown": 2.25, "cooldown_reduction": 0.18, "min_cooldown": 0.55, "base_damage_multiplier": 1.00, "damage_per_extra_stack": 0.20},
+	"channel_beam": {"base_range": 330.0, "range_per_stack": 28.0, "base_interval": 0.32, "interval_reduction": 0.035, "base_damage_multiplier": 0.85, "damage_per_extra_stack": 0.18, "move_speed_multiplier": 0.90},
+	"shatter_blast": {"explosion_damage_per_stack": 0.55, "explosion_radius": 32.0},
+	"pierce_amp": {"pierce_bonus": 1, "damage_per_stack": 0.55},
+	"conduit_coil": {"beam_damage_per_stack": 1.50, "chain_damage_per_stack": 0.75, "beam_interval_reduction": 0.03},
+	"guard_blade": {"close_damage_per_stack": 0.55, "base_shield": 16, "shield_per_stack": 4, "shield_duration": 4.0}
+}
+
+static func get_upgrade(upgrade_id: String) -> Dictionary:
+	if not UPGRADE_DEFINITIONS.has(upgrade_id):
+		return {}
+	var data: Dictionary = UPGRADE_DEFINITIONS[upgrade_id].duplicate(true)
+	data["id"] = upgrade_id
+	return data
+
+static func get_upgrade_pool() -> Array[Dictionary]:
+	return get_upgrade_pool_for_ids(UPGRADE_ORDER)
+
+static func get_upgrade_pool_for_ids(upgrade_ids: Array) -> Array[Dictionary]:
+	var pool: Array[Dictionary] = []
+	for upgrade_id in upgrade_ids:
+		var upgrade := get_upgrade(str(upgrade_id))
+		if not upgrade.is_empty():
+			pool.append(upgrade)
+	return pool
+
+static func get_upgrade_pool_for_route(route_id: String) -> Array[Dictionary]:
+	if route_id.is_empty() or not BUILD_ROUTE_DEFINITIONS.has(route_id):
+		return []
+	return get_upgrade_pool_for_ids(BUILD_ROUTE_DEFINITIONS[route_id].get("upgrades", []))
+
+static func get_upgrade_title(upgrade_id: String, fallback: String = "强化") -> String:
+	var upgrade := get_upgrade(upgrade_id)
+	if upgrade.is_empty():
+		return fallback
+	return str(upgrade.get("title", fallback))
+
+static func get_upgrade_rarity(upgrade_id: String) -> String:
+	var upgrade := get_upgrade(upgrade_id)
+	return str(upgrade.get("rarity", "green")) if not upgrade.is_empty() else "green"
+
+static func get_upgrade_preview(upgrade_id: String) -> String:
+	var upgrade := get_upgrade(upgrade_id)
+	return str(upgrade.get("preview", "")) if not upgrade.is_empty() else ""
+
+static func get_upgrade_value(upgrade_id: String, key: String, fallback) -> Variant:
+	var values: Dictionary = UPGRADE_VALUES.get(upgrade_id, {})
+	return values.get(key, fallback)
+
+static func get_skill_rarity_label(rarity: String) -> String:
+	var definition: Dictionary = SKILL_RARITY_DEFINITIONS.get(rarity, SKILL_RARITY_DEFINITIONS["green"])
+	return str(definition.get("label", "绿色"))
+
+static func get_skill_rarity_weight(rarity: String) -> int:
+	var definition: Dictionary = SKILL_RARITY_DEFINITIONS.get(rarity, SKILL_RARITY_DEFINITIONS["green"])
+	return maxi(1, int(definition.get("weight", 1)))
+
+static func get_shop_rarity_weight(rarity: String) -> int:
+	var definition: Dictionary = SKILL_RARITY_DEFINITIONS.get(rarity, SKILL_RARITY_DEFINITIONS["green"])
+	return maxi(1, int(definition.get("shop_weight", 1)))
+
+static func get_route_offer_ids(route_id: String) -> Array:
+	if route_id.is_empty() or not BUILD_ROUTE_DEFINITIONS.has(route_id):
+		return []
+	return BUILD_ROUTE_DEFINITIONS[route_id].get("shop_offers", [])
+
+static func get_route_signature_upgrades(route_id: String) -> Array:
+	return ROUTE_SIGNATURE_UPGRADES.get(route_id, [])
+
+static func get_shop_skill_offers(completed_stage: int, offer_ids: Array = []) -> Array[Dictionary]:
+	var ids := offer_ids
+	if ids.is_empty():
+		ids = SHOP_SKILL_OFFERS.keys()
+	var offers: Array[Dictionary] = []
+	for offer_id in ids:
+		var offer := get_shop_skill_offer(str(offer_id), completed_stage)
+		if not offer.is_empty():
+			offers.append(offer)
+	return offers
+
+static func get_shop_skill_offer(offer_id: String, completed_stage: int) -> Dictionary:
+	if not SHOP_SKILL_OFFERS.has(offer_id):
+		return {}
+	var template: Dictionary = SHOP_SKILL_OFFERS[offer_id].duplicate(true)
+	var upgrade_id := str(template.get("reward_upgrade_id", ""))
+	var upgrade := get_upgrade(upgrade_id)
+	if upgrade.is_empty():
+		return {}
+	template["id"] = offer_id
+	template["title"] = str(template.get("title", upgrade.get("title", "技能")))
+	template["description"] = str(upgrade.get("description", ""))
+	template["cost"] = int(template.get("base_cost", 0)) + completed_stage * int(template.get("stage_cost", 0))
+	template["reward_upgrade_title"] = str(template.get("title", upgrade.get("title", "技能")))
+	template.erase("base_cost")
+	template.erase("stage_cost")
+	return template

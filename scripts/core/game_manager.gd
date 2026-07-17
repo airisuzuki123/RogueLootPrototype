@@ -3,7 +3,6 @@ extends Node
 const EquipmentFactory := preload("res://scripts/items/equipment_factory.gd")
 
 const GRAZE_REWARD_REQUIRED: int = 6
-const GRAZE_REWARD_HEAL: int = 0
 const GRAZE_REWARD_SHIELD: int = 8
 const GRAZE_REWARD_SHIELD_DURATION: float = 2.5
 const GRAZE_REWARD_COOLDOWN: float = 6.0
@@ -623,6 +622,30 @@ const UPGRADE_POOL := [
 	}
 ]
 
+const BUILD_ROUTE_ORDER := ["bulk", "pierce", "blast", "chain", "close"]
+const BUILD_ROUTE_DEFINITIONS := {
+	"bulk": {
+		"upgrades": ["multishot", "mass_resonance", "slow_resonance", "still_focus", "heavy_shot", "blast_core"],
+		"shop_offers": ["shop_multishot_skill", "shop_mass_resonance_skill", "shop_slow_resonance_skill", "shop_still_focus_skill", "shop_heavy_skill", "shop_blast_skill"]
+	},
+	"pierce": {
+		"upgrades": ["piercing_rounds", "pierce_amp", "damage", "attack_speed", "multishot"],
+		"shop_offers": ["shop_pierce_skill", "shop_pierce_amp_skill", "shop_damage_skill", "shop_attack_speed_skill", "shop_multishot_skill"]
+	},
+	"blast": {
+		"upgrades": ["blast_core", "shatter_blast", "overload_burst", "heavy_shot", "damage"],
+		"shop_offers": ["shop_blast_skill", "shop_shatter_blast_skill", "shop_overload_skill", "shop_heavy_skill", "shop_damage_skill"]
+	},
+	"chain": {
+		"upgrades": ["chain_spark", "homing_shards", "orbit_blade", "conduit_coil", "channel_beam", "attack_speed"],
+		"shop_offers": ["shop_chain_skill", "shop_homing_skill", "shop_orbit_skill", "shop_conduit_coil_skill", "shop_channel_beam_skill", "shop_attack_speed_skill"]
+	},
+	"close": {
+		"upgrades": ["close_slash", "pulse_field", "guard_blade", "graze_barrier", "clear_barrier", "move_speed"],
+		"shop_offers": ["shop_close_slash_skill", "shop_pulse_field_skill", "shop_guard_blade_skill"]
+	}
+}
+
 func reset_run() -> void:
 	gold = 0
 	kills = 0
@@ -1168,14 +1191,9 @@ func _update_graze_reward_cooldown(delta: float) -> void:
 func _trigger_graze_reward() -> bool:
 	graze_charge = 0
 	graze_reward_cooldown_remaining = GRAZE_REWARD_COOLDOWN
-	var healed_amount := 0
-	if player != null and player.has_method("heal_fixed_amount"):
-		healed_amount = int(player.heal_fixed_amount(GRAZE_REWARD_HEAL))
 	if player != null and player.has_method("apply_graze_shield"):
 		player.apply_graze_shield(GRAZE_REWARD_SHIELD, GRAZE_REWARD_SHIELD_DURATION)
 	var reward_parts: Array[String] = []
-	if healed_amount > 0:
-		reward_parts.append("生命 +%d" % healed_amount)
 	reward_parts.append("护盾 +%d" % GRAZE_REWARD_SHIELD)
 	_set_loot_message("擦弹专注：%s" % "，".join(reward_parts))
 	graze_changed.emit(grazes)
@@ -1800,10 +1818,24 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 	var offers: Array[Dictionary] = []
 	var survival_preferred_id := _get_survival_preferred_shop_offer(is_elite_prep or is_boss_prep or is_final_prep)
 	var survival_preferred_chance := 0.92 if survival_preferred_id == "shop_shield" else 0.65
+	var used_offer_ids := {}
+	var skill_pool := core_skill_pool.duplicate(true)
+	skill_pool.append_array(shape_skill_pool)
+	var primary_route := _get_primary_build_route()
+	var starter_route := _get_random_build_route("")
+	var first_skill_route := primary_route if not primary_route.is_empty() else starter_route
+	var second_skill_route := _get_branch_build_route(first_skill_route)
 	offers.append(_roll_stage_shop_offer(survival_pool, survival_preferred_id, survival_preferred_chance))
 	offers.append(_roll_stage_shop_offer(gear_pool, "shop_boss_clear" if is_boss_prep or is_final_prep else ""))
-	offers.append(_roll_stage_shop_offer(core_skill_pool, "shop_still_focus_skill" if is_elite_prep or is_boss_prep or is_final_prep else ""))
-	offers.append(_roll_stage_shop_offer(shape_skill_pool, "shop_overload_skill" if is_boss_prep or is_final_prep else ""))
+	var first_skill_offer := _roll_shop_offer_for_route(skill_pool, first_skill_route, used_offer_ids, 0.88)
+	if not first_skill_offer.is_empty():
+		used_offer_ids[str(first_skill_offer.get("id", ""))] = true
+		offers.append(first_skill_offer)
+	var second_skill_offer := _roll_shop_offer_for_route(skill_pool, second_skill_route, used_offer_ids, 0.82)
+	if second_skill_offer.is_empty():
+		second_skill_offer = _roll_shop_offer_from_pool_excluding(skill_pool, used_offer_ids)
+	if not second_skill_offer.is_empty():
+		offers.append(second_skill_offer)
 	return offers
 
 func _get_survival_preferred_shop_offer(is_high_pressure_prep: bool) -> String:
@@ -1821,6 +1853,18 @@ func _roll_shop_offer_from_pool(pool: Array[Dictionary]) -> Dictionary:
 	var index := randi_range(0, pool.size() - 1)
 	return pool[index].duplicate(true)
 
+func _roll_shop_offer_from_pool_excluding(pool: Array[Dictionary], excluded_ids: Dictionary) -> Dictionary:
+	var available: Array[Dictionary] = []
+	for offer in pool:
+		var offer_id := str(offer.get("id", ""))
+		if offer_id.is_empty() or excluded_ids.has(offer_id):
+			continue
+		available.append(offer)
+	if available.is_empty():
+		return {}
+	var index := randi_range(0, available.size() - 1)
+	return available[index].duplicate(true)
+
 func _roll_stage_shop_offer(pool: Array[Dictionary], preferred_id: String = "", preferred_chance: float = 0.65) -> Dictionary:
 	if pool.is_empty():
 		return {}
@@ -1829,6 +1873,22 @@ func _roll_stage_shop_offer(pool: Array[Dictionary], preferred_id: String = "", 
 			if str(offer.get("id", "")) == preferred_id:
 				return offer.duplicate(true)
 	return _roll_shop_offer_from_pool(pool)
+
+func _roll_shop_offer_for_route(pool: Array[Dictionary], route_id: String, excluded_ids: Dictionary, preferred_chance: float = 0.85) -> Dictionary:
+	if route_id.is_empty() or not BUILD_ROUTE_DEFINITIONS.has(route_id):
+		return _roll_shop_offer_from_pool_excluding(pool, excluded_ids)
+	var route_offer_ids: Array = BUILD_ROUTE_DEFINITIONS[route_id].get("shop_offers", [])
+	var route_pool: Array[Dictionary] = []
+	for offer in pool:
+		var offer_id := str(offer.get("id", ""))
+		if excluded_ids.has(offer_id):
+			continue
+		if route_offer_ids.has(offer_id):
+			route_pool.append(offer)
+	if not route_pool.is_empty() and randf() < preferred_chance:
+		var route_index := randi_range(0, route_pool.size() - 1)
+		return route_pool[route_index].duplicate(true)
+	return _roll_shop_offer_from_pool_excluding(pool, excluded_ids)
 
 func _build_shop_offers(event: Dictionary) -> Array[Dictionary]:
 	var offers: Array[Dictionary] = []
@@ -1855,6 +1915,114 @@ func _get_upgrade_stack_count(upgrade_id: String) -> int:
 	var upgrade_stacks: Dictionary = player_build_summary.get("upgrade_stacks", {})
 	return int(upgrade_stacks.get(upgrade_id, 0))
 
+func _get_upgrade_by_id(upgrade_id: String) -> Dictionary:
+	for upgrade in UPGRADE_POOL:
+		if str(upgrade.get("id", "")) == upgrade_id:
+			return upgrade.duplicate(true)
+	return {}
+
+func _get_upgrade_pool_for_ids(upgrade_ids: Array) -> Array[Dictionary]:
+	var pool: Array[Dictionary] = []
+	for upgrade_id in upgrade_ids:
+		var upgrade := _get_upgrade_by_id(str(upgrade_id))
+		if not upgrade.is_empty():
+			pool.append(upgrade)
+	return pool
+
+func _get_upgrade_pool_for_route(route_id: String) -> Array[Dictionary]:
+	if route_id.is_empty() or not BUILD_ROUTE_DEFINITIONS.has(route_id):
+		return []
+	return _get_upgrade_pool_for_ids(BUILD_ROUTE_DEFINITIONS[route_id].get("upgrades", []))
+
+func _get_active_build_route_scores() -> Dictionary:
+	var route_scores := {}
+	for route_id in BUILD_ROUTE_ORDER:
+		route_scores[route_id] = 0
+	var route_signature_upgrades := {
+		"bulk": ["multishot", "mass_resonance", "slow_resonance", "still_focus", "heavy_shot", "blast_core"],
+		"pierce": ["piercing_rounds", "pierce_amp"],
+		"blast": ["blast_core", "shatter_blast", "overload_burst", "heavy_shot"],
+		"chain": ["chain_spark", "homing_shards", "orbit_blade", "conduit_coil", "channel_beam"],
+		"close": ["close_slash", "pulse_field", "guard_blade"]
+	}
+	for route_id in BUILD_ROUTE_ORDER:
+		var score := 0
+		for upgrade_id in route_signature_upgrades.get(route_id, []):
+			score += _get_upgrade_stack_count(str(upgrade_id))
+		route_scores[route_id] = score
+	var weapon: Dictionary = equipped_items.get("weapon", {})
+	var form: Dictionary = weapon.get("form", {})
+	match str(form.get("id", "")):
+		"piercing":
+			route_scores["pierce"] = int(route_scores.get("pierce", 0)) + 1
+		"burst":
+			route_scores["blast"] = int(route_scores.get("blast", 0)) + 1
+		"scatter":
+			route_scores["bulk"] = int(route_scores.get("bulk", 0)) + 1
+		"focused":
+			route_scores["pierce"] = int(route_scores.get("pierce", 0)) + 1
+	return route_scores
+
+func _get_primary_build_route() -> String:
+	var route_scores := _get_active_build_route_scores()
+	var best_route := ""
+	var best_score := 0
+	for route_id in BUILD_ROUTE_ORDER:
+		var score := int(route_scores.get(route_id, 0))
+		if score > best_score:
+			best_score = score
+			best_route = route_id
+	if best_score <= 0:
+		return ""
+	return best_route
+
+func _get_branch_build_route(excluded_route_id: String) -> String:
+	var route_scores := _get_active_build_route_scores()
+	var candidates: Array[String] = []
+	var lowest_score := 999999
+	for route_id in BUILD_ROUTE_ORDER:
+		if route_id == excluded_route_id:
+			continue
+		var score := int(route_scores.get(route_id, 0))
+		if score < lowest_score:
+			lowest_score = score
+			candidates.clear()
+		if score == lowest_score:
+			candidates.append(route_id)
+	if candidates.is_empty():
+		return _get_random_build_route(excluded_route_id)
+	return candidates[randi_range(0, candidates.size() - 1)]
+
+func _get_random_build_route(excluded_route_id: String = "") -> String:
+	var candidates: Array[String] = []
+	for route_id in BUILD_ROUTE_ORDER:
+		if route_id != excluded_route_id:
+			candidates.append(route_id)
+	if candidates.is_empty():
+		return ""
+	return candidates[randi_range(0, candidates.size() - 1)]
+
+func _append_upgrade_choice_from_pool(pool: Array[Dictionary], used_ids: Dictionary) -> bool:
+	var available: Array[Dictionary] = []
+	for upgrade in pool:
+		var upgrade_id := str(upgrade.get("id", ""))
+		if upgrade_id.is_empty() or used_ids.has(upgrade_id):
+			continue
+		available.append(upgrade)
+	if available.is_empty():
+		return false
+	available.shuffle()
+	var selected := available[0].duplicate(true)
+	pending_upgrade_choices.append(selected)
+	used_ids[str(selected.get("id", ""))] = true
+	return true
+
+func _build_upgrade_utility_pool() -> Array[Dictionary]:
+	var utility_ids := ["damage", "attack_speed", "move_speed", "max_health", "graze_barrier", "clear_barrier"]
+	if player_max_health > 0 and player_health <= int(round(float(player_max_health) * 0.55)):
+		utility_ids.append_array(["heal", "strong_heal", "recovery_training"])
+	return _get_upgrade_pool_for_ids(utility_ids)
+
 func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> String:
 	var next_stack := current_stack + 1
 	match upgrade_id:
@@ -1874,10 +2042,6 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 			return "本层穿透 +1，购买后穿透层数 %d" % next_stack
 		"blast_core":
 			return "本层爆裂范围 +36、玩家体积 +10%（最高 +240%），购买后爆裂层数 %d" % next_stack
-		"charged_volley":
-			return "立即连射 5 枚高亮弹，并永久伤害 +3"
-		"pulse_nova":
-			return "立即释放 10 枚新星弹，并永久爆裂范围 +18"
 		"chain_spark":
 			return "购买后每次攻击追加 %d 枚连锁弹，单枚伤害 %d%%，寿命 +%.2f 秒" % [
 				next_stack,
@@ -2155,14 +2319,27 @@ func _emit_phase_objective_changed() -> void:
 
 func _request_upgrade_choices() -> void:
 	is_upgrade_pending = true
-	var pool := UPGRADE_POOL.duplicate(true)
-	var form_upgrade := _get_current_form_upgrade_choice()
-	if not form_upgrade.is_empty():
-		pool.append(form_upgrade)
-	pool.shuffle()
 	pending_upgrade_choices.clear()
-	for index in range(min(3, pool.size())):
-		pending_upgrade_choices.append(pool[index])
+	var used_ids := {}
+	var primary_route := _get_primary_build_route()
+	var first_route := primary_route if not primary_route.is_empty() else _get_random_build_route()
+	var branch_route := _get_branch_build_route(first_route)
+	_append_upgrade_choice_from_pool(_get_upgrade_pool_for_route(first_route), used_ids)
+	_append_upgrade_choice_from_pool(_get_upgrade_pool_for_route(branch_route), used_ids)
+	var form_upgrade := _get_current_form_upgrade_choice()
+	var should_offer_form_upgrade := not form_upgrade.is_empty() and randf() < 0.45
+	if should_offer_form_upgrade and pending_upgrade_choices.size() < 3:
+		pending_upgrade_choices.append(form_upgrade)
+		used_ids[str(form_upgrade.get("id", ""))] = true
+	if pending_upgrade_choices.size() < 3:
+		_append_upgrade_choice_from_pool(_build_upgrade_utility_pool(), used_ids)
+	if not should_offer_form_upgrade and not form_upgrade.is_empty() and pending_upgrade_choices.size() < 3:
+		pending_upgrade_choices.append(form_upgrade)
+		used_ids[str(form_upgrade.get("id", ""))] = true
+	var fallback_pool := UPGRADE_POOL.duplicate(true)
+	fallback_pool.shuffle()
+	while pending_upgrade_choices.size() < 3 and _append_upgrade_choice_from_pool(fallback_pool, used_ids):
+		pass
 	upgrade_choices_requested.emit(pending_upgrade_choices)
 
 func _get_current_form_upgrade_choice() -> Dictionary:

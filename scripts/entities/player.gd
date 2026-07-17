@@ -8,7 +8,7 @@ const MIN_TRADEOFF_MOVE_SPEED := 80.0
 const MULTISHOT_SIZE_BONUS := 0.20
 const MULTISHOT_SPEED_MULTIPLIER := 0.82
 const BLAST_CORE_SIZE_BONUS := 0.10
-const HEAVY_SHOT_SIZE_BONUS := 0.06
+const HEAVY_SHOT_SIZE_BONUS := 0.08
 const LIGHT_FRAME_SIZE_REDUCTION := 0.08
 const LIGHT_FRAME_MOVE_SPEED_BONUS := 18.0
 const MASS_DAMAGE_PER_10_PERCENT := 0.06
@@ -237,7 +237,7 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			result["skill_text"] = "投射物 +1，玩家体积 +%d%%（最高 +240%%），当前移速 -%d%%（最低 80）" % [multishot_applied_size_percent, multishot_applied_slow_percent]
 		"mass_resonance":
 			mass_resonance_stacks += 1
-			result["skill_text"] = "玩家体积每 +10%%，投射物伤害 +6%%，无层数上限，当前 %d 层" % mass_resonance_stacks
+			result["skill_text"] = "玩家体积每 +10%%，投射物伤害 +6%%，无层数上限"
 		"light_frame":
 			light_frame_stacks += 1
 			var light_old_size_bonus := upgrade_player_size_bonus
@@ -245,19 +245,19 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			move_speed += LIGHT_FRAME_MOVE_SPEED_BONUS
 			var light_applied_size_percent := int(round((light_old_size_bonus - upgrade_player_size_bonus) * 100.0))
 			result["move_speed_bonus"] = int(round(LIGHT_FRAME_MOVE_SPEED_BONUS))
-			result["skill_text"] = "玩家体积 -%d%%（最低 -40%%），移动速度 +%d，当前 %d 层" % [light_applied_size_percent, int(round(LIGHT_FRAME_MOVE_SPEED_BONUS)), light_frame_stacks]
+			result["skill_text"] = "玩家体积 -%d%%（最低 -40%%）" % light_applied_size_percent
 		"light_resonance":
 			light_resonance_stacks += 1
-			result["skill_text"] = "玩家体积每低于 100%% 10%%，投射物伤害 +3%%、暴击率 +6%%，当前 %d 层" % light_resonance_stacks
+			result["skill_text"] = "玩家体积每低于 100%% 10%%，投射物伤害 +3%%、暴击率 +6%%"
 		"slow_resonance":
 			slow_resonance_stacks += 1
-			result["skill_text"] = "移速每低于初始值 10%%，投射物伤害 +8%%，无层数上限，当前 %d 层" % slow_resonance_stacks
+			result["skill_text"] = "移速每低于初始值 10%%，投射物伤害 +8%%，无层数上限"
 		"haste_resonance":
 			haste_resonance_stacks += 1
-			result["skill_text"] = "当前移速每高于初始值 10%%，投射物伤害 +4%%、暴击率 +3%%，当前 %d 层" % haste_resonance_stacks
+			result["skill_text"] = "当前移速每高于初始值 10%%，投射物伤害 +4%%、暴击率 +3%%"
 		"rapid_resonance":
 			rapid_resonance_stacks += 1
-			result["skill_text"] = "射击间隔每低于初始值 10%%，连锁/回旋/追踪/过载伤害 +6%%，当前 %d 层" % rapid_resonance_stacks
+			result["skill_text"] = "射击间隔每低于初始值 10%%，连锁/回旋/追踪/过载伤害 +6%%"
 		"blood_pact":
 			blood_pact_stacks += 1
 			var blood_cost := mini(12, maxi(0, health - 1))
@@ -266,13 +266,13 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 				GameManager.update_player_health(health, max_health)
 				CombatFeedback.show_damage(get_tree().current_scene, global_position, blood_cost, Color(1.0, 0.20, 0.32, 1.0))
 				CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1.0, 0.12, 0.24, 0.78), 1.1)
-			result["skill_text"] = "当前生命 -%d（最低 1）；生命每损失 10%%，投射物伤害 +5%%、暴击率 +4%%，当前 %d 层" % [blood_cost, blood_pact_stacks]
+			result["skill_text"] = "当前生命 -%d（最低 1）；生命每损失 10%%，投射物伤害 +5%%、暴击率 +4%%" % blood_cost
 		"still_focus":
 			still_focus_stacks += 1
-			result["skill_text"] = "静止每 0.7 秒暴击率 +8%%，最多 12 层专注，当前技能 %d 层" % still_focus_stacks
+			result["skill_text"] = "静止每 0.7 秒暴击率 +8%%，最多 12 层专注"
 		"motion_focus":
 			motion_focus_stacks += 1
-			result["skill_text"] = "移动每 0.6 秒游走伤害 +3%%、暴击率 +3%%，最多 10 层游走，当前技能 %d 层" % motion_focus_stacks
+			result["skill_text"] = "移动每 0.6 秒游走伤害 +3%%、暴击率 +3%%，最多 10 层游走"
 		"piercing_rounds":
 			upgrade_pierce_bonus += 1
 			projectile_damage = maxi(1, projectile_damage - 1)
@@ -284,7 +284,7 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			_apply_fire_interval_multiplier(BLAST_CORE_FIRE_INTERVAL_MULTIPLIER)
 			var blast_applied_size_percent := int(round((upgrade_player_size_bonus - blast_old_size_bonus) * 100.0))
 			result["explosion_radius"] = 36
-			result["skill_text"] = "爆裂 +36，玩家体积 +%d%%（最高 +240%%），射击间隔 +8%%" % blast_applied_size_percent
+			result["skill_text"] = "玩家体积 +%d%%（最高 +240%%），射击间隔 +8%%" % blast_applied_size_percent
 		"graze_barrier":
 			apply_graze_shield(22, 4.0)
 			result["shield"] = 22
@@ -341,11 +341,11 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			upgrade_damage_bonus += 3
 			projectile_damage += 3
 			var heavy_old_size_bonus := upgrade_player_size_bonus
-			upgrade_player_size_bonus = minf(PLAYER_SIZE_BONUS_CAP, upgrade_player_size_bonus + 0.08)
+			upgrade_player_size_bonus = minf(PLAYER_SIZE_BONUS_CAP, upgrade_player_size_bonus + HEAVY_SHOT_SIZE_BONUS)
 			_apply_fire_interval_multiplier(HEAVY_SHOT_FIRE_INTERVAL_MULTIPLIER)
 			var heavy_applied_size_percent := int(round((upgrade_player_size_bonus - heavy_old_size_bonus) * 100.0))
 			result["damage_bonus"] = 3
-			result["skill_text"] = "重弹 1 枚/3 次攻击，击退 +45%%，玩家体积 +%d%%（最高 +240%%），射击间隔 +5%%，当前 %d 层" % [heavy_applied_size_percent, heavy_shot_stacks]
+			result["skill_text"] = "重弹 1 枚/3 次攻击，击退 +45%%，玩家体积 +%d%%（最高 +240%%），射击间隔 +5%%" % heavy_applied_size_percent
 		"close_slash":
 			close_slash_stacks += 1
 			result["skill_text"] = "刀环半径 %d，冷却 %.2f 秒" % [
@@ -375,20 +375,20 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			shatter_blast_stacks += 1
 			upgrade_explosion_radius_bonus += 18.0
 			result["explosion_radius"] = 18
-			result["skill_text"] = "爆裂伤害 +12%%，爆裂范围 +18，当前 %d 层" % shatter_blast_stacks
+			result["skill_text"] = "爆裂伤害 +12%%"
 		"pierce_amp":
 			pierce_amp_stacks += 1
 			upgrade_pierce_bonus += 1
-			result["skill_text"] = "穿透 +1，投射物伤害 +%d%%，当前 %d 层" % [pierce_amp_stacks * 5, pierce_amp_stacks]
+			result["skill_text"] = "穿透 +1，投射物伤害 +%d%%" % (pierce_amp_stacks * 5)
 		"conduit_coil":
 			conduit_coil_stacks += 1
-			result["skill_text"] = "光束伤害 +10%%，连锁/追踪伤害 +6%%，当前 %d 层" % conduit_coil_stacks
+			result["skill_text"] = "光束伤害 +10%%，连锁/追踪伤害 +6%%"
 		"guard_blade":
 			guard_blade_stacks += 1
 			apply_graze_shield(8 + guard_blade_stacks * 2, 4.0)
 			result["shield"] = 8 + guard_blade_stacks * 2
 			result["shield_duration"] = 4.0
-			result["skill_text"] = "近身技能伤害 +10%%，护盾 +%d，当前 %d 层" % [8 + guard_blade_stacks * 2, guard_blade_stacks]
+			result["skill_text"] = "近身技能伤害 +10%%，近身命中护盾 +2"
 		"form_focused":
 			upgrade_damage_bonus += 8
 			projectile_damage += 8

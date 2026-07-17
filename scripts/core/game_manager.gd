@@ -623,6 +623,13 @@ const UPGRADE_POOL := [
 ]
 
 const BUILD_ROUTE_ORDER := ["bulk", "pierce", "blast", "chain", "close"]
+const BUILD_ROUTE_LABELS := {
+	"bulk": "体积迟缓",
+	"pierce": "穿透直伤",
+	"blast": "爆裂范围",
+	"chain": "连锁追踪",
+	"close": "近身护盾"
+}
 const BUILD_ROUTE_DEFINITIONS := {
 	"bulk": {
 		"upgrades": ["multishot", "mass_resonance", "slow_resonance", "still_focus", "heavy_shot", "blast_core"],
@@ -1827,14 +1834,18 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 	var second_skill_route := _get_branch_build_route(first_skill_route)
 	offers.append(_roll_stage_shop_offer(survival_pool, survival_preferred_id, survival_preferred_chance))
 	offers.append(_roll_stage_shop_offer(gear_pool, "shop_boss_clear" if is_boss_prep or is_final_prep else ""))
-	var first_skill_offer := _roll_shop_offer_for_route(skill_pool, first_skill_route, used_offer_ids, 0.88)
+	var first_skill_offer := _roll_shop_offer_for_route(skill_pool, first_skill_route, used_offer_ids)
 	if not first_skill_offer.is_empty():
+		if str(first_skill_offer.get("build_route_id", "")) == first_skill_route:
+			first_skill_offer = _annotate_build_route_context(first_skill_offer, first_skill_route, "路线续牌")
 		used_offer_ids[str(first_skill_offer.get("id", ""))] = true
 		offers.append(first_skill_offer)
-	var second_skill_offer := _roll_shop_offer_for_route(skill_pool, second_skill_route, used_offer_ids, 0.82)
+	var second_skill_offer := _roll_shop_offer_for_route(skill_pool, second_skill_route, used_offer_ids)
 	if second_skill_offer.is_empty():
 		second_skill_offer = _roll_shop_offer_from_pool_excluding(skill_pool, used_offer_ids)
 	if not second_skill_offer.is_empty():
+		if str(second_skill_offer.get("build_route_id", "")) == second_skill_route:
+			second_skill_offer = _annotate_build_route_context(second_skill_offer, second_skill_route, "分支路线")
 		offers.append(second_skill_offer)
 	return offers
 
@@ -1874,7 +1885,7 @@ func _roll_stage_shop_offer(pool: Array[Dictionary], preferred_id: String = "", 
 				return offer.duplicate(true)
 	return _roll_shop_offer_from_pool(pool)
 
-func _roll_shop_offer_for_route(pool: Array[Dictionary], route_id: String, excluded_ids: Dictionary, preferred_chance: float = 0.85) -> Dictionary:
+func _roll_shop_offer_for_route(pool: Array[Dictionary], route_id: String, excluded_ids: Dictionary) -> Dictionary:
 	if route_id.is_empty() or not BUILD_ROUTE_DEFINITIONS.has(route_id):
 		return _roll_shop_offer_from_pool_excluding(pool, excluded_ids)
 	var route_offer_ids: Array = BUILD_ROUTE_DEFINITIONS[route_id].get("shop_offers", [])
@@ -1885,9 +1896,11 @@ func _roll_shop_offer_for_route(pool: Array[Dictionary], route_id: String, exclu
 			continue
 		if route_offer_ids.has(offer_id):
 			route_pool.append(offer)
-	if not route_pool.is_empty() and randf() < preferred_chance:
+	if not route_pool.is_empty():
 		var route_index := randi_range(0, route_pool.size() - 1)
-		return route_pool[route_index].duplicate(true)
+		var selected := route_pool[route_index].duplicate(true)
+		selected["build_route_id"] = route_id
+		return selected
 	return _roll_shop_offer_from_pool_excluding(pool, excluded_ids)
 
 func _build_shop_offers(event: Dictionary) -> Array[Dictionary]:
@@ -1910,6 +1923,19 @@ func _annotate_shop_offer_context(offer: Dictionary) -> Dictionary:
 	if not purchase_preview.is_empty():
 		offer["purchase_preview"] = purchase_preview
 	return offer
+
+func get_build_route_label(route_id: String) -> String:
+	return str(BUILD_ROUTE_LABELS.get(route_id, ""))
+
+func _annotate_build_route_context(data: Dictionary, route_id: String, role: String) -> Dictionary:
+	var annotated := data.duplicate(true)
+	var route_label := get_build_route_label(route_id)
+	if route_label.is_empty():
+		return annotated
+	annotated["build_route_id"] = route_id
+	annotated["build_route_label"] = route_label
+	annotated["build_route_role"] = role
+	return annotated
 
 func _get_upgrade_stack_count(upgrade_id: String) -> int:
 	var upgrade_stacks: Dictionary = player_build_summary.get("upgrade_stacks", {})
@@ -2002,7 +2028,7 @@ func _get_random_build_route(excluded_route_id: String = "") -> String:
 		return ""
 	return candidates[randi_range(0, candidates.size() - 1)]
 
-func _append_upgrade_choice_from_pool(pool: Array[Dictionary], used_ids: Dictionary) -> bool:
+func _append_upgrade_choice_from_pool(pool: Array[Dictionary], used_ids: Dictionary, route_id: String = "", role: String = "") -> bool:
 	var available: Array[Dictionary] = []
 	for upgrade in pool:
 		var upgrade_id := str(upgrade.get("id", ""))
@@ -2013,6 +2039,10 @@ func _append_upgrade_choice_from_pool(pool: Array[Dictionary], used_ids: Diction
 		return false
 	available.shuffle()
 	var selected := available[0].duplicate(true)
+	if not role.is_empty():
+		selected["build_route_role"] = role
+	if not route_id.is_empty():
+		selected = _annotate_build_route_context(selected, route_id, role)
 	pending_upgrade_choices.append(selected)
 	used_ids[str(selected.get("id", ""))] = true
 	return true
@@ -2324,15 +2354,15 @@ func _request_upgrade_choices() -> void:
 	var primary_route := _get_primary_build_route()
 	var first_route := primary_route if not primary_route.is_empty() else _get_random_build_route()
 	var branch_route := _get_branch_build_route(first_route)
-	_append_upgrade_choice_from_pool(_get_upgrade_pool_for_route(first_route), used_ids)
-	_append_upgrade_choice_from_pool(_get_upgrade_pool_for_route(branch_route), used_ids)
+	_append_upgrade_choice_from_pool(_get_upgrade_pool_for_route(first_route), used_ids, first_route, "路线续牌" if not primary_route.is_empty() else "路线种子")
+	_append_upgrade_choice_from_pool(_get_upgrade_pool_for_route(branch_route), used_ids, branch_route, "分支路线")
 	var form_upgrade := _get_current_form_upgrade_choice()
 	var should_offer_form_upgrade := not form_upgrade.is_empty() and randf() < 0.45
 	if should_offer_form_upgrade and pending_upgrade_choices.size() < 3:
 		pending_upgrade_choices.append(form_upgrade)
 		used_ids[str(form_upgrade.get("id", ""))] = true
 	if pending_upgrade_choices.size() < 3:
-		_append_upgrade_choice_from_pool(_build_upgrade_utility_pool(), used_ids)
+		_append_upgrade_choice_from_pool(_build_upgrade_utility_pool(), used_ids, "", "通用补强")
 	if not should_offer_form_upgrade and not form_upgrade.is_empty() and pending_upgrade_choices.size() < 3:
 		pending_upgrade_choices.append(form_upgrade)
 		used_ids[str(form_upgrade.get("id", ""))] = true

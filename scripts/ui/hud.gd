@@ -522,7 +522,9 @@ func _on_upgrade_choices_requested(choices: Array) -> void:
 	for index in range(choices.size()):
 		var choice: Dictionary = choices[index]
 		var button := Button.new()
-		button.text = "%s\n%s" % [choice["title"], choice["description"]]
+		var route_context := _format_build_route_context(choice)
+		var context_line := "%s\n" % route_context if not route_context.is_empty() else ""
+		button.text = "%s%s\n%s" % [context_line, choice["title"], choice["description"]]
 		button.custom_minimum_size = Vector2(460, 52)
 		button.pressed.connect(_on_upgrade_button_pressed.bind(index))
 		upgrade_list.add_child(button)
@@ -1143,6 +1145,9 @@ func _format_stage_event_reward(event: Dictionary) -> String:
 
 func _format_shop_offer_reward(offer: Dictionary) -> String:
 	var lines: Array[String] = []
+	var route_context := _format_build_route_context(offer)
+	if not route_context.is_empty():
+		lines.append(route_context)
 	var description := str(offer.get("description", ""))
 	if not description.is_empty():
 		lines.append(description)
@@ -1158,6 +1163,17 @@ func _format_shop_offer_reward(offer: Dictionary) -> String:
 	if lines.is_empty():
 		return "无直接奖励"
 	return "\n".join(lines)
+
+func _format_build_route_context(data: Dictionary) -> String:
+	var role := str(data.get("build_route_role", ""))
+	var route_label := str(data.get("build_route_label", ""))
+	if role.is_empty() and route_label.is_empty():
+		return ""
+	if route_label.is_empty():
+		return role
+	if role.is_empty():
+		return "构筑路线：%s" % route_label
+	return "%s：%s" % [role, route_label]
 
 func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 	var parts: Array[String] = []

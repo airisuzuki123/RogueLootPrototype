@@ -537,9 +537,6 @@ func _on_upgrade_button_pressed(index: int) -> void:
 
 func _format_upgrade_choice_text(choice: Dictionary) -> String:
 	var lines: Array[String] = []
-	var route_context := _format_build_route_context(choice)
-	if not route_context.is_empty():
-		lines.append(route_context)
 	lines.append(str(choice.get("title", "强化")))
 	var description := str(choice.get("description", ""))
 	if not description.is_empty():
@@ -605,8 +602,7 @@ func _refresh_shop_panel() -> void:
 		var cost := maxi(0, int(offer.get("cost", 0)))
 		var sold := bool(offer.get("sold", false))
 		var reward_text := _format_shop_offer_reward(offer)
-		button.text = "【%s】%s%s\n价格：%d 金币\n%s" % [
-			str(offer.get("category", "商品")),
+		button.text = "%s%s\n价格：%d 金币\n%s" % [
 			str(offer.get("title", "商品")),
 			"（已购买）" if sold else "",
 			cost,
@@ -1163,9 +1159,6 @@ func _format_stage_event_reward(event: Dictionary) -> String:
 
 func _format_shop_offer_reward(offer: Dictionary) -> String:
 	var lines: Array[String] = []
-	var route_context := _format_build_route_context(offer)
-	if not route_context.is_empty():
-		lines.append(route_context)
 	var description := str(offer.get("description", ""))
 	if not description.is_empty():
 		lines.append(description)
@@ -1181,17 +1174,6 @@ func _format_shop_offer_reward(offer: Dictionary) -> String:
 	if lines.is_empty():
 		return "无直接奖励"
 	return "\n".join(lines)
-
-func _format_build_route_context(data: Dictionary) -> String:
-	var role := str(data.get("build_route_role", ""))
-	var route_label := str(data.get("build_route_label", ""))
-	if role.is_empty() and route_label.is_empty():
-		return ""
-	if route_label.is_empty():
-		return role
-	if role.is_empty():
-		return "构筑路线：%s" % route_label
-	return "%s：%s" % [role, route_label]
 
 func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 	var parts: Array[String] = []

@@ -653,14 +653,6 @@ const UPGRADE_POOL := [
 ]
 
 const BUILD_ROUTE_ORDER := ["bulk", "agile", "pierce", "blast", "chain", "close"]
-const BUILD_ROUTE_LABELS := {
-	"bulk": "体积迟缓",
-	"agile": "轻装疾行",
-	"pierce": "穿透直伤",
-	"blast": "爆裂范围",
-	"chain": "连锁追踪",
-	"close": "近身护盾"
-}
 const BUILD_ROUTE_DEFINITIONS := {
 	"bulk": {
 		"upgrades": ["multishot", "mass_resonance", "slow_resonance", "still_focus", "heavy_shot", "blast_core"],
@@ -1649,7 +1641,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_heal",
 			"title": "应急治疗",
-			"category": "生存",
 			"description": "恢复 45 生命",
 			"cost": 12 + completed_stage * 2,
 			"reward_heal": 45
@@ -1657,7 +1648,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_shield",
 			"title": "折光护盾",
-			"category": "生存",
 			"description": "护盾 +24，持续 4 秒",
 			"cost": 14 + completed_stage * 2,
 			"reward_graze_shield": 24,
@@ -1668,7 +1658,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		survival_pool.append({
 			"id": "shop_prep_barrier",
 			"title": "预备屏障",
-			"category": "生存",
 			"description": "护盾 +34，持续 5 秒",
 			"cost": 18 + completed_stage * 2,
 			"reward_graze_shield": 34,
@@ -1678,7 +1667,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_equipment",
 			"title": "鉴定装备",
-			"category": "装备",
 			"description": "获得 1 件当前关卡等级装备",
 			"cost": 18 + completed_stage * 3,
 			"reward_equipment_count": 1,
@@ -1689,7 +1677,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		gear_pool.append({
 			"id": "shop_boss_equipment",
 			"title": "决战装备",
-			"category": "装备",
 			"description": "获得 1 件当前等级 +3 的装备",
 			"cost": 28 + completed_stage * 3,
 			"reward_equipment_count": 1,
@@ -1699,7 +1686,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_damage_skill",
 			"title": "技能：强击弹体",
-			"category": "基础技能",
 			"description": "投射物伤害 +7，射击间隔 +6%",
 			"cost": 16 + completed_stage * 2,
 			"reward_upgrade_id": "damage",
@@ -1708,7 +1694,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_attack_speed_skill",
 			"title": "技能：急速施放",
-			"category": "基础技能",
 			"description": "射击间隔 -18%，投射物伤害 -1（最低 1）",
 			"cost": 18 + completed_stage * 2,
 			"reward_upgrade_id": "attack_speed",
@@ -1717,7 +1702,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_multishot_skill",
 			"title": "技能：分裂射击",
-			"category": "基础技能",
 			"description": "投射物 +1，玩家体积 +20%（最高 +240%），当前移速 -18%（最低 80）",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "multishot",
@@ -1726,7 +1710,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_mass_resonance_skill",
 			"title": "技能：体积共鸣",
-			"category": "基础技能",
 			"description": "每层：玩家体积每 +10%，投射物伤害 +6%，无层数上限",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "mass_resonance",
@@ -1735,7 +1718,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_light_frame_skill",
 			"title": "技能：轻装骨架",
-			"category": "基础技能",
 			"description": "玩家体积 -8%（最低 -40%），移动速度 +18",
 			"cost": 20 + completed_stage * 3,
 			"reward_upgrade_id": "light_frame",
@@ -1744,7 +1726,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_light_resonance_skill",
 			"title": "技能：轻盈共鸣",
-			"category": "基础技能",
 			"description": "每层：玩家体积每低于 100% 10%，投射物伤害 +3%、暴击率 +6%",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "light_resonance",
@@ -1753,7 +1734,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_slow_resonance_skill",
 			"title": "技能：迟缓共鸣",
-			"category": "基础技能",
 			"description": "每层：当前移速每低于初始值 10%，投射物伤害 +8%，无层数上限",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "slow_resonance",
@@ -1762,7 +1742,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_haste_resonance_skill",
 			"title": "技能：疾行共鸣",
-			"category": "基础技能",
 			"description": "每层：当前移速每高于初始值 10%，投射物伤害 +4%、暴击率 +3%",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "haste_resonance",
@@ -1771,7 +1750,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_rapid_resonance_skill",
 			"title": "技能：速射共鸣",
-			"category": "基础技能",
 			"description": "每层：射击间隔每低于初始值 10%，连锁、回旋、追踪和过载伤害 +6%",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "rapid_resonance",
@@ -1780,7 +1758,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_blood_pact_skill",
 			"title": "技能：血潮契约",
-			"category": "基础技能",
 			"description": "当前生命 -12（最低 1）；每层：生命每损失 10%，投射物伤害 +5%、暴击率 +4%",
 			"cost": 18 + completed_stage * 3,
 			"reward_upgrade_id": "blood_pact",
@@ -1789,7 +1766,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_still_focus_skill",
 			"title": "技能：静立聚焦",
-			"category": "基础技能",
 			"description": "静止每 0.7 秒暴击率 +8%，最多 12 层专注；技能可重复提高每层暴击",
 			"cost": 20 + completed_stage * 3,
 			"reward_upgrade_id": "still_focus",
@@ -1798,7 +1774,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_motion_focus_skill",
 			"title": "技能：游走聚焦",
-			"category": "基础技能",
 			"description": "移动每 0.6 秒游走伤害 +3%、暴击率 +3%，最多 10 层游走；技能可重复提高每层收益",
 			"cost": 20 + completed_stage * 3,
 			"reward_upgrade_id": "motion_focus",
@@ -1807,7 +1782,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_pierce_skill",
 			"title": "技能：穿透弹芯",
-			"category": "基础技能",
 			"description": "投射物穿透 +1，投射物伤害 -1（最低 1）",
 			"cost": 20 + completed_stage * 3,
 			"reward_upgrade_id": "piercing_rounds",
@@ -1818,7 +1792,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_blast_skill",
 			"title": "技能：爆裂核心",
-			"category": "形态技能",
 			"description": "爆裂范围 +36，玩家体积 +10%（最高 +240%），射击间隔 +8%",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "blast_core",
@@ -1827,7 +1800,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_chain_skill",
 			"title": "技能：连锁电弧",
-			"category": "形态技能",
 			"description": "每次攻击连锁弹 +1，单枚伤害 66%；每层伤害 +6%，投射物伤害 -1（最低 1）",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "chain_spark",
@@ -1836,7 +1808,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_orbit_skill",
 			"title": "技能：回旋刃",
-			"category": "形态技能",
 			"description": "每次攻击两侧回旋弹各 +1，单枚伤害 54%；每层伤害 +8%",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "orbit_blade",
@@ -1845,7 +1816,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_overload_skill",
 			"title": "技能：过载爆发",
-			"category": "形态技能",
 			"description": "每 4 次攻击释放 8 枚爆裂弹，每层 +2 枚，无弹数上限",
 			"cost": 28 + completed_stage * 3,
 			"reward_upgrade_id": "overload_burst",
@@ -1854,7 +1824,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_homing_skill",
 			"title": "技能：寻迹碎片",
-			"category": "形态技能",
 			"description": "每次攻击追踪碎片 +1，单枚伤害 56%；每层伤害 +8%，当前移速 -6%（最低 80）",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "homing_shards",
@@ -1863,7 +1832,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_heavy_skill",
 			"title": "技能：重压弹芯",
-			"category": "形态技能",
 			"description": "每 3 次攻击发射 1 枚重弹，伤害 +3，击退 +45%，玩家体积 +8%（最高 +240%），射击间隔 +5%",
 			"cost": 26 + completed_stage * 3,
 			"reward_upgrade_id": "heavy_shot",
@@ -1872,7 +1840,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_close_slash_skill",
 			"title": "技能：近身刀环",
-			"category": "身法技能",
 			"description": "每 1.18 秒斩击半径 85；每层半径 +13，冷却 -0.09 秒，最低 0.22 秒",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "close_slash",
@@ -1881,7 +1848,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_pulse_field_skill",
 			"title": "技能：脉冲场",
-			"category": "身法技能",
 			"description": "每 2.25 秒释放半径 110 脉冲；每层半径 +14，冷却 -0.12 秒，最低 0.55 秒",
 			"cost": 25 + completed_stage * 3,
 			"reward_upgrade_id": "pulse_field",
@@ -1890,7 +1856,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_channel_beam_skill",
 			"title": "技能：引导光束",
-			"category": "身法技能",
 			"description": "每 0.32 秒对 330 范围内最近敌人造成 24% 投射物伤害；每层射程 +28、伤害 +4.5%、间隔 -0.025 秒，当前移速 -5%（最低 80）",
 			"cost": 28 + completed_stage * 3,
 			"reward_upgrade_id": "channel_beam",
@@ -1899,7 +1864,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_shatter_blast_skill",
 			"title": "技能：裂片爆破",
-			"category": "形态技能",
 			"description": "爆裂伤害 +12%，爆裂范围 +18",
 			"cost": 25 + completed_stage * 3,
 			"reward_upgrade_id": "shatter_blast",
@@ -1908,7 +1872,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_pierce_amp_skill",
 			"title": "技能：贯穿增幅",
-			"category": "形态技能",
 			"description": "穿透 +1，投射物伤害 +5%",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "pierce_amp",
@@ -1917,7 +1880,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_conduit_coil_skill",
 			"title": "技能：超导线圈",
-			"category": "形态技能",
 			"description": "光束伤害 +10%，连锁弹和追踪碎片伤害 +6%，光束间隔 -0.01 秒",
 			"cost": 26 + completed_stage * 3,
 			"reward_upgrade_id": "conduit_coil",
@@ -1926,7 +1888,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		{
 			"id": "shop_guard_blade_skill",
 			"title": "技能：护身锋刃",
-			"category": "身法技能",
 			"description": "近身刀环和脉冲场伤害 +10%，获得护盾 +10；近身命中时每层护盾 +2",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "guard_blade",
@@ -1937,7 +1898,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		gear_pool.append({
 			"id": "shop_clear",
 			"title": "清场符标",
-			"category": "工具",
 			"description": "立即清除敌弹，生命 +12",
 			"cost": 20 + completed_stage * 2,
 			"reward_heal": 12,
@@ -1947,7 +1907,6 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 		gear_pool.append({
 			"id": "shop_boss_clear",
 			"title": "净场符标",
-			"category": "工具",
 			"description": "立即清除敌弹，护盾 +18，持续 4 秒",
 			"cost": 24 + completed_stage * 2,
 			"reward_graze_shield": 18,
@@ -1968,16 +1927,12 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 	offers.append(_roll_stage_shop_offer(gear_pool, "shop_boss_clear" if is_boss_prep or is_final_prep else ""))
 	var first_skill_offer := _roll_shop_offer_for_route(skill_pool, first_skill_route, used_offer_ids)
 	if not first_skill_offer.is_empty():
-		if str(first_skill_offer.get("build_route_id", "")) == first_skill_route:
-			first_skill_offer = _annotate_build_route_context(first_skill_offer, first_skill_route, "路线续牌")
 		used_offer_ids[str(first_skill_offer.get("id", ""))] = true
 		offers.append(first_skill_offer)
 	var second_skill_offer := _roll_shop_offer_for_route(skill_pool, second_skill_route, used_offer_ids)
 	if second_skill_offer.is_empty():
 		second_skill_offer = _roll_shop_offer_from_pool_excluding(skill_pool, used_offer_ids)
 	if not second_skill_offer.is_empty():
-		if str(second_skill_offer.get("build_route_id", "")) == second_skill_route:
-			second_skill_offer = _annotate_build_route_context(second_skill_offer, second_skill_route, "分支路线")
 		offers.append(second_skill_offer)
 	return offers
 
@@ -2055,19 +2010,6 @@ func _annotate_shop_offer_context(offer: Dictionary) -> Dictionary:
 	if not purchase_preview.is_empty():
 		offer["purchase_preview"] = purchase_preview
 	return offer
-
-func get_build_route_label(route_id: String) -> String:
-	return str(BUILD_ROUTE_LABELS.get(route_id, ""))
-
-func _annotate_build_route_context(data: Dictionary, route_id: String, role: String) -> Dictionary:
-	var annotated := data.duplicate(true)
-	var route_label := get_build_route_label(route_id)
-	if route_label.is_empty():
-		return annotated
-	annotated["build_route_id"] = route_id
-	annotated["build_route_label"] = route_label
-	annotated["build_route_role"] = role
-	return annotated
 
 func _get_upgrade_stack_count(upgrade_id: String) -> int:
 	var upgrade_stacks: Dictionary = player_build_summary.get("upgrade_stacks", {})
@@ -2165,7 +2107,7 @@ func _get_random_build_route(excluded_route_id: String = "") -> String:
 		return ""
 	return candidates[randi_range(0, candidates.size() - 1)]
 
-func _append_upgrade_choice_from_pool(pool: Array[Dictionary], used_ids: Dictionary, route_id: String = "", role: String = "") -> bool:
+func _append_upgrade_choice_from_pool(pool: Array[Dictionary], used_ids: Dictionary) -> bool:
 	var available: Array[Dictionary] = []
 	for upgrade in pool:
 		var upgrade_id := str(upgrade.get("id", ""))
@@ -2176,10 +2118,6 @@ func _append_upgrade_choice_from_pool(pool: Array[Dictionary], used_ids: Diction
 		return false
 	available.shuffle()
 	var selected := available[0].duplicate(true)
-	if not role.is_empty():
-		selected["build_route_role"] = role
-	if not route_id.is_empty():
-		selected = _annotate_build_route_context(selected, route_id, role)
 	selected = _annotate_upgrade_choice_context(selected)
 	pending_upgrade_choices.append(selected)
 	used_ids[str(selected.get("id", ""))] = true
@@ -2538,8 +2476,8 @@ func _request_upgrade_choices() -> void:
 	var primary_route := _get_primary_build_route()
 	var first_route := primary_route if not primary_route.is_empty() else _get_random_build_route()
 	var branch_route := _get_branch_build_route(first_route)
-	_append_upgrade_choice_from_pool(_get_upgrade_pool_for_route(first_route), used_ids, first_route, "路线续牌" if not primary_route.is_empty() else "路线种子")
-	_append_upgrade_choice_from_pool(_get_upgrade_pool_for_route(branch_route), used_ids, branch_route, "分支路线")
+	_append_upgrade_choice_from_pool(_get_upgrade_pool_for_route(first_route), used_ids)
+	_append_upgrade_choice_from_pool(_get_upgrade_pool_for_route(branch_route), used_ids)
 	var form_upgrade := _get_current_form_upgrade_choice()
 	var should_offer_form_upgrade := not form_upgrade.is_empty() and randf() < 0.45
 	if should_offer_form_upgrade and pending_upgrade_choices.size() < 3:
@@ -2547,7 +2485,7 @@ func _request_upgrade_choices() -> void:
 		pending_upgrade_choices.append(annotated_form_upgrade)
 		used_ids[str(annotated_form_upgrade.get("id", ""))] = true
 	if pending_upgrade_choices.size() < 3:
-		_append_upgrade_choice_from_pool(_build_upgrade_utility_pool(), used_ids, "", "通用补强")
+		_append_upgrade_choice_from_pool(_build_upgrade_utility_pool(), used_ids)
 	if not should_offer_form_upgrade and not form_upgrade.is_empty() and pending_upgrade_choices.size() < 3:
 		var annotated_form_upgrade := _annotate_upgrade_choice_context(form_upgrade)
 		pending_upgrade_choices.append(annotated_form_upgrade)

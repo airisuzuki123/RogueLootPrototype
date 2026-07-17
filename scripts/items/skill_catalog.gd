@@ -45,6 +45,15 @@ const ROUTE_SIGNATURE_UPGRADES := {
 	"close": ["close_slash", "pulse_field", "guard_blade", "blood_pact"]
 }
 
+const ROUTE_SYNERGY_DEFINITIONS := {
+	"bulk": ["blast", "close", "pierce"],
+	"agile": ["chain", "close", "pierce"],
+	"pierce": ["blast", "bulk", "chain"],
+	"blast": ["bulk", "pierce", "chain"],
+	"chain": ["agile", "pierce", "blast"],
+	"close": ["bulk", "agile", "chain"]
+}
+
 const UPGRADE_DEFINITIONS := {
 	"damage": {
 		"title": "强击弹体",
@@ -404,6 +413,9 @@ static func get_route_offer_ids(route_id: String) -> Array:
 
 static func get_route_signature_upgrades(route_id: String) -> Array:
 	return ROUTE_SIGNATURE_UPGRADES.get(route_id, [])
+
+static func get_route_synergy_ids(route_id: String) -> Array:
+	return ROUTE_SYNERGY_DEFINITIONS.get(route_id, [])
 
 static func get_shop_skill_offers(completed_stage: int, offer_ids: Array = []) -> Array[Dictionary]:
 	var ids := offer_ids

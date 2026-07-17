@@ -1765,6 +1765,25 @@ func _get_primary_build_route() -> String:
 
 func _get_branch_build_route(excluded_route_id: String) -> String:
 	var route_scores := _get_active_build_route_scores()
+	var synergy_candidates: Array[String] = []
+	for route_id in SkillCatalog.get_route_synergy_ids(excluded_route_id):
+		var candidate_id := str(route_id)
+		if candidate_id == excluded_route_id or not SkillCatalog.BUILD_ROUTE_DEFINITIONS.has(candidate_id):
+			continue
+		synergy_candidates.append(candidate_id)
+	if not synergy_candidates.is_empty():
+		var best_synergy_score := -1
+		var best_synergies: Array[String] = []
+		for route_id in synergy_candidates:
+			var score := int(route_scores.get(route_id, 0))
+			if score > best_synergy_score:
+				best_synergy_score = score
+				best_synergies.clear()
+			if score == best_synergy_score:
+				best_synergies.append(route_id)
+		if not best_synergies.is_empty() and best_synergy_score > 0:
+			return best_synergies[randi_range(0, best_synergies.size() - 1)]
+		return synergy_candidates[randi_range(0, synergy_candidates.size() - 1)]
 	var candidates: Array[String] = []
 	var lowest_score := 999999
 	for route_id in SkillCatalog.BUILD_ROUTE_ORDER:

@@ -234,8 +234,11 @@ func _roll_enemy_type(current_bullet_enemy_count: int) -> String:
 		if effective_level < int(entry["min_level"]):
 			continue
 		var entry_weight := maxi(0, int(entry["weight"]) + GameManager.get_current_phase_enemy_weight_bonus(str(entry["type"])))
-		if _is_bullet_enemy_type(str(entry["type"])) and current_bullet_enemy_count >= bullet_enemy_soft_cap:
+		var enemy_type := str(entry["type"])
+		if _is_bullet_enemy_type(enemy_type) and current_bullet_enemy_count >= bullet_enemy_soft_cap:
 			entry_weight = 0
+		elif not _is_bullet_enemy_type(enemy_type):
+			entry_weight += GameManager.get_current_phase_non_bullet_pressure_weight_bonus(enemy_type)
 		if entry_weight <= 0:
 			continue
 		var weighted_entry := entry.duplicate(true)
@@ -264,11 +267,12 @@ func _get_alive_bullet_enemy_count() -> int:
 
 func _get_bullet_enemy_soft_cap() -> int:
 	var stage_number := GameManager.current_phase_index + 1
+	var base_cap := 5
 	if stage_number <= 3:
-		return 3
-	if stage_number <= 6:
-		return 4
-	return 5
+		base_cap = 3
+	elif stage_number <= 6:
+		base_cap = 4
+	return GameManager.get_current_bullet_enemy_soft_cap(base_cap)
 
 func _prepare_arena_pattern() -> void:
 	if player == null or not is_instance_valid(player) or GameManager.is_run_over or GameManager.is_gameplay_paused():

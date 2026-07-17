@@ -839,6 +839,44 @@ func get_current_phase_spawn_count() -> int:
 		pressure_bonus += 1
 	return base_count + pressure_bonus
 
+func get_current_phase_non_bullet_pressure_weight_bonus(enemy_type: String) -> int:
+	if current_phase_index < 4:
+		return 0
+	var stage_number := current_phase_index + 1
+	var pressure_tier := get_build_pressure_tier()
+	var power_multiplier := get_build_power_pressure_multiplier()
+	var power_tier := 0
+	if power_multiplier >= 2.0:
+		power_tier += 1
+	if power_multiplier >= 3.5:
+		power_tier += 1
+	if power_multiplier >= 5.5:
+		power_tier += 1
+	var pressure_score := pressure_tier + power_tier
+	var late_stage_bonus := maxi(0, stage_number - 4)
+	match enemy_type:
+		"grunt":
+			return maxi(0, int(round(float(pressure_score) * 1.2)) + late_stage_bonus)
+		"runner":
+			return maxi(0, int(round(float(pressure_score) * 1.35)) + late_stage_bonus)
+		"tank":
+			return maxi(0, int(round(float(pressure_score) * 1.55)) + int(round(float(late_stage_bonus) * 1.25)))
+		"bulwark":
+			return maxi(0, int(round(float(pressure_score) * 1.8)) + int(round(float(late_stage_bonus) * 1.6)))
+	return 0
+
+func get_current_bullet_enemy_soft_cap(base_cap: int) -> int:
+	var cap := maxi(1, base_cap)
+	if current_phase_index < 4:
+		return cap
+	var pressure_tier := get_build_pressure_tier()
+	if pressure_tier >= 4:
+		cap -= 1
+	if get_build_power_pressure_multiplier() >= 5.0:
+		cap -= 1
+	var minimum_cap := 3 if current_phase_index >= 6 else 2
+	return maxi(minimum_cap, cap)
+
 func get_current_phase_enemy_level_bonus() -> int:
 	return maxi(0, int(get_current_run_phase().get("enemy_level_bonus", 0)))
 

@@ -287,8 +287,8 @@ func _apply_run_pressure_scaling() -> void:
 	var health_multiplier := GameManager.get_current_pressure_enemy_health_multiplier()
 	var damage_multiplier := GameManager.get_current_pressure_enemy_damage_multiplier()
 	if is_encounter_enemy:
-		health_multiplier = 1.0 + (health_multiplier - 1.0) * 0.55
-		damage_multiplier = 1.0 + (damage_multiplier - 1.0) * 0.45
+		health_multiplier = 1.0 + (health_multiplier - 1.0) * 0.78
+		damage_multiplier = 1.0 + (damage_multiplier - 1.0) * 0.58
 	max_health = maxi(1, int(round(float(max_health) * health_multiplier)))
 	touch_damage = maxi(1, int(round(float(touch_damage) * damage_multiplier)))
 

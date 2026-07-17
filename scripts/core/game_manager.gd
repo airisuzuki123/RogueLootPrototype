@@ -188,9 +188,9 @@ const RUN_PHASES: Array[Dictionary] = [
 		"id": "stage_05",
 		"name": "第 5 关：旋转压力",
 		"duration": 30.0,
-		"spawn_interval": 0.78,
-		"spawn_count": 1,
-		"enemy_level_bonus": 2,
+		"spawn_interval": 0.72,
+		"spawn_count": 2,
+		"enemy_level_bonus": 3,
 		"enemy_weight_bonus": {"grunt": 10, "runner": 8, "tank": 7, "bulwark": 5, "ranged": 16, "weaver": 14, "turret": 12},
 		"bullet_pattern": "spiral",
 		"bullet_patterns": ["spiral", "fan", "mirror_fan", "double_ring", "sweep"],
@@ -203,7 +203,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"arena_patterns": ["cross_curtain", "alternating_curtain", "center_pulse"],
 		"arena_pattern_interval": 12.5,
 		"goal": "预判旋转弹幕轨迹，用商店强化后的技能清场",
-		"kill_target": 18,
+		"kill_target": 22,
 		"reward_gold": 20,
 		"reward_experience": 5,
 		"reward_heal": 6
@@ -212,9 +212,9 @@ const RUN_PHASES: Array[Dictionary] = [
 		"id": "stage_06",
 		"name": "第 6 关：墙幕切线",
 		"duration": 30.0,
-		"spawn_interval": 0.72,
-		"spawn_count": 1,
-		"enemy_level_bonus": 2,
+		"spawn_interval": 0.66,
+		"spawn_count": 2,
+		"enemy_level_bonus": 3,
 		"enemy_weight_bonus": {"grunt": 10, "runner": 8, "tank": 9, "bulwark": 7, "ranged": 18, "weaver": 14, "turret": 12},
 		"bullet_pattern": "wall",
 		"bullet_patterns": ["wall", "diamond", "cross", "ring"],
@@ -227,7 +227,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"arena_patterns": ["alternating_curtain", "cross_curtain"],
 		"arena_pattern_interval": 12.5,
 		"goal": "阅读墙幕缺口，检验穿透、爆裂或多重投射组合",
-		"kill_target": 20,
+		"kill_target": 24,
 		"reward_gold": 22,
 		"reward_experience": 5,
 		"reward_heal": 6
@@ -236,9 +236,9 @@ const RUN_PHASES: Array[Dictionary] = [
 		"id": "stage_07",
 		"name": "第 7 关：折幕炮台",
 		"duration": 30.0,
-		"spawn_interval": 0.94,
-		"spawn_count": 1,
-		"enemy_level_bonus": 3,
+		"spawn_interval": 0.84,
+		"spawn_count": 2,
+		"enemy_level_bonus": 4,
 		"enemy_weight_bonus": {"grunt": 8, "runner": 5, "tank": 8, "bulwark": 6, "ranged": 14, "weaver": 11, "turret": 22},
 		"bullet_pattern": "ring",
 		"bullet_patterns": ["ring", "diamond", "double_ring", "pinwheel"],
@@ -251,7 +251,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"arena_patterns": ["center_pulse", "corner_pinwheel"],
 		"arena_pattern_interval": 12.0,
 		"goal": "特殊关卡：处理炮台精英与环形缺口",
-		"kill_target": 14,
+		"kill_target": 18,
 		"reward_gold": 26,
 		"reward_experience": 6,
 		"reward_heal": 6
@@ -260,9 +260,9 @@ const RUN_PHASES: Array[Dictionary] = [
 		"id": "stage_08",
 		"name": "第 8 关：棱镜核心",
 		"duration": 30.0,
-		"spawn_interval": 1.06,
-		"spawn_count": 1,
-		"enemy_level_bonus": 3,
+		"spawn_interval": 0.96,
+		"spawn_count": 2,
+		"enemy_level_bonus": 4,
 		"enemy_weight_bonus": {"grunt": 6, "runner": 3, "tank": 8, "bulwark": 7, "ranged": 12, "weaver": 12, "turret": 22},
 		"bullet_pattern": "flower",
 		"bullet_patterns": ["wall", "flower", "diamond", "pinwheel", "double_ring"],
@@ -275,7 +275,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"arena_patterns": ["alternating_curtain", "corner_pinwheel", "center_pulse"],
 		"arena_pattern_interval": 11.5,
 		"goal": "特殊 Boss 关：在短窗口内爆发输出并躲避花形弹幕",
-		"kill_target": 12,
+		"kill_target": 16,
 		"reward_gold": 30,
 		"reward_experience": 7,
 		"reward_heal": 7
@@ -284,9 +284,9 @@ const RUN_PHASES: Array[Dictionary] = [
 		"id": "stage_09",
 		"name": "第 9 关：组合压迫",
 		"duration": 30.0,
-		"spawn_interval": 0.66,
-		"spawn_count": 2,
-		"enemy_level_bonus": 4,
+		"spawn_interval": 0.58,
+		"spawn_count": 3,
+		"enemy_level_bonus": 6,
 		"enemy_weight_bonus": {"grunt": 14, "runner": 10, "tank": 11, "bulwark": 10, "ranged": 18, "weaver": 15, "turret": 19},
 		"bullet_pattern": "wall",
 		"bullet_patterns": ["wall", "spiral", "flower", "diamond", "pinwheel"],
@@ -299,7 +299,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"arena_patterns": ["alternating_curtain", "corner_pinwheel", "center_pulse"],
 		"arena_pattern_interval": 11.0,
 		"goal": "用成型组合处理高密度弹幕与刷怪",
-		"kill_target": 24,
+		"kill_target": 32,
 		"reward_gold": 32,
 		"reward_experience": 7,
 		"reward_heal": 7
@@ -308,9 +308,9 @@ const RUN_PHASES: Array[Dictionary] = [
 		"id": "stage_10",
 		"name": "第 10 关：终局收束",
 		"duration": 30.0,
-		"spawn_interval": 0.58,
-		"spawn_count": 2,
-		"enemy_level_bonus": 5,
+		"spawn_interval": 0.50,
+		"spawn_count": 3,
+		"enemy_level_bonus": 7,
 		"enemy_weight_bonus": {"grunt": 16, "runner": 11, "tank": 12, "bulwark": 11, "ranged": 18, "weaver": 15, "turret": 19},
 		"bullet_pattern": "wall",
 		"bullet_patterns": ["wall", "spiral", "flower", "diamond", "pinwheel"],
@@ -323,7 +323,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"arena_patterns": ["alternating_curtain", "corner_pinwheel", "center_pulse"],
 		"arena_pattern_interval": 10.5,
 		"goal": "撑过最后 30 秒，完成 10 关试炼",
-		"kill_target": 28,
+		"kill_target": 36,
 		"reward_gold": 40,
 		"reward_experience": 8,
 		"reward_heal": 8
@@ -821,8 +821,9 @@ func get_current_phase_spawn_interval() -> float:
 	if current_phase_index < 4:
 		return base_interval
 	var pressure_tier := get_build_pressure_tier()
-	var pressure_multiplier := 1.0 - minf(0.30, float(pressure_tier) * 0.055)
-	return maxf(0.36, base_interval * pressure_multiplier)
+	var power_multiplier := get_build_power_pressure_multiplier()
+	var pressure_multiplier := 1.0 - minf(0.42, float(pressure_tier) * 0.055 + maxf(0.0, power_multiplier - 1.0) * 0.030)
+	return maxf(0.30, base_interval * pressure_multiplier)
 
 func get_current_phase_spawn_count() -> int:
 	var base_count := maxi(1, int(get_current_run_phase().get("spawn_count", 1)))
@@ -830,9 +831,11 @@ func get_current_phase_spawn_count() -> int:
 	var pressure_bonus := 0
 	if current_phase_index >= 4 and pressure_tier >= 2:
 		pressure_bonus += 1
-	if current_phase_index >= 6 and pressure_tier >= 4:
+	if current_phase_index >= 5 and pressure_tier >= 4:
 		pressure_bonus += 1
-	if current_phase_index >= 8 and pressure_tier >= 5:
+	if current_phase_index >= 7 and pressure_tier >= 6:
+		pressure_bonus += 1
+	if current_phase_index >= 8 and get_build_power_pressure_multiplier() >= 5.0:
 		pressure_bonus += 1
 	return base_count + pressure_bonus
 
@@ -860,19 +863,43 @@ func get_build_pressure_tier() -> int:
 		tier += 1
 	if total_route_score >= 9:
 		tier += 1
-	return clampi(tier, 0, 6)
+	var power_multiplier := get_build_power_pressure_multiplier()
+	if power_multiplier >= 1.8:
+		tier += 1
+	if power_multiplier >= 3.0:
+		tier += 1
+	if power_multiplier >= 5.0:
+		tier += 1
+	if power_multiplier >= 8.0:
+		tier += 1
+	return clampi(tier, 0, 10)
+
+func get_build_power_pressure_multiplier() -> float:
+	if player_build_summary.is_empty():
+		return 1.0
+	var flow_multiplier := maxf(1.0, 1.0 + float(player_build_summary.get("flow_damage_bonus_percent", 0)) / 100.0)
+	var projectile_count := maxi(1, int(player_build_summary.get("projectiles", 1)))
+	var projectile_factor := 1.0 + float(maxi(0, projectile_count - 1)) * 0.22
+	var attack_interval := maxf(0.05, float(player_build_summary.get("attack_interval", 0.45)))
+	var attack_factor := clampf(0.45 / attack_interval, 0.75, 3.2)
+	var pierce_factor := 1.0 + float(mini(8, int(player_build_summary.get("pierce", 0)))) * 0.07
+	var explosion_factor := 1.0 + minf(0.70, float(player_build_summary.get("explosion_radius", 0)) / 500.0)
+	var raw_power := flow_multiplier * projectile_factor * attack_factor * pierce_factor * explosion_factor
+	return clampf(raw_power, 1.0, 18.0)
 
 func get_current_pressure_enemy_health_multiplier() -> float:
 	var stage_number := current_phase_index + 1
-	var late_stage_bonus := maxf(0.0, float(stage_number - 4)) * 0.11
-	var build_bonus := float(get_build_pressure_tier()) * 0.18
-	return 1.0 + late_stage_bonus + build_bonus
+	var late_stage_bonus := maxf(0.0, float(stage_number - 4)) * 0.14
+	var build_bonus := float(get_build_pressure_tier()) * 0.22
+	var power_bonus := maxf(0.0, pow(get_build_power_pressure_multiplier(), 0.68) - 1.0) * 0.95
+	return 1.0 + late_stage_bonus + build_bonus + power_bonus
 
 func get_current_pressure_enemy_damage_multiplier() -> float:
 	var stage_number := current_phase_index + 1
-	var late_stage_bonus := maxf(0.0, float(stage_number - 5)) * 0.055
-	var build_bonus := float(get_build_pressure_tier()) * 0.075
-	return 1.0 + late_stage_bonus + build_bonus
+	var late_stage_bonus := maxf(0.0, float(stage_number - 5)) * 0.070
+	var build_bonus := float(get_build_pressure_tier()) * 0.095
+	var power_bonus := maxf(0.0, pow(get_build_power_pressure_multiplier(), 0.45) - 1.0) * 0.20
+	return 1.0 + late_stage_bonus + build_bonus + power_bonus
 
 func get_current_phase_enemy_weight_bonus(enemy_type: String) -> int:
 	var weight_bonus: Dictionary = get_current_run_phase().get("enemy_weight_bonus", {})

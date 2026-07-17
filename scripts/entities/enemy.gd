@@ -44,6 +44,7 @@ var encounter_aura_timer: float = 0.0
 func _ready() -> void:
 	_apply_enemy_type(enemy_type)
 	_apply_encounter_config()
+	_apply_run_pressure_scaling()
 	health = max_health
 	_update_health_bar(false)
 	add_to_group("enemies")
@@ -175,6 +176,7 @@ func configure_encounter(encounter: Dictionary) -> void:
 	if is_inside_tree():
 		_apply_enemy_type(enemy_type)
 		_apply_encounter_config()
+		_apply_run_pressure_scaling()
 		health = max_health
 		_update_boss_phase()
 		_update_health_bar(false)
@@ -280,6 +282,15 @@ func _apply_encounter_config() -> void:
 	knockback_resistance *= maxf(0.1, float(encounter_config.get("visual_scale", 1.0)))
 	visual.color = encounter_config.get("color", visual.color)
 	z_index = 2
+
+func _apply_run_pressure_scaling() -> void:
+	var health_multiplier := GameManager.get_current_pressure_enemy_health_multiplier()
+	var damage_multiplier := GameManager.get_current_pressure_enemy_damage_multiplier()
+	if is_encounter_enemy:
+		health_multiplier = 1.0 + (health_multiplier - 1.0) * 0.55
+		damage_multiplier = 1.0 + (damage_multiplier - 1.0) * 0.45
+	max_health = maxi(1, int(round(float(max_health) * health_multiplier)))
+	touch_damage = maxi(1, int(round(float(touch_damage) * damage_multiplier)))
 
 func _update_boss_phase() -> void:
 	if not is_encounter_enemy or health <= 0:

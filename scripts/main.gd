@@ -17,7 +17,7 @@ const CHOICE_EVENT_SCENE := preload("res://scenes/choice_event.tscn")
 @export var spawn_radius: float = 460.0
 @export var minimum_spawn_radius: float = 360.0
 @export var spawn_interval_reduction_per_level: float = 0.025
-@export var minimum_spawn_interval: float = 0.52
+@export var minimum_spawn_interval: float = 0.44
 @export var arena_warning_duration: float = 0.75
 
 var player: CharacterBody2D

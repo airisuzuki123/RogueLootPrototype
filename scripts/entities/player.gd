@@ -13,6 +13,8 @@ const SLOW_DAMAGE_PER_10_PERCENT := 0.08
 const STILL_FOCUS_INTERVAL := 0.70
 const STILL_FOCUS_CRIT_PER_TIER := 8
 const STILL_FOCUS_MAX_TIER := 12
+const ROUTE_MASTERY_STEP := 3
+const ROUTE_MASTERY_CAP := 3
 
 @export var move_speed: float = 260.0
 @export var max_health: int = 100
@@ -456,7 +458,9 @@ func _get_flow_damage_multiplier(_include_stationary_bonus: bool = false) -> flo
 	var mass_bonus := _get_mass_resonance_damage_bonus()
 	var slow_bonus := _get_slow_resonance_damage_bonus()
 	var pierce_bonus := float(pierce_amp_stacks) * 0.05
-	return 1.0 + mass_bonus + slow_bonus + pierce_bonus
+	var bulk_mastery_bonus := float(_get_route_mastery_tier("bulk")) * 0.06
+	var pierce_mastery_bonus := float(_get_route_mastery_tier("pierce")) * 0.06 if _get_total_pierce() > 0 else 0.0
+	return 1.0 + mass_bonus + slow_bonus + pierce_bonus + bulk_mastery_bonus + pierce_mastery_bonus
 
 func _get_mass_resonance_damage_bonus() -> float:
 	if mass_resonance_stacks <= 0:
@@ -471,6 +475,32 @@ func _get_slow_resonance_damage_bonus() -> float:
 	var slow_ratio := clampf((base_move_speed - move_speed) / base_move_speed, 0.0, 0.90)
 	var raw_bonus := (slow_ratio / 0.10) * SLOW_DAMAGE_PER_10_PERCENT * float(slow_resonance_stacks)
 	return raw_bonus
+
+func _get_route_stack_count(route_id: String) -> int:
+	match route_id:
+		"bulk":
+			return int(upgrade_stacks.get("multishot", 0)) + mass_resonance_stacks + slow_resonance_stacks + still_focus_stacks + heavy_shot_stacks + int(upgrade_stacks.get("blast_core", 0))
+		"pierce":
+			return int(upgrade_stacks.get("piercing_rounds", 0)) + pierce_amp_stacks
+		"blast":
+			return int(upgrade_stacks.get("blast_core", 0)) + shatter_blast_stacks + overload_burst_stacks + heavy_shot_stacks
+		"chain":
+			return chain_spark_stacks + homing_shard_stacks + orbit_blade_stacks + conduit_coil_stacks + channel_beam_stacks
+		"close":
+			return close_slash_stacks + pulse_field_stacks + guard_blade_stacks
+	return 0
+
+func _get_route_mastery_tier(route_id: String) -> int:
+	return clampi(int(floor(float(_get_route_stack_count(route_id)) / float(ROUTE_MASTERY_STEP))), 0, ROUTE_MASTERY_CAP)
+
+func _get_route_mastery_summary() -> Dictionary:
+	return {
+		"bulk": _get_route_mastery_tier("bulk"),
+		"pierce": _get_route_mastery_tier("pierce"),
+		"blast": _get_route_mastery_tier("blast"),
+		"chain": _get_route_mastery_tier("chain"),
+		"close": _get_route_mastery_tier("close")
+	}
 
 func _get_player_size_multiplier() -> float:
 	var size_bonus := clampf(upgrade_player_size_bonus, 0.0, PLAYER_SIZE_BONUS_CAP)
@@ -517,6 +547,7 @@ func _get_total_explosion_damage_ratio() -> float:
 		if equipment_explosion_damage_ratio > 0.0:
 			ratio += 0.08
 	ratio += float(shatter_blast_stacks) * 0.12
+	ratio += float(_get_route_mastery_tier("blast")) * 0.06
 	return ratio
 
 func _apply_weapon_form(form: Dictionary) -> void:
@@ -595,32 +626,34 @@ func _spawn_player_projectile(direction: Vector2, damage_multiplier: float = 1.0
 	get_tree().current_scene.add_child(projectile)
 
 func _fire_extra_skill_projectiles(base_direction: Vector2) -> void:
+	var chain_mastery_bonus := float(_get_route_mastery_tier("chain")) * 0.05
+	var blast_mastery_bonus := float(_get_route_mastery_tier("blast")) * 0.05
 	var chain_count := chain_spark_stacks
-	var chain_multiplier := 0.66 + float(maxi(0, chain_spark_stacks - 1)) * 0.06 + float(conduit_coil_stacks) * 0.06
+	var chain_multiplier := 0.66 + float(maxi(0, chain_spark_stacks - 1)) * 0.06 + float(conduit_coil_stacks) * 0.06 + chain_mastery_bonus
 	for index in range(chain_count):
 		var angle := deg_to_rad(18.0 + float(index) * 10.0)
 		var side := -1.0 if index % 2 == 0 else 1.0
 		_spawn_player_projectile(base_direction.rotated(angle * side), chain_multiplier, ["chain"])
 	var orbit_count := orbit_blade_stacks
-	var orbit_multiplier := 0.54 + float(maxi(0, orbit_blade_stacks - 1)) * 0.08
+	var orbit_multiplier := 0.54 + float(maxi(0, orbit_blade_stacks - 1)) * 0.08 + chain_mastery_bonus
 	for index in range(orbit_count):
 		var side_angle := deg_to_rad(82.0 + float(index) * 8.0)
 		_spawn_player_projectile(base_direction.rotated(side_angle), orbit_multiplier, ["orbit"])
 		_spawn_player_projectile(base_direction.rotated(-side_angle), orbit_multiplier, ["orbit"])
 	if overload_burst_stacks > 0 and attack_sequence % 4 == 0:
 		var bullet_count := 6 + overload_burst_stacks * 2
-		var overload_multiplier := 0.50 + float(overload_burst_stacks) * 0.08
+		var overload_multiplier := 0.50 + float(overload_burst_stacks) * 0.08 + blast_mastery_bonus
 		for index in range(bullet_count):
 			var angle := TAU * float(index) / float(bullet_count)
 			_spawn_player_projectile(Vector2.RIGHT.rotated(angle), overload_multiplier, ["overload", "blast"])
 	if homing_shard_stacks > 0:
 		var homing_count := homing_shard_stacks
-		var homing_multiplier := 0.56 + float(maxi(0, homing_shard_stacks - 1)) * 0.08 + float(conduit_coil_stacks) * 0.06
+		var homing_multiplier := 0.56 + float(maxi(0, homing_shard_stacks - 1)) * 0.08 + float(conduit_coil_stacks) * 0.06 + chain_mastery_bonus
 		for index in range(homing_count):
 			var angle := deg_to_rad((float(index) - float(homing_count - 1) * 0.5) * 24.0)
 			_spawn_player_projectile(base_direction.rotated(angle), homing_multiplier, ["homing"])
 	if heavy_shot_stacks > 0 and attack_sequence % 3 == 0:
-		_spawn_player_projectile(base_direction, 1.55 + float(heavy_shot_stacks) * 0.12, ["heavy", "charged"])
+		_spawn_player_projectile(base_direction, 1.55 + float(heavy_shot_stacks) * 0.12 + float(_get_route_mastery_tier("bulk")) * 0.05, ["heavy", "charged"])
 
 func _update_close_range_skills(delta: float) -> void:
 	if close_slash_cooldown > 0.0:
@@ -661,7 +694,7 @@ func _update_player_body_scale() -> void:
 func _fire_close_slash() -> void:
 	var stationary_tier := _get_stationary_focus_tier()
 	var radius := 72.0 + float(close_slash_stacks) * 13.0 + float(stationary_tier) * 6.0
-	var damage_multiplier := 0.50 + float(close_slash_stacks) * 0.10 + float(guard_blade_stacks) * 0.10
+	var damage_multiplier := 0.50 + float(close_slash_stacks) * 0.10 + float(guard_blade_stacks) * 0.10 + float(_get_route_mastery_tier("close")) * 0.06
 	var damage := maxi(1, int(round(float(_get_base_projectile_damage()) * damage_multiplier * _get_flow_damage_multiplier(true))))
 	var hit_count := 0
 	for enemy_node in get_tree().get_nodes_in_group("enemies"):
@@ -697,7 +730,7 @@ func _show_close_slash_effect(radius: float) -> void:
 func _fire_pulse_field() -> void:
 	var stationary_tier := _get_stationary_focus_tier()
 	var radius := 96.0 + float(pulse_field_stacks) * 14.0 + float(stationary_tier) * 8.0
-	var damage_multiplier := 0.38 + float(pulse_field_stacks) * 0.06 + float(guard_blade_stacks) * 0.10
+	var damage_multiplier := 0.38 + float(pulse_field_stacks) * 0.06 + float(guard_blade_stacks) * 0.10 + float(_get_route_mastery_tier("close")) * 0.06
 	var damage := maxi(1, int(round(float(_get_base_projectile_damage()) * damage_multiplier * _get_flow_damage_multiplier(true))))
 	var hit_count := 0
 	for enemy_node in get_tree().get_nodes_in_group("enemies"):
@@ -742,7 +775,7 @@ func _fire_channel_beam_tick() -> void:
 	var distance := global_position.distance_to(target.global_position)
 	if distance > max_range:
 		return
-	var damage := maxi(1, int(round(float(_get_base_projectile_damage()) * (0.24 + float(channel_beam_stacks) * 0.045 + float(conduit_coil_stacks) * 0.10) * _get_flow_damage_multiplier(true))))
+	var damage := maxi(1, int(round(float(_get_base_projectile_damage()) * (0.24 + float(channel_beam_stacks) * 0.045 + float(conduit_coil_stacks) * 0.10 + float(_get_route_mastery_tier("close")) * 0.04 + float(_get_route_mastery_tier("chain")) * 0.04) * _get_flow_damage_multiplier(true))))
 	if target.has_method("take_damage"):
 		var knockback := global_position.direction_to(target.global_position) * 36.0
 		target.take_damage(damage, knockback)
@@ -807,6 +840,7 @@ func _emit_build_summary() -> void:
 		"pierce_amp_stacks": pierce_amp_stacks,
 		"conduit_coil_stacks": conduit_coil_stacks,
 		"guard_blade_stacks": guard_blade_stacks,
+		"route_mastery_tiers": _get_route_mastery_summary(),
 		"upgrade_stacks": upgrade_stacks.duplicate(true)
 	})
 

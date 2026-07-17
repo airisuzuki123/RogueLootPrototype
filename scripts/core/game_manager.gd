@@ -12,6 +12,8 @@ const STAGE_COUNT: int = 10
 const SHOP_REFRESH_BASE_COST: int = 6
 const OVERKILL_BONUS_PER_KILL: int = 2
 const OVERKILL_BONUS_CAP: int = 24
+const BUILD_ROUTE_MASTERY_STEP: int = 3
+const BUILD_ROUTE_MASTERY_CAP: int = 3
 
 signal gold_changed(total: int)
 signal enemy_killed(total: int)
@@ -744,13 +746,56 @@ func get_current_run_phase() -> Dictionary:
 	return RUN_PHASES[clampi(current_phase_index, 0, RUN_PHASES.size() - 1)].duplicate(true)
 
 func get_current_phase_spawn_interval() -> float:
-	return float(get_current_run_phase().get("spawn_interval", 1.25))
+	var base_interval := float(get_current_run_phase().get("spawn_interval", 1.25))
+	if current_phase_index < 4:
+		return base_interval
+	var pressure_tier := get_build_pressure_tier()
+	var pressure_multiplier := 1.0 - minf(0.18, float(pressure_tier) * 0.045)
+	return maxf(0.42, base_interval * pressure_multiplier)
 
 func get_current_phase_spawn_count() -> int:
-	return maxi(1, int(get_current_run_phase().get("spawn_count", 1)))
+	var base_count := maxi(1, int(get_current_run_phase().get("spawn_count", 1)))
+	var pressure_tier := get_build_pressure_tier()
+	var pressure_bonus := 0
+	if current_phase_index >= 4 and pressure_tier >= 2:
+		pressure_bonus += 1
+	if current_phase_index >= 8 and pressure_tier >= 4:
+		pressure_bonus += 1
+	return base_count + pressure_bonus
 
 func get_current_phase_enemy_level_bonus() -> int:
 	return maxi(0, int(get_current_run_phase().get("enemy_level_bonus", 0)))
+
+func get_build_pressure_tier() -> int:
+	var route_scores := _get_active_build_route_scores()
+	var highest_route_score := 0
+	var total_route_score := 0
+	for route_id in BUILD_ROUTE_ORDER:
+		var score := int(route_scores.get(route_id, 0))
+		highest_route_score = maxi(highest_route_score, score)
+		total_route_score += score
+	var tier := 0
+	if current_phase_index >= 4:
+		tier += 1
+	if current_phase_index >= 7:
+		tier += 1
+	if highest_route_score >= 4:
+		tier += 1
+	if total_route_score >= 8:
+		tier += 1
+	return clampi(tier, 0, 4)
+
+func get_current_pressure_enemy_health_multiplier() -> float:
+	var stage_number := current_phase_index + 1
+	var late_stage_bonus := maxf(0.0, float(stage_number - 4)) * 0.08
+	var build_bonus := float(get_build_pressure_tier()) * 0.10
+	return 1.0 + late_stage_bonus + build_bonus
+
+func get_current_pressure_enemy_damage_multiplier() -> float:
+	var stage_number := current_phase_index + 1
+	var late_stage_bonus := maxf(0.0, float(stage_number - 5)) * 0.035
+	var build_bonus := float(get_build_pressure_tier()) * 0.045
+	return 1.0 + late_stage_bonus + build_bonus
 
 func get_current_phase_enemy_weight_bonus(enemy_type: String) -> int:
 	var weight_bonus: Dictionary = get_current_run_phase().get("enemy_weight_bonus", {})
@@ -1922,10 +1967,35 @@ func _annotate_shop_offer_context(offer: Dictionary) -> Dictionary:
 	var purchase_preview := _get_upgrade_purchase_preview(reward_upgrade_id, current_stack)
 	if not purchase_preview.is_empty():
 		offer["purchase_preview"] = purchase_preview
+	var mastery_preview := _get_route_mastery_preview_for_choice(offer)
+	if not mastery_preview.is_empty():
+		offer["route_mastery_preview"] = mastery_preview
 	return offer
 
 func get_build_route_label(route_id: String) -> String:
 	return str(BUILD_ROUTE_LABELS.get(route_id, ""))
+
+func get_build_route_mastery_tier(route_id: String) -> int:
+	var route_scores := _get_active_build_route_scores()
+	return _get_build_route_mastery_tier_for_score(int(route_scores.get(route_id, 0)))
+
+func get_build_route_mastery_description(route_id: String, tier: int) -> String:
+	var clamped_tier := clampi(tier, 1, BUILD_ROUTE_MASTERY_CAP)
+	match route_id:
+		"bulk":
+			return "联动伤害 +%d%%" % (clamped_tier * 6)
+		"pierce":
+			return "有穿透时投射物伤害 +%d%%" % (clamped_tier * 6)
+		"blast":
+			return "爆裂伤害 +%d%%" % (clamped_tier * 6)
+		"chain":
+			return "连锁、回旋和追踪伤害 +%d%%" % (clamped_tier * 5)
+		"close":
+			return "近身刀环、脉冲场和光束伤害 +%d%%" % (clamped_tier * 6)
+	return ""
+
+func _get_build_route_mastery_tier_for_score(score: int) -> int:
+	return clampi(int(floor(float(maxi(0, score)) / float(BUILD_ROUTE_MASTERY_STEP))), 0, BUILD_ROUTE_MASTERY_CAP)
 
 func _annotate_build_route_context(data: Dictionary, route_id: String, role: String) -> Dictionary:
 	var annotated := data.duplicate(true)
@@ -2058,7 +2128,26 @@ func _annotate_upgrade_choice_context(choice: Dictionary) -> Dictionary:
 	var upgrade_preview := _get_upgrade_purchase_preview(upgrade_id, current_stack)
 	if not upgrade_preview.is_empty():
 		annotated["upgrade_preview"] = upgrade_preview
+	var mastery_preview := _get_route_mastery_preview_for_choice(annotated)
+	if not mastery_preview.is_empty():
+		annotated["route_mastery_preview"] = mastery_preview
 	return annotated
+
+func _get_route_mastery_preview_for_choice(data: Dictionary) -> String:
+	var route_id := str(data.get("build_route_id", ""))
+	if route_id.is_empty():
+		return ""
+	var route_scores := _get_active_build_route_scores()
+	var current_score := int(route_scores.get(route_id, 0))
+	var current_mastery := _get_build_route_mastery_tier_for_score(current_score)
+	var next_mastery := _get_build_route_mastery_tier_for_score(current_score + 1)
+	if next_mastery <= current_mastery:
+		return ""
+	return "将激活%s专精 %d：%s" % [
+		get_build_route_label(route_id),
+		next_mastery,
+		get_build_route_mastery_description(route_id, next_mastery)
+	]
 
 func _build_upgrade_utility_pool() -> Array[Dictionary]:
 	var utility_ids := ["damage", "attack_speed", "move_speed", "max_health", "graze_barrier", "clear_barrier"]

@@ -24,14 +24,15 @@ var player: CharacterBody2D
 var pending_arena_pattern: Dictionary = {}
 var arena_pattern_index: int = 0
 var windowed_size_before_fullscreen: Vector2i = Vector2i(1600, 900)
+var bullet_enemy_types := {"ranged": true, "weaver": true, "turret": true}
 var enemy_spawn_table: Array[Dictionary] = [
-	{"type": "grunt", "weight": 36, "min_level": 1},
-	{"type": "runner", "weight": 16, "min_level": 1},
-	{"type": "tank", "weight": 12, "min_level": 2},
-	{"type": "ranged", "weight": 26, "min_level": 1},
-	{"type": "weaver", "weight": 12, "min_level": 2},
-	{"type": "turret", "weight": 8, "min_level": 3},
-	{"type": "bulwark", "weight": 4, "min_level": 5}
+	{"type": "grunt", "weight": 40, "min_level": 1},
+	{"type": "runner", "weight": 20, "min_level": 1},
+	{"type": "tank", "weight": 16, "min_level": 2},
+	{"type": "ranged", "weight": 14, "min_level": 1},
+	{"type": "weaver", "weight": 7, "min_level": 2},
+	{"type": "turret", "weight": 5, "min_level": 3},
+	{"type": "bulwark", "weight": 8, "min_level": 5}
 ]
 
 func _ready() -> void:
@@ -104,13 +105,17 @@ func _spawn_enemy() -> void:
 	if player == null or not is_instance_valid(player) or GameManager.is_run_over or GameManager.is_gameplay_paused():
 		return
 	var spawn_count := GameManager.get_current_phase_spawn_count()
+	var bullet_enemy_count := _get_alive_bullet_enemy_count()
 	for index in range(spawn_count):
-		_spawn_single_enemy()
+		var enemy_type := _roll_enemy_type(bullet_enemy_count)
+		if _is_bullet_enemy_type(enemy_type):
+			bullet_enemy_count += 1
+		_spawn_single_enemy(enemy_type)
 	_update_spawn_interval()
 
-func _spawn_single_enemy() -> void:
+func _spawn_single_enemy(enemy_type: String) -> void:
 	var enemy := ENEMY_SCENE.instantiate()
-	enemy.configure(_roll_enemy_type())
+	enemy.configure(enemy_type)
 	enemy.target = player
 	enemy.global_position = _random_spawn_position_around(player.global_position, _get_dynamic_spawn_radius())
 	if enemy.has_method("set_movement_bounds"):
@@ -220,14 +225,17 @@ func _update_arena_pattern_interval() -> void:
 	arena_pattern_timer.wait_time = interval
 	arena_pattern_timer.start()
 
-func _roll_enemy_type() -> String:
+func _roll_enemy_type(current_bullet_enemy_count: int) -> String:
 	var available: Array[Dictionary] = []
 	var total_weight := 0
 	var effective_level := GameManager.level + GameManager.get_current_phase_enemy_level_bonus()
+	var bullet_enemy_soft_cap := _get_bullet_enemy_soft_cap()
 	for entry in enemy_spawn_table:
 		if effective_level < int(entry["min_level"]):
 			continue
 		var entry_weight := maxi(0, int(entry["weight"]) + GameManager.get_current_phase_enemy_weight_bonus(str(entry["type"])))
+		if _is_bullet_enemy_type(str(entry["type"])) and current_bullet_enemy_count >= bullet_enemy_soft_cap:
+			entry_weight = 0
 		if entry_weight <= 0:
 			continue
 		var weighted_entry := entry.duplicate(true)
@@ -241,6 +249,26 @@ func _roll_enemy_type() -> String:
 		if roll <= cursor:
 			return str(entry["type"])
 	return "grunt"
+
+func _is_bullet_enemy_type(enemy_type: String) -> bool:
+	return bullet_enemy_types.has(enemy_type)
+
+func _get_alive_bullet_enemy_count() -> int:
+	var count := 0
+	for enemy_node in get_tree().get_nodes_in_group("enemies"):
+		if not is_instance_valid(enemy_node):
+			continue
+		if _is_bullet_enemy_type(str(enemy_node.enemy_type)):
+			count += 1
+	return count
+
+func _get_bullet_enemy_soft_cap() -> int:
+	var stage_number := GameManager.current_phase_index + 1
+	if stage_number <= 3:
+		return 3
+	if stage_number <= 6:
+		return 4
+	return 5
 
 func _prepare_arena_pattern() -> void:
 	if player == null or not is_instance_valid(player) or GameManager.is_run_over or GameManager.is_gameplay_paused():

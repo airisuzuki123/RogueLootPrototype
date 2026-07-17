@@ -95,7 +95,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 1.05,
 		"spawn_count": 1,
 		"enemy_level_bonus": 0,
-		"enemy_weight_bonus": {"grunt": 2, "runner": 0, "ranged": 12},
+		"enemy_weight_bonus": {"grunt": 6, "runner": 3, "ranged": 6},
 		"bullet_pattern": "aimed",
 		"bullet_patterns": ["aimed", "aimed_burst"],
 		"enemy_bullet_patterns": {
@@ -119,7 +119,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.98,
 		"spawn_count": 1,
 		"enemy_level_bonus": 0,
-		"enemy_weight_bonus": {"grunt": 4, "runner": 4, "tank": -4, "ranged": 18, "weaver": 12},
+		"enemy_weight_bonus": {"grunt": 8, "runner": 8, "tank": 0, "ranged": 7, "weaver": 4},
 		"bullet_pattern": "fan",
 		"bullet_patterns": ["fan", "aimed_burst"],
 		"enemy_bullet_patterns": {
@@ -143,7 +143,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.92,
 		"spawn_count": 1,
 		"enemy_level_bonus": 1,
-		"enemy_weight_bonus": {"grunt": 6, "runner": 4, "tank": 2, "ranged": 18, "weaver": 12, "turret": 8},
+		"enemy_weight_bonus": {"grunt": 10, "runner": 7, "tank": 5, "ranged": 8, "weaver": 5, "turret": 2},
 		"bullet_pattern": "ring",
 		"bullet_patterns": ["ring", "cross", "mirror_fan", "sweep"],
 		"enemy_bullet_patterns": {
@@ -167,7 +167,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 1.10,
 		"spawn_count": 1,
 		"enemy_level_bonus": 1,
-		"enemy_weight_bonus": {"grunt": 4, "runner": 2, "tank": 0, "ranged": 16, "weaver": 20, "turret": 8},
+		"enemy_weight_bonus": {"grunt": 8, "runner": 6, "tank": 6, "ranged": 7, "weaver": 12, "turret": 2},
 		"bullet_pattern": "sweep",
 		"bullet_patterns": ["fan", "mirror_fan", "sweep", "cross"],
 		"enemy_bullet_patterns": {
@@ -191,7 +191,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.72,
 		"spawn_count": 2,
 		"enemy_level_bonus": 3,
-		"enemy_weight_bonus": {"grunt": 10, "runner": 8, "tank": 7, "bulwark": 5, "ranged": 16, "weaver": 14, "turret": 12},
+		"enemy_weight_bonus": {"grunt": 14, "runner": 12, "tank": 12, "bulwark": 10, "ranged": 7, "weaver": 6, "turret": 4},
 		"bullet_pattern": "spiral",
 		"bullet_patterns": ["spiral", "fan", "mirror_fan", "double_ring", "sweep"],
 		"enemy_bullet_patterns": {
@@ -215,7 +215,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.66,
 		"spawn_count": 2,
 		"enemy_level_bonus": 3,
-		"enemy_weight_bonus": {"grunt": 10, "runner": 8, "tank": 9, "bulwark": 7, "ranged": 18, "weaver": 14, "turret": 12},
+		"enemy_weight_bonus": {"grunt": 14, "runner": 12, "tank": 14, "bulwark": 12, "ranged": 8, "weaver": 6, "turret": 4},
 		"bullet_pattern": "wall",
 		"bullet_patterns": ["wall", "diamond", "cross", "ring"],
 		"enemy_bullet_patterns": {
@@ -239,7 +239,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.84,
 		"spawn_count": 2,
 		"enemy_level_bonus": 4,
-		"enemy_weight_bonus": {"grunt": 8, "runner": 5, "tank": 8, "bulwark": 6, "ranged": 14, "weaver": 11, "turret": 22},
+		"enemy_weight_bonus": {"grunt": 12, "runner": 9, "tank": 14, "bulwark": 12, "ranged": 6, "weaver": 5, "turret": 12},
 		"bullet_pattern": "ring",
 		"bullet_patterns": ["ring", "diamond", "double_ring", "pinwheel"],
 		"enemy_bullet_patterns": {
@@ -263,7 +263,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.96,
 		"spawn_count": 2,
 		"enemy_level_bonus": 4,
-		"enemy_weight_bonus": {"grunt": 6, "runner": 3, "tank": 8, "bulwark": 7, "ranged": 12, "weaver": 12, "turret": 22},
+		"enemy_weight_bonus": {"grunt": 12, "runner": 8, "tank": 15, "bulwark": 13, "ranged": 5, "weaver": 5, "turret": 12},
 		"bullet_pattern": "flower",
 		"bullet_patterns": ["wall", "flower", "diamond", "pinwheel", "double_ring"],
 		"enemy_bullet_patterns": {
@@ -287,7 +287,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.58,
 		"spawn_count": 3,
 		"enemy_level_bonus": 6,
-		"enemy_weight_bonus": {"grunt": 14, "runner": 10, "tank": 11, "bulwark": 10, "ranged": 18, "weaver": 15, "turret": 19},
+		"enemy_weight_bonus": {"grunt": 20, "runner": 15, "tank": 18, "bulwark": 16, "ranged": 8, "weaver": 6, "turret": 10},
 		"bullet_pattern": "wall",
 		"bullet_patterns": ["wall", "spiral", "flower", "diamond", "pinwheel"],
 		"enemy_bullet_patterns": {
@@ -311,7 +311,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"spawn_interval": 0.50,
 		"spawn_count": 3,
 		"enemy_level_bonus": 7,
-		"enemy_weight_bonus": {"grunt": 16, "runner": 11, "tank": 12, "bulwark": 11, "ranged": 18, "weaver": 15, "turret": 19},
+		"enemy_weight_bonus": {"grunt": 22, "runner": 16, "tank": 19, "bulwark": 17, "ranged": 8, "weaver": 6, "turret": 10},
 		"bullet_pattern": "wall",
 		"bullet_patterns": ["wall", "spiral", "flower", "diamond", "pinwheel"],
 		"enemy_bullet_patterns": {

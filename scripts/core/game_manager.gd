@@ -2247,8 +2247,7 @@ func _build_upgrade_utility_pool() -> Array[Dictionary]:
 		utility_ids.append_array(["heal", "strong_heal", "recovery_training"])
 	return _get_upgrade_pool_for_ids(utility_ids)
 
-func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> String:
-	var next_stack := current_stack + 1
+func _get_upgrade_purchase_preview(upgrade_id: String, _current_stack: int) -> String:
 	match upgrade_id:
 		"damage":
 			return "本层：投射物伤害 +25%，射击间隔 +10%"
@@ -2293,69 +2292,29 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 		"clear_barrier":
 			return "本层：立即清除敌弹，护盾 +16，持续 3.5 秒"
 		"chain_spark":
-			return "获得后每次攻击追加 %d 枚连锁弹，单枚伤害 %d%%，寿命 +%.2f 秒，投射物伤害 -12%%" % [
-				next_stack,
-				115 + maxi(0, next_stack - 1) * 20,
-				next_stack * 0.08
-			]
+			return "本层：连锁弹 +1，单枚伤害 115%，重复拿取独立 x1.20，寿命每次 +0.08 秒，投射物伤害 -12%"
 		"orbit_blade":
-			return "获得后每次攻击两侧各追加 %d 枚回旋弹，单枚伤害 %d%%，寿命 +%.2f 秒" % [
-				next_stack,
-				105 + maxi(0, next_stack - 1) * 18,
-				next_stack * 0.08
-			]
+			return "本层：两侧回旋弹各 +1，单枚伤害 105%，重复拿取独立 x1.18，寿命每次 +0.08 秒"
 		"overload_burst":
-			return "获得后每 4 次攻击释放 %d 枚爆裂弹，单枚伤害 %d%%" % [
-				6 + next_stack * 2,
-				250 + maxi(0, next_stack - 1) * 25
-			]
+			return "本层：每 4 次攻击爆裂弹 +2，单枚伤害 250%，重复拿取独立 x1.25"
 		"homing_shards":
-			return "获得后每次攻击追加 %d 枚追踪碎片，单枚伤害 %d%%，追踪强度 %.2f，当前移速 -12%%（最低 80）" % [
-				next_stack,
-				115 + maxi(0, next_stack - 1) * 20,
-				4.8 + float(next_stack) * 0.85
-			]
+			return "本层：追踪碎片 +1，单枚伤害 115%，重复拿取独立 x1.20，追踪强度 4.8 且每次 +0.85，当前移速 -12%（最低 80）"
 		"heavy_shot":
 			return "本层：投射物伤害 +20%、玩家体积 +15%（最高 +240%）、射击间隔 +10%；每 3 次攻击发射 1 枚 220% 重弹，击退 +45%"
 		"close_slash":
-			return "获得后刀环伤害 %d%%，半径 %d，冷却 %.2f 秒" % [
-				120 + maxi(0, next_stack - 1) * 25,
-				int(round(72.0 + float(next_stack) * 22.0)),
-				maxf(0.22, 1.18 - float(next_stack) * 0.12)
-			]
+			return "本层：刀环伤害 120%，重复拿取独立 x1.25，半径 +22，冷却 -0.12 秒，最低 0.22 秒"
 		"pulse_field":
-			return "获得后脉冲伤害 %d%%，半径 %d，冷却 %.2f 秒" % [
-				100 + maxi(0, next_stack - 1) * 20,
-				int(round(96.0 + float(next_stack) * 24.0)),
-				maxf(0.55, 2.25 - float(next_stack) * 0.18)
-			]
+			return "本层：脉冲伤害 100%，重复拿取独立 x1.20，半径 +24，冷却 -0.18 秒，最低 0.55 秒"
 		"channel_beam":
-			return "获得后光束射程 %d，跳伤间隔 %.2f 秒，单跳伤害 %.1f%% 投射物伤害，当前移速 -10%%（最低 80）" % [
-				int(round(330.0 + float(next_stack) * 28.0)),
-				maxf(0.05, 0.32 - float(next_stack) * 0.035),
-				(0.85 + float(maxi(0, next_stack - 1)) * 0.18) * 100.0
-			]
+			return "本层：光束单跳伤害 85%，重复拿取独立 x1.18，射程 +28，间隔 -0.035 秒，当前移速 -10%（最低 80）"
 		"shatter_blast":
-			return "获得后爆裂伤害 +%d%%，爆裂范围 +%d" % [
-				next_stack * 55,
-				next_stack * 32
-			]
+			return "本层：爆裂伤害独立 x1.55，爆裂范围 +32"
 		"pierce_amp":
-			return "获得后穿透 +%d，投射物伤害 +%d%%" % [
-				next_stack,
-				next_stack * 55
-			]
+			return "本层：穿透 +1，投射物伤害独立 x1.55"
 		"conduit_coil":
-			return "获得后光束伤害 +%d%%，连锁/追踪伤害 +%d%%，光束间隔 -%.2f 秒" % [
-				next_stack * 150,
-				next_stack * 75,
-				next_stack * 0.03
-			]
+			return "本层：光束伤害独立 x2.50，连锁/追踪伤害独立 x1.75，光束间隔 -0.03 秒"
 		"guard_blade":
-			return "获得后近身伤害 +%d%%，立即护盾 +%d，近身命中每层护盾 +4" % [
-				next_stack * 55,
-				16 + next_stack * 4
-			]
+			return "本层：近身伤害独立 x1.55，立即护盾至少 +20 且每次 +4，近身命中护盾 +4"
 		"form_focused":
 			return "本层：投射物伤害 +8"
 		"form_scatter":

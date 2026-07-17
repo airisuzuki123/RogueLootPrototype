@@ -1180,6 +1180,10 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 	var slash_stacks := int(summary.get("close_slash_stacks", 0))
 	var pulse_stacks := int(summary.get("pulse_field_stacks", 0))
 	var beam_stacks := int(summary.get("channel_beam_stacks", 0))
+	var shatter_stacks := int(summary.get("shatter_blast_stacks", 0))
+	var pierce_amp_stacks := int(summary.get("pierce_amp_stacks", 0))
+	var conduit_stacks := int(summary.get("conduit_coil_stacks", 0))
+	var guard_stacks := int(summary.get("guard_blade_stacks", 0))
 	if damage_bonus > 0:
 		parts.append("强击 +%d" % damage_bonus)
 	if attack_speed_stacks > 0:
@@ -1220,6 +1224,14 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 		parts.append("脉冲 x%d" % pulse_stacks)
 	if beam_stacks > 0:
 		parts.append("光束 x%d" % beam_stacks)
+	if shatter_stacks > 0:
+		parts.append("裂片 x%d" % shatter_stacks)
+	if pierce_amp_stacks > 0:
+		parts.append("贯穿 x%d" % pierce_amp_stacks)
+	if conduit_stacks > 0:
+		parts.append("线圈 x%d" % conduit_stacks)
+	if guard_stacks > 0:
+		parts.append("锋刃 x%d" % guard_stacks)
 	return parts
 
 func _format_event_choice_result(choice: Dictionary) -> String:

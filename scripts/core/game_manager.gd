@@ -524,22 +524,22 @@ const UPGRADE_POOL := [
 	{
 		"id": "multishot",
 		"title": "分裂射击",
-		"description": "投射物 +1，玩家体积 +20%（最高 +90%），当前移速 -30%（最低 120）"
+		"description": "投射物 +1，玩家体积 +20%（最高 +240%），当前移速 -18%（最低 80）"
 	},
 	{
 		"id": "mass_resonance",
 		"title": "体积共鸣",
-		"description": "每层：玩家体积每 +10%，投射物伤害 +6%，每层上限 +30%"
+		"description": "每层：玩家体积每 +10%，投射物伤害 +6%，无层数上限"
 	},
 	{
 		"id": "slow_resonance",
 		"title": "迟缓共鸣",
-		"description": "每层：当前移速每低于初始值 10%，投射物伤害 +8%，每层上限 +40%"
+		"description": "每层：当前移速每低于初始值 10%，投射物伤害 +8%，无层数上限"
 	},
 	{
 		"id": "still_focus",
 		"title": "静立聚焦",
-		"description": "每层：静止每 0.7 秒暴击率 +8%，每层上限 +32%；移动每秒失去 1 层"
+		"description": "静止每 0.7 秒暴击率 +8%，最多 12 层专注；技能可重复提高每层暴击"
 	},
 	{
 		"id": "piercing_rounds",
@@ -549,7 +549,7 @@ const UPGRADE_POOL := [
 	{
 		"id": "blast_core",
 		"title": "爆裂核心",
-		"description": "爆裂范围 +36，玩家体积 +10%（最高 +90%）"
+		"description": "爆裂范围 +36，玩家体积 +10%（最高 +240%）"
 	},
 	{
 		"id": "graze_barrier",
@@ -564,42 +564,62 @@ const UPGRADE_POOL := [
 	{
 		"id": "chain_spark",
 		"title": "连锁电弧",
-		"description": "每次攻击连锁弹 +1，最多 3 枚；单枚伤害 66%，超出后每层伤害 +6%"
+		"description": "每次攻击连锁弹 +1，单枚伤害 66%；每层伤害 +6%"
 	},
 	{
 		"id": "orbit_blade",
 		"title": "回旋刃",
-		"description": "每次攻击两侧回旋弹各 +1，最多各 3 枚；单枚伤害 54%，超出后每层伤害 +8%"
+		"description": "每次攻击两侧回旋弹各 +1，单枚伤害 54%；每层伤害 +8%"
 	},
 	{
 		"id": "overload_burst",
 		"title": "过载爆发",
-		"description": "每 4 次攻击释放 8 枚爆裂弹，每层 +2 枚，上限 12 枚"
+		"description": "每 4 次攻击释放 8 枚爆裂弹，每层 +2 枚，无弹数上限"
 	},
 	{
 		"id": "homing_shards",
 		"title": "寻迹碎片",
-		"description": "每次攻击追踪碎片 +1，最多 3 枚；单枚伤害 56%，超出后每层伤害 +8%"
+		"description": "每次攻击追踪碎片 +1，单枚伤害 56%；每层伤害 +8%"
 	},
 	{
 		"id": "heavy_shot",
 		"title": "重压弹芯",
-		"description": "每 3 次攻击发射 1 枚重弹，伤害 +2，击退 +45%，玩家体积 +6%（最高 +90%）"
+		"description": "每 3 次攻击发射 1 枚重弹，伤害 +2，击退 +45%，玩家体积 +6%（最高 +240%）"
 	},
 	{
 		"id": "close_slash",
 		"title": "近身刀环",
-		"description": "每 1.18 秒斩击半径 85；每层半径 +13，冷却 -0.09 秒，最低 0.48 秒"
+		"description": "每 1.18 秒斩击半径 85；每层半径 +13，冷却 -0.09 秒，最低 0.22 秒"
 	},
 	{
 		"id": "pulse_field",
 		"title": "脉冲场",
-		"description": "每 2.25 秒释放半径 110 脉冲；每层半径 +14，冷却 -0.12 秒，最低 1.15 秒"
+		"description": "每 2.25 秒释放半径 110 脉冲；每层半径 +14，冷却 -0.12 秒，最低 0.55 秒"
 	},
 	{
 		"id": "channel_beam",
 		"title": "引导光束",
 		"description": "每 0.32 秒对 330 范围内最近敌人造成 24% 投射物伤害；每层射程 +28、伤害 +4.5%、间隔 -0.025 秒"
+	},
+	{
+		"id": "shatter_blast",
+		"title": "裂片爆破",
+		"description": "爆裂伤害 +12%，爆裂范围 +18"
+	},
+	{
+		"id": "pierce_amp",
+		"title": "贯穿增幅",
+		"description": "穿透 +1，投射物伤害 +5%"
+	},
+	{
+		"id": "conduit_coil",
+		"title": "超导线圈",
+		"description": "光束伤害 +10%，连锁弹和追踪碎片伤害 +6%，光束间隔 -0.01 秒"
+	},
+	{
+		"id": "guard_blade",
+		"title": "护身锋刃",
+		"description": "近身刀环和脉冲场伤害 +10%，获得护盾 +10；近身命中时每层护盾 +2"
 	}
 ]
 
@@ -1595,7 +1615,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_multishot_skill",
 			"title": "技能：分裂射击",
 			"category": "基础技能",
-			"description": "投射物 +1，玩家体积 +20%（最高 +90%），当前移速 -30%（最低 120）",
+			"description": "投射物 +1，玩家体积 +20%（最高 +240%），当前移速 -18%（最低 80）",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "multishot",
 			"reward_upgrade_title": "分裂射击"
@@ -1604,7 +1624,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_mass_resonance_skill",
 			"title": "技能：体积共鸣",
 			"category": "基础技能",
-			"description": "每层：玩家体积每 +10%，投射物伤害 +6%，每层上限 +30%",
+			"description": "每层：玩家体积每 +10%，投射物伤害 +6%，无层数上限",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "mass_resonance",
 			"reward_upgrade_title": "体积共鸣"
@@ -1613,7 +1633,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_slow_resonance_skill",
 			"title": "技能：迟缓共鸣",
 			"category": "基础技能",
-			"description": "每层：当前移速每低于初始值 10%，投射物伤害 +8%，每层上限 +40%",
+			"description": "每层：当前移速每低于初始值 10%，投射物伤害 +8%，无层数上限",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "slow_resonance",
 			"reward_upgrade_title": "迟缓共鸣"
@@ -1622,7 +1642,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_still_focus_skill",
 			"title": "技能：静立聚焦",
 			"category": "基础技能",
-			"description": "每层：静止每 0.7 秒暴击率 +8%，每层上限 +32%；移动每秒失去 1 层",
+			"description": "静止每 0.7 秒暴击率 +8%，最多 12 层专注；技能可重复提高每层暴击",
 			"cost": 20 + completed_stage * 3,
 			"reward_upgrade_id": "still_focus",
 			"reward_upgrade_title": "静立聚焦"
@@ -1642,7 +1662,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_blast_skill",
 			"title": "技能：爆裂核心",
 			"category": "形态技能",
-			"description": "爆裂范围 +36，玩家体积 +10%（最高 +90%）",
+			"description": "爆裂范围 +36，玩家体积 +10%（最高 +240%）",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "blast_core",
 			"reward_upgrade_title": "爆裂核心"
@@ -1651,7 +1671,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_chain_skill",
 			"title": "技能：连锁电弧",
 			"category": "形态技能",
-			"description": "每次攻击连锁弹 +1，最多 3 枚；单枚伤害 66%，超出后每层伤害 +6%",
+			"description": "每次攻击连锁弹 +1，单枚伤害 66%；每层伤害 +6%",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "chain_spark",
 			"reward_upgrade_title": "连锁电弧"
@@ -1660,7 +1680,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_orbit_skill",
 			"title": "技能：回旋刃",
 			"category": "形态技能",
-			"description": "每次攻击两侧回旋弹各 +1，最多各 3 枚；单枚伤害 54%，超出后每层伤害 +8%",
+			"description": "每次攻击两侧回旋弹各 +1，单枚伤害 54%；每层伤害 +8%",
 			"cost": 22 + completed_stage * 3,
 			"reward_upgrade_id": "orbit_blade",
 			"reward_upgrade_title": "回旋刃"
@@ -1669,7 +1689,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_overload_skill",
 			"title": "技能：过载爆发",
 			"category": "形态技能",
-			"description": "每 4 次攻击释放 8 枚爆裂弹，每层 +2 枚，上限 12 枚",
+			"description": "每 4 次攻击释放 8 枚爆裂弹，每层 +2 枚，无弹数上限",
 			"cost": 28 + completed_stage * 3,
 			"reward_upgrade_id": "overload_burst",
 			"reward_upgrade_title": "过载爆发"
@@ -1678,7 +1698,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_homing_skill",
 			"title": "技能：寻迹碎片",
 			"category": "形态技能",
-			"description": "每次攻击追踪碎片 +1，最多 3 枚；单枚伤害 56%，超出后每层伤害 +8%",
+			"description": "每次攻击追踪碎片 +1，单枚伤害 56%；每层伤害 +8%",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "homing_shards",
 			"reward_upgrade_title": "寻迹碎片"
@@ -1687,7 +1707,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_heavy_skill",
 			"title": "技能：重压弹芯",
 			"category": "形态技能",
-			"description": "每 3 次攻击发射 1 枚重弹，伤害 +2，击退 +45%，玩家体积 +6%（最高 +90%）",
+			"description": "每 3 次攻击发射 1 枚重弹，伤害 +2，击退 +45%，玩家体积 +6%（最高 +240%）",
 			"cost": 26 + completed_stage * 3,
 			"reward_upgrade_id": "heavy_shot",
 			"reward_upgrade_title": "重压弹芯"
@@ -1696,7 +1716,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_close_slash_skill",
 			"title": "技能：近身刀环",
 			"category": "身法技能",
-			"description": "每 1.18 秒斩击半径 85；每层半径 +13，冷却 -0.09 秒，最低 0.48 秒",
+			"description": "每 1.18 秒斩击半径 85；每层半径 +13，冷却 -0.09 秒，最低 0.22 秒",
 			"cost": 24 + completed_stage * 3,
 			"reward_upgrade_id": "close_slash",
 			"reward_upgrade_title": "近身刀环"
@@ -1705,7 +1725,7 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"id": "shop_pulse_field_skill",
 			"title": "技能：脉冲场",
 			"category": "身法技能",
-			"description": "每 2.25 秒释放半径 110 脉冲；每层半径 +14，冷却 -0.12 秒，最低 1.15 秒",
+			"description": "每 2.25 秒释放半径 110 脉冲；每层半径 +14，冷却 -0.12 秒，最低 0.55 秒",
 			"cost": 25 + completed_stage * 3,
 			"reward_upgrade_id": "pulse_field",
 			"reward_upgrade_title": "脉冲场"
@@ -1718,6 +1738,42 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"cost": 28 + completed_stage * 3,
 			"reward_upgrade_id": "channel_beam",
 			"reward_upgrade_title": "引导光束"
+		},
+		{
+			"id": "shop_shatter_blast_skill",
+			"title": "技能：裂片爆破",
+			"category": "形态技能",
+			"description": "爆裂伤害 +12%，爆裂范围 +18",
+			"cost": 25 + completed_stage * 3,
+			"reward_upgrade_id": "shatter_blast",
+			"reward_upgrade_title": "裂片爆破"
+		},
+		{
+			"id": "shop_pierce_amp_skill",
+			"title": "技能：贯穿增幅",
+			"category": "形态技能",
+			"description": "穿透 +1，投射物伤害 +5%",
+			"cost": 24 + completed_stage * 3,
+			"reward_upgrade_id": "pierce_amp",
+			"reward_upgrade_title": "贯穿增幅"
+		},
+		{
+			"id": "shop_conduit_coil_skill",
+			"title": "技能：超导线圈",
+			"category": "形态技能",
+			"description": "光束伤害 +10%，连锁弹和追踪碎片伤害 +6%，光束间隔 -0.01 秒",
+			"cost": 26 + completed_stage * 3,
+			"reward_upgrade_id": "conduit_coil",
+			"reward_upgrade_title": "超导线圈"
+		},
+		{
+			"id": "shop_guard_blade_skill",
+			"title": "技能：护身锋刃",
+			"category": "身法技能",
+			"description": "近身刀环和脉冲场伤害 +10%，获得护盾 +10；近身命中时每层护盾 +2",
+			"cost": 24 + completed_stage * 3,
+			"reward_upgrade_id": "guard_blade",
+			"reward_upgrade_title": "护身锋刃"
 		}
 	]
 	if completed_stage >= 4:
@@ -1807,55 +1863,82 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 		"attack_speed":
 			return "本层射击间隔 -18%，购买后急速层数 %d" % next_stack
 		"multishot":
-			return "本层投射物 +1，玩家体积 +20%（最高 +90%），当前移速 -30%（最低 120）；购买后分裂层数 %d" % next_stack
+			return "本层投射物 +1，玩家体积 +20%（最高 +240%），当前移速 -18%（最低 80）；购买后分裂层数 %d" % next_stack
 		"mass_resonance":
-			return "每层：玩家体积每 +10%，投射物伤害 +6%，每层上限 +30%；购买后体积共鸣层数 %d" % next_stack
+			return "每层：玩家体积每 +10%，投射物伤害 +6%，无层数上限；购买后体积共鸣层数 %d" % next_stack
 		"slow_resonance":
-			return "每层：当前移速每低于初始值 10%，投射物伤害 +8%，每层上限 +40%；购买后迟缓共鸣层数 %d" % next_stack
+			return "每层：当前移速每低于初始值 10%，投射物伤害 +8%，无层数上限；购买后迟缓共鸣层数 %d" % next_stack
 		"still_focus":
-			return "每层：静止每 0.7 秒暴击率 +8%，每层上限 +32%；移动每秒失去 1 层；购买后静立层数 %d" % next_stack
+			return "静止每 0.7 秒暴击率 +8%，最多 12 层专注；购买后静立技能层数 %d" % next_stack
 		"piercing_rounds":
 			return "本层穿透 +1，购买后穿透层数 %d" % next_stack
 		"blast_core":
-			return "本层爆裂范围 +36、玩家体积 +10%，购买后爆裂层数 %d" % next_stack
+			return "本层爆裂范围 +36、玩家体积 +10%（最高 +240%），购买后爆裂层数 %d" % next_stack
 		"charged_volley":
 			return "立即连射 5 枚高亮弹，并永久伤害 +3"
 		"pulse_nova":
 			return "立即释放 10 枚新星弹，并永久爆裂范围 +18"
 		"chain_spark":
-			if next_stack <= 3:
-				return "购买后每次攻击追加 %d 枚连锁弹，单枚伤害 %d%%" % [next_stack, 66 + (next_stack - 1) * 6]
-			return "连锁弹数量 3 枚；本层单枚伤害 +6%，寿命 +0.08 秒，击退 +4%"
+			return "购买后每次攻击追加 %d 枚连锁弹，单枚伤害 %d%%，寿命 +%.2f 秒" % [
+				next_stack,
+				66 + maxi(0, next_stack - 1) * 6,
+				next_stack * 0.08
+			]
 		"orbit_blade":
-			if next_stack <= 3:
-				return "购买后每次攻击两侧各追加 %d 枚回旋弹，单枚伤害 %d%%" % [next_stack, 54 + (next_stack - 1) * 8]
-			return "回旋弹数量两侧各 3 枚；本层单枚伤害 +8%，寿命 +0.08 秒，击退 +5%"
+			return "购买后每次攻击两侧各追加 %d 枚回旋弹，单枚伤害 %d%%，寿命 +%.2f 秒" % [
+				next_stack,
+				54 + maxi(0, next_stack - 1) * 8,
+				next_stack * 0.08
+			]
 		"overload_burst":
 			return "购买后每 4 次攻击释放 %d 枚爆裂弹，单枚伤害 %d%%" % [
-				mini(12, 6 + next_stack * 2),
+				6 + next_stack * 2,
 				50 + next_stack * 8
 			]
 		"homing_shards":
-			if next_stack <= 3:
-				return "购买后每次攻击追加 %d 枚追踪碎片，单枚伤害 %d%%" % [next_stack, 56 + (next_stack - 1) * 8]
-			return "追踪碎片数量 3 枚；本层单枚伤害 +8%，追踪强度 +0.65"
+			return "购买后每次攻击追加 %d 枚追踪碎片，单枚伤害 %d%%，追踪强度 %.2f" % [
+				next_stack,
+				56 + maxi(0, next_stack - 1) * 8,
+				4.2 + float(next_stack) * 0.65
+			]
 		"heavy_shot":
-			return "本层伤害 +2、玩家体积 +6%（最高 +90%）；每 3 次攻击发射 1 枚重弹，击退 +45%"
+			return "本层伤害 +2、玩家体积 +6%（最高 +240%）；每 3 次攻击发射 1 枚重弹，击退 +45%"
 		"close_slash":
 			return "购买后刀环半径 %d，冷却 %.2f 秒" % [
 				int(round(72.0 + float(next_stack) * 13.0)),
-				maxf(0.48, 1.18 - float(next_stack) * 0.09)
+				maxf(0.22, 1.18 - float(next_stack) * 0.09)
 			]
 		"pulse_field":
 			return "购买后脉冲半径 %d，冷却 %.2f 秒" % [
 				int(round(96.0 + float(next_stack) * 14.0)),
-				maxf(1.15, 2.25 - float(next_stack) * 0.12)
+				maxf(0.55, 2.25 - float(next_stack) * 0.12)
 			]
 		"channel_beam":
 			return "购买后光束射程 %d，跳伤间隔 %.2f 秒，单跳伤害 %.1f%% 投射物伤害" % [
 				int(round(330.0 + float(next_stack) * 28.0)),
-				maxf(0.12, 0.32 - float(next_stack) * 0.025),
+				maxf(0.05, 0.32 - float(next_stack) * 0.025),
 				(0.24 + float(next_stack) * 0.045) * 100.0
+			]
+		"shatter_blast":
+			return "购买后爆裂伤害 +%d%%，爆裂范围 +%d" % [
+				next_stack * 12,
+				next_stack * 18
+			]
+		"pierce_amp":
+			return "购买后穿透 +%d，投射物伤害 +%d%%" % [
+				next_stack,
+				next_stack * 5
+			]
+		"conduit_coil":
+			return "购买后光束伤害 +%d%%，连锁/追踪伤害 +%d%%，光束间隔 -%.2f 秒" % [
+				next_stack * 10,
+				next_stack * 6,
+				next_stack * 0.01
+			]
+		"guard_blade":
+			return "购买后近身伤害 +%d%%，立即护盾 +%d，近身命中每层护盾 +2" % [
+				next_stack * 10,
+				8 + next_stack * 2
 			]
 	return ""
 

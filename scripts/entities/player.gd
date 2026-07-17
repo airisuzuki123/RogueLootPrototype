@@ -3,16 +3,30 @@ extends CharacterBody2D
 const PROJECTILE_SCENE := preload("res://scenes/projectile.tscn")
 const CombatFeedback := preload("res://scripts/effects/combat_feedback.gd")
 const PLAYER_SIZE_BONUS_CAP := 2.40
+const PLAYER_SIZE_PENALTY_CAP := -0.40
 const MIN_TRADEOFF_MOVE_SPEED := 80.0
 const MULTISHOT_SIZE_BONUS := 0.20
 const MULTISHOT_SPEED_MULTIPLIER := 0.82
 const BLAST_CORE_SIZE_BONUS := 0.10
 const HEAVY_SHOT_SIZE_BONUS := 0.06
+const LIGHT_FRAME_SIZE_REDUCTION := 0.08
+const LIGHT_FRAME_MOVE_SPEED_BONUS := 18.0
 const MASS_DAMAGE_PER_10_PERCENT := 0.06
+const SMALL_DAMAGE_PER_10_PERCENT := 0.03
+const SMALL_CRIT_PER_10_PERCENT := 6
 const SLOW_DAMAGE_PER_10_PERCENT := 0.08
+const FAST_DAMAGE_PER_10_PERCENT := 0.04
+const FAST_CRIT_PER_10_PERCENT := 3
+const RAPID_SKILL_DAMAGE_PER_10_PERCENT := 0.06
+const BLOOD_DAMAGE_PER_10_PERCENT := 0.05
+const BLOOD_CRIT_PER_10_PERCENT := 4
 const STILL_FOCUS_INTERVAL := 0.70
 const STILL_FOCUS_CRIT_PER_TIER := 8
 const STILL_FOCUS_MAX_TIER := 12
+const MOVEMENT_FOCUS_INTERVAL := 0.60
+const MOVEMENT_FOCUS_DAMAGE_PER_TIER := 0.03
+const MOVEMENT_FOCUS_CRIT_PER_TIER := 3
+const MOVEMENT_FOCUS_MAX_TIER := 10
 const DAMAGE_TRADEOFF_FIRE_INTERVAL_MULTIPLIER := 1.06
 const BLAST_CORE_FIRE_INTERVAL_MULTIPLIER := 1.08
 const HEAVY_SHOT_FIRE_INTERVAL_MULTIPLIER := 1.05
@@ -37,6 +51,7 @@ var fire_cooldown: float = 0.0
 var invulnerability_timer: float = 0.0
 var knockback_velocity: Vector2 = Vector2.ZERO
 var base_fire_interval: float
+var initial_fire_interval: float
 var equipment_damage_bonus: int = 0
 var equipment_attack_speed_bonus: int = 0
 var equipment_health_bonus: int = 0
@@ -60,8 +75,14 @@ var upgrade_pierce_bonus: int = 0
 var upgrade_explosion_radius_bonus: float = 0.0
 var upgrade_player_size_bonus: float = 0.0
 var mass_resonance_stacks: int = 0
+var light_frame_stacks: int = 0
+var light_resonance_stacks: int = 0
 var slow_resonance_stacks: int = 0
+var haste_resonance_stacks: int = 0
+var rapid_resonance_stacks: int = 0
+var blood_pact_stacks: int = 0
 var still_focus_stacks: int = 0
+var motion_focus_stacks: int = 0
 var chain_spark_stacks: int = 0
 var orbit_blade_stacks: int = 0
 var overload_burst_stacks: int = 0
@@ -79,7 +100,9 @@ var close_slash_cooldown: float = 0.0
 var pulse_field_cooldown: float = 0.0
 var channel_beam_tick_timer: float = 0.0
 var stationary_focus_time: float = 0.0
+var movement_focus_time: float = 0.0
 var last_stationary_focus_tier: int = 0
+var last_movement_focus_tier: int = 0
 var upgrade_stacks := {}
 @onready var visual: Polygon2D = $Visual
 @onready var hit_core: Polygon2D = $HitCore
@@ -88,6 +111,7 @@ func _ready() -> void:
 	health = max_health
 	base_move_speed = move_speed
 	base_fire_interval = fire_interval
+	initial_fire_interval = fire_interval
 	sync_health_state()
 
 func _physics_process(delta: float) -> void:
@@ -116,6 +140,7 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 		return
 	health -= remaining_damage
 	GameManager.update_player_health(max(health, 0), max_health)
+	_emit_build_summary()
 	CombatFeedback.show_damage(get_tree().current_scene, global_position, remaining_damage, Color(1, 0.25, 0.25, 1))
 	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1, 0.2, 0.2, 0.9), 1.3)
 	if health <= 0:
@@ -137,6 +162,7 @@ func heal_fixed_amount(amount: int) -> int:
 	var old_health := health
 	health = min(max_health, health + amount)
 	GameManager.update_player_health(health, max_health)
+	_emit_build_summary()
 	return health - old_health
 
 func apply_graze_shield(amount: int, duration: float) -> void:
@@ -153,6 +179,7 @@ func take_event_damage(amount: int) -> int:
 	var old_health := health
 	health = max(0, health - amount)
 	GameManager.update_player_health(health, max_health)
+	_emit_build_summary()
 	CombatFeedback.show_damage(get_tree().current_scene, global_position, old_health - health, Color(1, 0.25, 0.25, 1))
 	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1, 0.2, 0.2, 0.9), 1.2)
 	if health <= 0:
@@ -211,12 +238,41 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 		"mass_resonance":
 			mass_resonance_stacks += 1
 			result["skill_text"] = "玩家体积每 +10%%，投射物伤害 +6%%，无层数上限，当前 %d 层" % mass_resonance_stacks
+		"light_frame":
+			light_frame_stacks += 1
+			var light_old_size_bonus := upgrade_player_size_bonus
+			upgrade_player_size_bonus = maxf(PLAYER_SIZE_PENALTY_CAP, upgrade_player_size_bonus - LIGHT_FRAME_SIZE_REDUCTION)
+			move_speed += LIGHT_FRAME_MOVE_SPEED_BONUS
+			var light_applied_size_percent := int(round((light_old_size_bonus - upgrade_player_size_bonus) * 100.0))
+			result["move_speed_bonus"] = int(round(LIGHT_FRAME_MOVE_SPEED_BONUS))
+			result["skill_text"] = "玩家体积 -%d%%（最低 -40%%），移动速度 +%d，当前 %d 层" % [light_applied_size_percent, int(round(LIGHT_FRAME_MOVE_SPEED_BONUS)), light_frame_stacks]
+		"light_resonance":
+			light_resonance_stacks += 1
+			result["skill_text"] = "玩家体积每低于 100%% 10%%，投射物伤害 +3%%、暴击率 +6%%，当前 %d 层" % light_resonance_stacks
 		"slow_resonance":
 			slow_resonance_stacks += 1
 			result["skill_text"] = "移速每低于初始值 10%%，投射物伤害 +8%%，无层数上限，当前 %d 层" % slow_resonance_stacks
+		"haste_resonance":
+			haste_resonance_stacks += 1
+			result["skill_text"] = "当前移速每高于初始值 10%%，投射物伤害 +4%%、暴击率 +3%%，当前 %d 层" % haste_resonance_stacks
+		"rapid_resonance":
+			rapid_resonance_stacks += 1
+			result["skill_text"] = "射击间隔每低于初始值 10%%，连锁/回旋/追踪/过载伤害 +6%%，当前 %d 层" % rapid_resonance_stacks
+		"blood_pact":
+			blood_pact_stacks += 1
+			var blood_cost := mini(12, maxi(0, health - 1))
+			if blood_cost > 0:
+				health -= blood_cost
+				GameManager.update_player_health(health, max_health)
+				CombatFeedback.show_damage(get_tree().current_scene, global_position, blood_cost, Color(1.0, 0.20, 0.32, 1.0))
+				CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1.0, 0.12, 0.24, 0.78), 1.1)
+			result["skill_text"] = "当前生命 -%d（最低 1）；生命每损失 10%%，投射物伤害 +5%%、暴击率 +4%%，当前 %d 层" % [blood_cost, blood_pact_stacks]
 		"still_focus":
 			still_focus_stacks += 1
 			result["skill_text"] = "静止每 0.7 秒暴击率 +8%%，最多 12 层专注，当前技能 %d 层" % still_focus_stacks
+		"motion_focus":
+			motion_focus_stacks += 1
+			result["skill_text"] = "移动每 0.6 秒游走伤害 +3%%、暴击率 +3%%，最多 10 层游走，当前技能 %d 层" % motion_focus_stacks
 		"piercing_rounds":
 			upgrade_pierce_bonus += 1
 			projectile_damage = maxi(1, projectile_damage - 1)
@@ -369,6 +425,7 @@ func heal_from_life_steal(hit_damage: int) -> void:
 	var heal_amount: int = max(1, int(round(float(hit_damage) * float(equipment_life_steal_bonus) / 100.0)))
 	health = min(max_health, health + heal_amount)
 	GameManager.update_player_health(health, max_health)
+	_emit_build_summary()
 
 func _heal_after_upgrade(amount: int) -> int:
 	var old_health := health
@@ -489,9 +546,13 @@ func _get_base_projectile_damage() -> int:
 
 func _get_flow_damage_multiplier(_include_stationary_bonus: bool = false) -> float:
 	var mass_bonus := _get_mass_resonance_damage_bonus()
+	var light_bonus := _get_light_resonance_damage_bonus()
 	var slow_bonus := _get_slow_resonance_damage_bonus()
+	var fast_bonus := _get_haste_resonance_damage_bonus()
+	var blood_bonus := _get_blood_pact_damage_bonus()
+	var movement_bonus := _get_movement_focus_damage_bonus()
 	var pierce_bonus := float(pierce_amp_stacks) * 0.05
-	return 1.0 + mass_bonus + slow_bonus + pierce_bonus
+	return 1.0 + mass_bonus + light_bonus + slow_bonus + fast_bonus + blood_bonus + movement_bonus + pierce_bonus
 
 func _get_mass_resonance_damage_bonus() -> float:
 	if mass_resonance_stacks <= 0:
@@ -500,6 +561,18 @@ func _get_mass_resonance_damage_bonus() -> float:
 	var raw_bonus := (player_size_bonus / 0.10) * MASS_DAMAGE_PER_10_PERCENT * float(mass_resonance_stacks)
 	return raw_bonus
 
+func _get_light_resonance_damage_bonus() -> float:
+	if light_resonance_stacks <= 0:
+		return 0.0
+	var player_size_penalty := maxf(0.0, 1.0 - _get_player_size_multiplier())
+	return (player_size_penalty / 0.10) * SMALL_DAMAGE_PER_10_PERCENT * float(light_resonance_stacks)
+
+func _get_light_resonance_crit_bonus() -> int:
+	if light_resonance_stacks <= 0:
+		return 0
+	var player_size_penalty := maxf(0.0, 1.0 - _get_player_size_multiplier())
+	return int(round((player_size_penalty / 0.10) * float(SMALL_CRIT_PER_10_PERCENT) * float(light_resonance_stacks)))
+
 func _get_slow_resonance_damage_bonus() -> float:
 	if slow_resonance_stacks <= 0 or base_move_speed <= 0.0:
 		return 0.0
@@ -507,8 +580,38 @@ func _get_slow_resonance_damage_bonus() -> float:
 	var raw_bonus := (slow_ratio / 0.10) * SLOW_DAMAGE_PER_10_PERCENT * float(slow_resonance_stacks)
 	return raw_bonus
 
+func _get_haste_resonance_damage_bonus() -> float:
+	if haste_resonance_stacks <= 0 or base_move_speed <= 0.0:
+		return 0.0
+	var fast_ratio := maxf(0.0, (move_speed - base_move_speed) / base_move_speed)
+	return (fast_ratio / 0.10) * FAST_DAMAGE_PER_10_PERCENT * float(haste_resonance_stacks)
+
+func _get_haste_resonance_crit_bonus() -> int:
+	if haste_resonance_stacks <= 0 or base_move_speed <= 0.0:
+		return 0
+	var fast_ratio := maxf(0.0, (move_speed - base_move_speed) / base_move_speed)
+	return int(round((fast_ratio / 0.10) * float(FAST_CRIT_PER_10_PERCENT) * float(haste_resonance_stacks)))
+
+func _get_rapid_skill_damage_bonus() -> float:
+	if rapid_resonance_stacks <= 0 or initial_fire_interval <= 0.0:
+		return 0.0
+	var rapid_ratio := maxf(0.0, (initial_fire_interval - fire_interval) / initial_fire_interval)
+	return (rapid_ratio / 0.10) * RAPID_SKILL_DAMAGE_PER_10_PERCENT * float(rapid_resonance_stacks)
+
+func _get_blood_pact_damage_bonus() -> float:
+	if blood_pact_stacks <= 0 or max_health <= 0:
+		return 0.0
+	var missing_ratio := clampf(float(max_health - health) / float(max_health), 0.0, 0.95)
+	return (missing_ratio / 0.10) * BLOOD_DAMAGE_PER_10_PERCENT * float(blood_pact_stacks)
+
+func _get_blood_pact_crit_bonus() -> int:
+	if blood_pact_stacks <= 0 or max_health <= 0:
+		return 0
+	var missing_ratio := clampf(float(max_health - health) / float(max_health), 0.0, 0.95)
+	return int(round((missing_ratio / 0.10) * float(BLOOD_CRIT_PER_10_PERCENT) * float(blood_pact_stacks)))
+
 func _get_player_size_multiplier() -> float:
-	var size_bonus := clampf(upgrade_player_size_bonus, 0.0, PLAYER_SIZE_BONUS_CAP)
+	var size_bonus := clampf(upgrade_player_size_bonus, PLAYER_SIZE_PENALTY_CAP, PLAYER_SIZE_BONUS_CAP)
 	return clampf(1.0 + size_bonus, 0.85, 1.0 + PLAYER_SIZE_BONUS_CAP)
 
 func _get_stationary_focus_tier() -> int:
@@ -522,6 +625,26 @@ func _get_stationary_crit_bonus() -> int:
 		return 0
 	return tier * STILL_FOCUS_CRIT_PER_TIER * still_focus_stacks
 
+func _get_movement_focus_tier() -> int:
+	if motion_focus_stacks <= 0:
+		return 0
+	return clampi(int(floor(movement_focus_time / MOVEMENT_FOCUS_INTERVAL)), 0, MOVEMENT_FOCUS_MAX_TIER)
+
+func _get_movement_focus_damage_bonus() -> float:
+	var tier := _get_movement_focus_tier()
+	if tier <= 0:
+		return 0.0
+	return float(tier) * MOVEMENT_FOCUS_DAMAGE_PER_TIER * float(motion_focus_stacks)
+
+func _get_movement_focus_crit_bonus() -> int:
+	var tier := _get_movement_focus_tier()
+	if tier <= 0:
+		return 0
+	return tier * MOVEMENT_FOCUS_CRIT_PER_TIER * motion_focus_stacks
+
+func _get_total_crit_bonus() -> int:
+	return equipment_critical_chance_bonus + _get_stationary_crit_bonus() + _get_light_resonance_crit_bonus() + _get_haste_resonance_crit_bonus() + _get_blood_pact_crit_bonus() + _get_movement_focus_crit_bonus()
+
 func _get_total_projectile_count() -> int:
 	return maxi(1, projectile_count + equipment_projectile_count_bonus + affix_projectile_count_bonus)
 
@@ -530,7 +653,7 @@ func _get_total_pierce() -> int:
 
 func _roll_projectile_damage() -> Dictionary:
 	var damage := maxi(1, int(round(float(_get_base_projectile_damage()) * _get_flow_damage_multiplier())))
-	var critical_chance := clampf(float(equipment_critical_chance_bonus + _get_stationary_crit_bonus()) / 100.0, 0.0, 0.95)
+	var critical_chance := clampf(float(_get_total_crit_bonus()) / 100.0, 0.0, 0.95)
 	var is_critical := randf() < critical_chance
 	if is_critical:
 		damage *= 2
@@ -630,27 +753,28 @@ func _spawn_player_projectile(direction: Vector2, damage_multiplier: float = 1.0
 	get_tree().current_scene.add_child(projectile)
 
 func _fire_extra_skill_projectiles(base_direction: Vector2) -> void:
+	var rapid_bonus := _get_rapid_skill_damage_bonus()
 	var chain_count := chain_spark_stacks
-	var chain_multiplier := 0.66 + float(maxi(0, chain_spark_stacks - 1)) * 0.06 + float(conduit_coil_stacks) * 0.06
+	var chain_multiplier := 0.66 + float(maxi(0, chain_spark_stacks - 1)) * 0.06 + float(conduit_coil_stacks) * 0.06 + rapid_bonus
 	for index in range(chain_count):
 		var angle := deg_to_rad(18.0 + float(index) * 10.0)
 		var side := -1.0 if index % 2 == 0 else 1.0
 		_spawn_player_projectile(base_direction.rotated(angle * side), chain_multiplier, ["chain"])
 	var orbit_count := orbit_blade_stacks
-	var orbit_multiplier := 0.54 + float(maxi(0, orbit_blade_stacks - 1)) * 0.08
+	var orbit_multiplier := 0.54 + float(maxi(0, orbit_blade_stacks - 1)) * 0.08 + rapid_bonus
 	for index in range(orbit_count):
 		var side_angle := deg_to_rad(82.0 + float(index) * 8.0)
 		_spawn_player_projectile(base_direction.rotated(side_angle), orbit_multiplier, ["orbit"])
 		_spawn_player_projectile(base_direction.rotated(-side_angle), orbit_multiplier, ["orbit"])
 	if overload_burst_stacks > 0 and attack_sequence % 4 == 0:
 		var bullet_count := 6 + overload_burst_stacks * 2
-		var overload_multiplier := 0.50 + float(overload_burst_stacks) * 0.08
+		var overload_multiplier := 0.50 + float(overload_burst_stacks) * 0.08 + rapid_bonus
 		for index in range(bullet_count):
 			var angle := TAU * float(index) / float(bullet_count)
 			_spawn_player_projectile(Vector2.RIGHT.rotated(angle), overload_multiplier, ["overload", "blast"])
 	if homing_shard_stacks > 0:
 		var homing_count := homing_shard_stacks
-		var homing_multiplier := 0.56 + float(maxi(0, homing_shard_stacks - 1)) * 0.08 + float(conduit_coil_stacks) * 0.06
+		var homing_multiplier := 0.56 + float(maxi(0, homing_shard_stacks - 1)) * 0.08 + float(conduit_coil_stacks) * 0.06 + rapid_bonus
 		for index in range(homing_count):
 			var angle := deg_to_rad((float(index) - float(homing_count - 1) * 0.5) * 24.0)
 			_spawn_player_projectile(base_direction.rotated(angle), homing_multiplier, ["homing"])
@@ -680,14 +804,19 @@ func _update_channel_skill(delta: float) -> void:
 
 func _update_motion_focus(delta: float, input_direction: Vector2) -> void:
 	var old_tier := _get_stationary_focus_tier()
+	var old_movement_tier := _get_movement_focus_tier()
 	var is_moving := input_direction.length_squared() > 0.01 or knockback_velocity.length_squared() > 100.0
 	if is_moving:
 		stationary_focus_time = maxf(0.0, stationary_focus_time - STILL_FOCUS_INTERVAL * delta)
+		movement_focus_time = minf(MOVEMENT_FOCUS_INTERVAL * float(MOVEMENT_FOCUS_MAX_TIER), movement_focus_time + delta)
 	else:
 		stationary_focus_time = minf(STILL_FOCUS_INTERVAL * float(STILL_FOCUS_MAX_TIER), stationary_focus_time + delta)
+		movement_focus_time = maxf(0.0, movement_focus_time - MOVEMENT_FOCUS_INTERVAL * delta)
 	var new_tier := _get_stationary_focus_tier()
-	if new_tier != old_tier or new_tier != last_stationary_focus_tier:
+	var new_movement_tier := _get_movement_focus_tier()
+	if new_tier != old_tier or new_tier != last_stationary_focus_tier or new_movement_tier != old_movement_tier or new_movement_tier != last_movement_focus_tier:
 		last_stationary_focus_tier = new_tier
+		last_movement_focus_tier = new_movement_tier
 		_emit_build_summary()
 
 func _update_player_body_scale() -> void:
@@ -814,12 +943,22 @@ func _emit_build_summary() -> void:
 		"player_size_bonus": int(round((_get_player_size_multiplier() - 1.0) * 100.0)),
 		"flow_damage_bonus_percent": int(round((_get_flow_damage_multiplier() - 1.0) * 100.0)),
 		"mass_damage_bonus_percent": int(round(_get_mass_resonance_damage_bonus() * 100.0)),
+		"light_damage_bonus_percent": int(round(_get_light_resonance_damage_bonus() * 100.0)),
+		"light_critical_bonus": _get_light_resonance_crit_bonus(),
 		"slow_damage_bonus_percent": int(round(_get_slow_resonance_damage_bonus() * 100.0)),
+		"haste_damage_bonus_percent": int(round(_get_haste_resonance_damage_bonus() * 100.0)),
+		"haste_critical_bonus": _get_haste_resonance_crit_bonus(),
+		"rapid_skill_damage_bonus_percent": int(round(_get_rapid_skill_damage_bonus() * 100.0)),
+		"blood_damage_bonus_percent": int(round(_get_blood_pact_damage_bonus() * 100.0)),
+		"blood_critical_bonus": _get_blood_pact_crit_bonus(),
+		"movement_damage_bonus_percent": int(round(_get_movement_focus_damage_bonus() * 100.0)),
 		"stationary_focus_tier": _get_stationary_focus_tier(),
+		"movement_focus_tier": _get_movement_focus_tier(),
 		"stationary_critical_bonus": _get_stationary_crit_bonus(),
+		"movement_critical_bonus": _get_movement_focus_crit_bonus(),
 		"attack_interval": fire_interval,
 		"move_speed": int(round(move_speed)),
-		"critical_chance": equipment_critical_chance_bonus + _get_stationary_crit_bonus(),
+		"critical_chance": _get_total_crit_bonus(),
 		"shield": graze_shield,
 		"upgrade_damage_bonus": upgrade_damage_bonus,
 		"upgrade_attack_speed_stacks": upgrade_attack_speed_stacks,
@@ -828,8 +967,14 @@ func _emit_build_summary() -> void:
 		"upgrade_explosion_radius_bonus": int(round(upgrade_explosion_radius_bonus)),
 		"upgrade_player_size_bonus": int(round(upgrade_player_size_bonus * 100.0)),
 		"mass_resonance_stacks": mass_resonance_stacks,
+		"light_frame_stacks": light_frame_stacks,
+		"light_resonance_stacks": light_resonance_stacks,
 		"slow_resonance_stacks": slow_resonance_stacks,
+		"haste_resonance_stacks": haste_resonance_stacks,
+		"rapid_resonance_stacks": rapid_resonance_stacks,
+		"blood_pact_stacks": blood_pact_stacks,
 		"still_focus_stacks": still_focus_stacks,
+		"motion_focus_stacks": motion_focus_stacks,
 		"chain_spark_stacks": chain_spark_stacks,
 		"orbit_blade_stacks": orbit_blade_stacks,
 		"overload_burst_stacks": overload_burst_stacks,

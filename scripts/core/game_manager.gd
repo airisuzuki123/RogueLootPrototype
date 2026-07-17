@@ -531,14 +531,44 @@ const UPGRADE_POOL := [
 		"description": "每层：玩家体积每 +10%，投射物伤害 +6%，无层数上限"
 	},
 	{
+		"id": "light_frame",
+		"title": "轻装骨架",
+		"description": "玩家体积 -8%（最低 -40%），移动速度 +18"
+	},
+	{
+		"id": "light_resonance",
+		"title": "轻盈共鸣",
+		"description": "每层：玩家体积每低于 100% 10%，投射物伤害 +3%、暴击率 +6%"
+	},
+	{
 		"id": "slow_resonance",
 		"title": "迟缓共鸣",
 		"description": "每层：当前移速每低于初始值 10%，投射物伤害 +8%，无层数上限"
 	},
 	{
+		"id": "haste_resonance",
+		"title": "疾行共鸣",
+		"description": "每层：当前移速每高于初始值 10%，投射物伤害 +4%、暴击率 +3%"
+	},
+	{
+		"id": "rapid_resonance",
+		"title": "速射共鸣",
+		"description": "每层：射击间隔每低于初始值 10%，连锁、回旋、追踪和过载伤害 +6%"
+	},
+	{
+		"id": "blood_pact",
+		"title": "血潮契约",
+		"description": "当前生命 -12（最低 1）；每层：生命每损失 10%，投射物伤害 +5%、暴击率 +4%"
+	},
+	{
 		"id": "still_focus",
 		"title": "静立聚焦",
 		"description": "静止每 0.7 秒暴击率 +8%，最多 12 层专注；技能可重复提高每层暴击"
+	},
+	{
+		"id": "motion_focus",
+		"title": "游走聚焦",
+		"description": "移动每 0.6 秒游走伤害 +3%、暴击率 +3%，最多 10 层游走；技能可重复提高每层收益"
 	},
 	{
 		"id": "piercing_rounds",
@@ -622,9 +652,10 @@ const UPGRADE_POOL := [
 	}
 ]
 
-const BUILD_ROUTE_ORDER := ["bulk", "pierce", "blast", "chain", "close"]
+const BUILD_ROUTE_ORDER := ["bulk", "agile", "pierce", "blast", "chain", "close"]
 const BUILD_ROUTE_LABELS := {
 	"bulk": "体积迟缓",
+	"agile": "轻装疾行",
 	"pierce": "穿透直伤",
 	"blast": "爆裂范围",
 	"chain": "连锁追踪",
@@ -635,6 +666,10 @@ const BUILD_ROUTE_DEFINITIONS := {
 		"upgrades": ["multishot", "mass_resonance", "slow_resonance", "still_focus", "heavy_shot", "blast_core"],
 		"shop_offers": ["shop_multishot_skill", "shop_mass_resonance_skill", "shop_slow_resonance_skill", "shop_still_focus_skill", "shop_heavy_skill", "shop_blast_skill"]
 	},
+	"agile": {
+		"upgrades": ["light_frame", "light_resonance", "haste_resonance", "motion_focus", "attack_speed", "orbit_blade"],
+		"shop_offers": ["shop_light_frame_skill", "shop_light_resonance_skill", "shop_haste_resonance_skill", "shop_motion_focus_skill", "shop_attack_speed_skill", "shop_orbit_skill"]
+	},
 	"pierce": {
 		"upgrades": ["piercing_rounds", "pierce_amp", "damage", "attack_speed", "multishot"],
 		"shop_offers": ["shop_pierce_skill", "shop_pierce_amp_skill", "shop_damage_skill", "shop_attack_speed_skill", "shop_multishot_skill"]
@@ -644,12 +679,12 @@ const BUILD_ROUTE_DEFINITIONS := {
 		"shop_offers": ["shop_blast_skill", "shop_shatter_blast_skill", "shop_overload_skill", "shop_heavy_skill", "shop_damage_skill"]
 	},
 	"chain": {
-		"upgrades": ["chain_spark", "homing_shards", "orbit_blade", "conduit_coil", "channel_beam", "attack_speed"],
-		"shop_offers": ["shop_chain_skill", "shop_homing_skill", "shop_orbit_skill", "shop_conduit_coil_skill", "shop_channel_beam_skill", "shop_attack_speed_skill"]
+		"upgrades": ["chain_spark", "homing_shards", "orbit_blade", "conduit_coil", "channel_beam", "attack_speed", "rapid_resonance"],
+		"shop_offers": ["shop_chain_skill", "shop_homing_skill", "shop_orbit_skill", "shop_conduit_coil_skill", "shop_channel_beam_skill", "shop_attack_speed_skill", "shop_rapid_resonance_skill"]
 	},
 	"close": {
-		"upgrades": ["close_slash", "pulse_field", "guard_blade", "graze_barrier", "clear_barrier", "move_speed"],
-		"shop_offers": ["shop_close_slash_skill", "shop_pulse_field_skill", "shop_guard_blade_skill"]
+		"upgrades": ["close_slash", "pulse_field", "guard_blade", "blood_pact", "graze_barrier", "clear_barrier", "move_speed"],
+		"shop_offers": ["shop_close_slash_skill", "shop_pulse_field_skill", "shop_guard_blade_skill", "shop_blood_pact_skill"]
 	}
 }
 
@@ -1698,6 +1733,24 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"reward_upgrade_title": "体积共鸣"
 		},
 		{
+			"id": "shop_light_frame_skill",
+			"title": "技能：轻装骨架",
+			"category": "基础技能",
+			"description": "玩家体积 -8%（最低 -40%），移动速度 +18",
+			"cost": 20 + completed_stage * 3,
+			"reward_upgrade_id": "light_frame",
+			"reward_upgrade_title": "轻装骨架"
+		},
+		{
+			"id": "shop_light_resonance_skill",
+			"title": "技能：轻盈共鸣",
+			"category": "基础技能",
+			"description": "每层：玩家体积每低于 100% 10%，投射物伤害 +3%、暴击率 +6%",
+			"cost": 22 + completed_stage * 3,
+			"reward_upgrade_id": "light_resonance",
+			"reward_upgrade_title": "轻盈共鸣"
+		},
+		{
 			"id": "shop_slow_resonance_skill",
 			"title": "技能：迟缓共鸣",
 			"category": "基础技能",
@@ -1707,6 +1760,33 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"reward_upgrade_title": "迟缓共鸣"
 		},
 		{
+			"id": "shop_haste_resonance_skill",
+			"title": "技能：疾行共鸣",
+			"category": "基础技能",
+			"description": "每层：当前移速每高于初始值 10%，投射物伤害 +4%、暴击率 +3%",
+			"cost": 22 + completed_stage * 3,
+			"reward_upgrade_id": "haste_resonance",
+			"reward_upgrade_title": "疾行共鸣"
+		},
+		{
+			"id": "shop_rapid_resonance_skill",
+			"title": "技能：速射共鸣",
+			"category": "基础技能",
+			"description": "每层：射击间隔每低于初始值 10%，连锁、回旋、追踪和过载伤害 +6%",
+			"cost": 22 + completed_stage * 3,
+			"reward_upgrade_id": "rapid_resonance",
+			"reward_upgrade_title": "速射共鸣"
+		},
+		{
+			"id": "shop_blood_pact_skill",
+			"title": "技能：血潮契约",
+			"category": "基础技能",
+			"description": "当前生命 -12（最低 1）；每层：生命每损失 10%，投射物伤害 +5%、暴击率 +4%",
+			"cost": 18 + completed_stage * 3,
+			"reward_upgrade_id": "blood_pact",
+			"reward_upgrade_title": "血潮契约"
+		},
+		{
 			"id": "shop_still_focus_skill",
 			"title": "技能：静立聚焦",
 			"category": "基础技能",
@@ -1714,6 +1794,15 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 			"cost": 20 + completed_stage * 3,
 			"reward_upgrade_id": "still_focus",
 			"reward_upgrade_title": "静立聚焦"
+		},
+		{
+			"id": "shop_motion_focus_skill",
+			"title": "技能：游走聚焦",
+			"category": "基础技能",
+			"description": "移动每 0.6 秒游走伤害 +3%、暴击率 +3%，最多 10 层游走；技能可重复提高每层收益",
+			"cost": 20 + completed_stage * 3,
+			"reward_upgrade_id": "motion_focus",
+			"reward_upgrade_title": "游走聚焦"
 		},
 		{
 			"id": "shop_pierce_skill",
@@ -2009,10 +2098,11 @@ func _get_active_build_route_scores() -> Dictionary:
 		route_scores[route_id] = 0
 	var route_signature_upgrades := {
 		"bulk": ["multishot", "mass_resonance", "slow_resonance", "still_focus", "heavy_shot", "blast_core"],
+		"agile": ["light_frame", "light_resonance", "haste_resonance", "motion_focus"],
 		"pierce": ["piercing_rounds", "pierce_amp"],
 		"blast": ["blast_core", "shatter_blast", "overload_burst", "heavy_shot"],
-		"chain": ["chain_spark", "homing_shards", "orbit_blade", "conduit_coil", "channel_beam"],
-		"close": ["close_slash", "pulse_field", "guard_blade"]
+		"chain": ["chain_spark", "homing_shards", "orbit_blade", "conduit_coil", "channel_beam", "rapid_resonance"],
+		"close": ["close_slash", "pulse_field", "guard_blade", "blood_pact"]
 	}
 	for route_id in BUILD_ROUTE_ORDER:
 		var score := 0
@@ -2030,6 +2120,10 @@ func _get_active_build_route_scores() -> Dictionary:
 			route_scores["bulk"] = int(route_scores.get("bulk", 0)) + 1
 		"focused":
 			route_scores["pierce"] = int(route_scores.get("pierce", 0)) + 1
+	if int(player_build_summary.get("move_speed", 0)) > 300:
+		route_scores["agile"] = int(route_scores.get("agile", 0)) + 1
+	if int(player_build_summary.get("player_size_bonus", 0)) < 0:
+		route_scores["agile"] = int(route_scores.get("agile", 0)) + 1
 	return route_scores
 
 func _get_primary_build_route() -> String:
@@ -2130,10 +2224,22 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 			return "本层投射物 +1，玩家体积 +20%（最高 +240%），当前移速 -18%（最低 80）；获得后分裂层数 %d" % next_stack
 		"mass_resonance":
 			return "每层：玩家体积每 +10%，投射物伤害 +6%，无层数上限；获得后体积共鸣层数 %d" % next_stack
+		"light_frame":
+			return "本层玩家体积 -8%（最低 -40%），移动速度 +18；获得后轻装层数 %d" % next_stack
+		"light_resonance":
+			return "每层：玩家体积每低于 100% 10%，投射物伤害 +3%、暴击率 +6%；获得后轻盈共鸣层数 %d" % next_stack
 		"slow_resonance":
 			return "每层：当前移速每低于初始值 10%，投射物伤害 +8%，无层数上限；获得后迟缓共鸣层数 %d" % next_stack
+		"haste_resonance":
+			return "每层：当前移速每高于初始值 10%，投射物伤害 +4%、暴击率 +3%；获得后疾行共鸣层数 %d" % next_stack
+		"rapid_resonance":
+			return "每层：射击间隔每低于初始值 10%，连锁、回旋、追踪和过载伤害 +6%；获得后速射共鸣层数 %d" % next_stack
+		"blood_pact":
+			return "本层当前生命 -12（最低 1）；每层：生命每损失 10%，投射物伤害 +5%、暴击率 +4%；获得后血潮层数 %d" % next_stack
 		"still_focus":
 			return "静止每 0.7 秒暴击率 +8%，最多 12 层专注；获得后静立技能层数 %d" % next_stack
+		"motion_focus":
+			return "移动每 0.6 秒游走伤害 +3%、暴击率 +3%，最多 10 层游走；获得后游走技能层数 %d" % next_stack
 		"piercing_rounds":
 			return "本层穿透 +1，投射物伤害 -1（最低 1）；获得后穿透层数 %d" % next_stack
 		"blast_core":

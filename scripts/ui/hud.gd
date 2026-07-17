@@ -461,14 +461,17 @@ func _on_build_summary_changed(summary: Dictionary) -> void:
 	var player_size_bonus := int(summary.get("player_size_bonus", 0))
 	var flow_damage_bonus := int(summary.get("flow_damage_bonus_percent", 0))
 	var stationary_critical_bonus := int(summary.get("stationary_critical_bonus", 0))
+	var player_size_text := "玩家体积 +%d%%" % player_size_bonus
+	if player_size_bonus < 0:
+		player_size_text = "玩家体积 %d%%" % player_size_bonus
 	var lines: Array[String] = []
-	lines.append("构筑：伤害 %d | 联动伤害 +%d%% | 弹体 %d | 穿透 %d | 爆裂 %d | 玩家体积 +%d%%" % [
+	lines.append("构筑：伤害 %d | 联动伤害 +%d%% | 弹体 %d | 穿透 %d | 爆裂 %d | %s" % [
 		int(summary.get("damage", 0)),
 		flow_damage_bonus,
 		int(summary.get("projectiles", 0)),
 		int(summary.get("pierce", 0)),
 		int(summary.get("explosion_radius", 0)),
-		player_size_bonus
+		player_size_text
 	])
 	lines.append("攻速 %.1f/秒 | 暴击 %d%% | 静立 +%d%% | 移速 %d" % [
 		attacks_per_second,
@@ -1199,10 +1202,25 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 	var pierce_bonus := int(summary.get("upgrade_pierce_bonus", 0))
 	var explosion_bonus := int(summary.get("upgrade_explosion_radius_bonus", 0))
 	var mass_stacks := int(summary.get("mass_resonance_stacks", 0))
+	var light_frame_stacks := int(summary.get("light_frame_stacks", 0))
+	var light_stacks := int(summary.get("light_resonance_stacks", 0))
 	var slow_stacks := int(summary.get("slow_resonance_stacks", 0))
+	var haste_stacks := int(summary.get("haste_resonance_stacks", 0))
+	var rapid_stacks := int(summary.get("rapid_resonance_stacks", 0))
+	var blood_stacks := int(summary.get("blood_pact_stacks", 0))
 	var mass_damage_bonus := int(summary.get("mass_damage_bonus_percent", 0))
+	var light_damage_bonus := int(summary.get("light_damage_bonus_percent", 0))
+	var light_critical_bonus := int(summary.get("light_critical_bonus", 0))
 	var slow_damage_bonus := int(summary.get("slow_damage_bonus_percent", 0))
+	var haste_damage_bonus := int(summary.get("haste_damage_bonus_percent", 0))
+	var haste_critical_bonus := int(summary.get("haste_critical_bonus", 0))
+	var rapid_damage_bonus := int(summary.get("rapid_skill_damage_bonus_percent", 0))
+	var blood_damage_bonus := int(summary.get("blood_damage_bonus_percent", 0))
+	var blood_critical_bonus := int(summary.get("blood_critical_bonus", 0))
 	var still_stacks := int(summary.get("still_focus_stacks", 0))
+	var motion_stacks := int(summary.get("motion_focus_stacks", 0))
+	var movement_damage_bonus := int(summary.get("movement_damage_bonus_percent", 0))
+	var movement_critical_bonus := int(summary.get("movement_critical_bonus", 0))
 	var chain_stacks := int(summary.get("chain_spark_stacks", 0))
 	var orbit_stacks := int(summary.get("orbit_blade_stacks", 0))
 	var overload_stacks := int(summary.get("overload_burst_stacks", 0))
@@ -1227,10 +1245,22 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 		parts.append("爆裂 +%d" % explosion_bonus)
 	if mass_stacks > 0:
 		parts.append("体积共鸣 x%d/+%d%%" % [mass_stacks, mass_damage_bonus])
+	if light_frame_stacks > 0:
+		parts.append("轻装 x%d" % light_frame_stacks)
+	if light_stacks > 0:
+		parts.append("轻盈 x%d/+%d%%/%d%%暴" % [light_stacks, light_damage_bonus, light_critical_bonus])
 	if slow_stacks > 0:
 		parts.append("迟缓共鸣 x%d/+%d%%" % [slow_stacks, slow_damage_bonus])
+	if haste_stacks > 0:
+		parts.append("疾行 x%d/+%d%%/%d%%暴" % [haste_stacks, haste_damage_bonus, haste_critical_bonus])
+	if rapid_stacks > 0:
+		parts.append("速射 x%d/+%d%%" % [rapid_stacks, rapid_damage_bonus])
+	if blood_stacks > 0:
+		parts.append("血潮 x%d/+%d%%/%d%%暴" % [blood_stacks, blood_damage_bonus, blood_critical_bonus])
 	if still_stacks > 0:
 		parts.append("静立 x%d" % still_stacks)
+	if motion_stacks > 0:
+		parts.append("游走 x%d/+%d%%/%d%%暴" % [motion_stacks, movement_damage_bonus, movement_critical_bonus])
 	if int(upgrade_stacks.get("graze_barrier", 0)) > 0:
 		parts.append("折光 x%d" % int(upgrade_stacks.get("graze_barrier", 0)))
 	if int(upgrade_stacks.get("clear_barrier", 0)) > 0:

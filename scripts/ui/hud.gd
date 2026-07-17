@@ -1205,6 +1205,7 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 	var parts: Array[String] = []
 	var upgrade_stacks: Dictionary = summary.get("upgrade_stacks", {})
 	var damage_bonus := int(summary.get("upgrade_damage_bonus", 0))
+	var damage_percent_bonus := int(summary.get("upgrade_projectile_damage_percent_bonus", 0))
 	var attack_speed_stacks := int(summary.get("upgrade_attack_speed_stacks", 0))
 	var projectile_bonus := int(summary.get("upgrade_projectile_count_bonus", 0))
 	var pierce_bonus := int(summary.get("upgrade_pierce_bonus", 0))
@@ -1243,6 +1244,10 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 	var guard_stacks := int(summary.get("guard_blade_stacks", 0))
 	if damage_bonus > 0:
 		parts.append("强击 +%d" % damage_bonus)
+	if damage_percent_bonus > 0:
+		parts.append("伤害 +%d%%" % damage_percent_bonus)
+	elif damage_percent_bonus < 0:
+		parts.append("伤害 %d%%" % damage_percent_bonus)
 	if attack_speed_stacks > 0:
 		parts.append("急速 x%d" % attack_speed_stacks)
 	if projectile_bonus > 0:

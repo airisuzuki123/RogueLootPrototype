@@ -328,19 +328,19 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			chain_spark_stacks += 1
 			result["skill_text"] = "连锁弹 %d 枚/次攻击，单枚伤害 %d%%，投射物伤害 -12%%" % [
 				chain_spark_stacks,
-				int(round((_skill_float("chain_spark", "base_damage_multiplier", 1.15) + float(maxi(0, chain_spark_stacks - 1)) * _skill_float("chain_spark", "damage_per_extra_stack", 0.20)) * 100.0))
+				int(round(_skill_float("chain_spark", "base_damage_multiplier", 1.15) * _stacked_percent_multiplier(_skill_float("chain_spark", "damage_per_extra_stack", 0.20), maxi(0, chain_spark_stacks - 1)) * 100.0))
 			]
 		"orbit_blade":
 			orbit_blade_stacks += 1
 			result["skill_text"] = "两侧回旋弹各 %d 枚/次攻击，单枚伤害 %d%%" % [
 				orbit_blade_stacks,
-				int(round((_skill_float("orbit_blade", "base_damage_multiplier", 1.05) + float(maxi(0, orbit_blade_stacks - 1)) * _skill_float("orbit_blade", "damage_per_extra_stack", 0.18)) * 100.0))
+				int(round(_skill_float("orbit_blade", "base_damage_multiplier", 1.05) * _stacked_percent_multiplier(_skill_float("orbit_blade", "damage_per_extra_stack", 0.18), maxi(0, orbit_blade_stacks - 1)) * 100.0))
 			]
 		"overload_burst":
 			overload_burst_stacks += 1
 			result["skill_text"] = "每 4 次攻击释放 %d 枚爆裂弹，单枚伤害 %d%%" % [
 				_skill_int("overload_burst", "base_projectiles", 6) + overload_burst_stacks * _skill_int("overload_burst", "projectiles_per_stack", 2),
-				int(round((_skill_float("overload_burst", "base_damage_multiplier", 2.50) + float(overload_burst_stacks - 1) * _skill_float("overload_burst", "damage_per_extra_stack", 0.25)) * 100.0))
+				int(round(_skill_float("overload_burst", "base_damage_multiplier", 2.50) * _stacked_percent_multiplier(_skill_float("overload_burst", "damage_per_extra_stack", 0.25), maxi(0, overload_burst_stacks - 1)) * 100.0))
 			]
 		"homing_shards":
 			homing_shard_stacks += 1
@@ -351,7 +351,7 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 				homing_slow_percent = int(round((homing_old_move_speed - move_speed) / homing_old_move_speed * 100.0))
 			result["skill_text"] = "追踪碎片 %d 枚/次攻击，单枚伤害 %d%%，追踪强度 %.2f，当前移速 -%d%%（最低 80）" % [
 				homing_shard_stacks,
-				int(round((_skill_float("homing_shards", "base_damage_multiplier", 1.15) + float(maxi(0, homing_shard_stacks - 1)) * _skill_float("homing_shards", "damage_per_extra_stack", 0.20)) * 100.0)),
+				int(round(_skill_float("homing_shards", "base_damage_multiplier", 1.15) * _stacked_percent_multiplier(_skill_float("homing_shards", "damage_per_extra_stack", 0.20), maxi(0, homing_shard_stacks - 1)) * 100.0)),
 				_skill_float("homing_shards", "base_tracking", 4.8) + float(homing_shard_stacks) * _skill_float("homing_shards", "tracking_per_stack", 0.85),
 				homing_slow_percent
 			]
@@ -384,7 +384,7 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			result["skill_text"] = "光束射程 %d，间隔 %.2f 秒，单跳伤害 %.1f%%，当前移速 -%d%%（最低 80）" % [
 				int(round(_skill_float("channel_beam", "base_range", 330.0) + float(channel_beam_stacks) * _skill_float("channel_beam", "range_per_stack", 28.0))),
 				_get_channel_beam_interval(),
-				(_skill_float("channel_beam", "base_damage_multiplier", 0.85) + float(channel_beam_stacks - 1) * _skill_float("channel_beam", "damage_per_extra_stack", 0.18)) * 100.0,
+				_skill_float("channel_beam", "base_damage_multiplier", 0.85) * _stacked_percent_multiplier(_skill_float("channel_beam", "damage_per_extra_stack", 0.18), maxi(0, channel_beam_stacks - 1)) * 100.0,
 				beam_slow_percent
 			]
 		"shatter_blast":
@@ -728,6 +728,9 @@ func _roll_projectile_damage() -> Dictionary:
 		"is_critical": is_critical
 	}
 
+func _get_final_projectile_damage() -> int:
+	return maxi(1, int(round(float(_get_base_projectile_damage()) * _get_flow_damage_multiplier())))
+
 func _get_total_explosion_radius() -> float:
 	return equipment_explosion_radius + affix_explosion_radius_bonus + upgrade_explosion_radius_bonus
 
@@ -1016,6 +1019,7 @@ func _fire_charged_volley() -> int:
 func _emit_build_summary() -> void:
 	GameManager.update_player_build_summary({
 		"damage": _get_base_projectile_damage(),
+		"final_projectile_damage": _get_final_projectile_damage(),
 		"projectiles": _get_total_projectile_count(),
 		"pierce": _get_total_pierce(),
 		"explosion_radius": int(round(_get_total_explosion_radius())),

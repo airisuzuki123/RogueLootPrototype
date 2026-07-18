@@ -469,13 +469,19 @@ func _on_build_summary_changed(summary: Dictionary) -> void:
 	var player_size_bonus := int(summary.get("player_size_bonus", 0))
 	var flow_damage_bonus := int(summary.get("flow_damage_bonus_percent", 0))
 	var stationary_critical_bonus := int(summary.get("stationary_critical_bonus", 0))
+	var base_damage := int(summary.get("damage", 0))
+	var final_damage := int(summary.get("final_projectile_damage", base_damage))
+	var flow_damage_text := "+%d%%" % flow_damage_bonus
+	if flow_damage_bonus < 0:
+		flow_damage_text = "%d%%" % flow_damage_bonus
 	var player_size_text := "玩家体积 +%d%%" % player_size_bonus
 	if player_size_bonus < 0:
 		player_size_text = "玩家体积 %d%%" % player_size_bonus
 	var lines: Array[String] = []
-	lines.append("构筑：伤害 %d | 联动伤害 +%d%% | 弹体 %d | 穿透 %d | 爆裂 %d | %s" % [
-		int(summary.get("damage", 0)),
-		flow_damage_bonus,
+	lines.append("构筑：单发 %d（基础 %d） | 乘区 %s | 弹体 %d | 穿透 %d | 爆裂 %d | %s" % [
+		final_damage,
+		base_damage,
+		flow_damage_text,
 		int(summary.get("projectiles", 0)),
 		int(summary.get("pierce", 0)),
 		int(summary.get("explosion_radius", 0)),

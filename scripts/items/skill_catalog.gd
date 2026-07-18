@@ -75,9 +75,9 @@ const UPGRADE_SYNERGY_SOURCES := {
 }
 
 const UPGRADE_TAGS := {
-	"damage": {"effect_tags": ["slow_attack"], "conflict_tags": ["fast_attack"]},
-	"attack_speed": {"effect_tags": ["fast_attack"], "conflict_tags": ["slow_attack"]},
-	"move_speed": {"effect_tags": ["fast_move", "large_body"], "conflict_tags": ["small_body"]},
+	"damage": {"effect_tags": ["slow_attack"], "conflict_tags": ["fast_attack"], "route_tags": ["projectile"]},
+	"attack_speed": {"effect_tags": ["fast_attack"], "conflict_tags": ["slow_attack"], "route_tags": ["utility"]},
+	"move_speed": {"effect_tags": ["fast_move", "large_body"], "conflict_tags": ["small_body"], "route_tags": ["mobility"]},
 	"max_health": {"effect_tags": ["slow_move", "high_health"], "conflict_tags": ["fast_move"]},
 	"recovery_training": {"effect_tags": ["slow_move", "high_health"], "conflict_tags": ["fast_move"]},
 	"multishot": {"effect_tags": ["large_body", "slow_move", "multi_projectile"], "conflict_tags": ["small_body", "fast_move"]},
@@ -87,11 +87,13 @@ const UPGRADE_TAGS := {
 	"slow_resonance": {"source_tags": ["slow_move"], "conflict_tags": ["fast_move"]},
 	"haste_resonance": {"source_tags": ["fast_move"], "conflict_tags": ["slow_move"]},
 	"rapid_resonance": {"source_tags": ["fast_attack"], "conflict_tags": ["slow_attack"]},
-	"blood_pact": {"effect_tags": ["low_life"], "source_tags": ["high_health"], "conflict_tags": ["shielded"]},
+	"blood_pact": {"effect_tags": ["low_life"], "source_tags": ["low_life", "high_health", "blood_risk"], "conflict_tags": ["shielded"]},
 	"still_focus": {"effect_tags": ["stationary"], "source_tags": ["slow_attack"], "conflict_tags": ["moving"]},
 	"motion_focus": {"effect_tags": ["moving"], "source_tags": ["fast_move"], "conflict_tags": ["stationary"]},
 	"piercing_rounds": {"effect_tags": ["pierce"], "conflict_tags": ["heavy_hit"]},
 	"blast_core": {"effect_tags": ["blast", "large_body", "slow_attack"], "conflict_tags": ["fast_attack", "small_body"]},
+	"graze_barrier": {"effect_tags": ["shielded"], "route_tags": ["survival"]},
+	"clear_barrier": {"effect_tags": ["shielded"], "route_tags": ["survival"]},
 	"chain_spark": {"effect_tags": ["chain_skill"], "source_tags": ["fast_attack"], "conflict_tags": ["slow_attack"]},
 	"orbit_blade": {"effect_tags": ["chain_skill"], "source_tags": ["fast_move", "fast_attack"]},
 	"overload_burst": {"effect_tags": ["blast", "heavy_hit"], "source_tags": ["slow_attack", "blast"], "conflict_tags": ["fast_attack"]},
@@ -104,11 +106,11 @@ const UPGRADE_TAGS := {
 	"pierce_amp": {"source_tags": ["pierce"]},
 	"conduit_coil": {"source_tags": ["chain_skill", "stationary"]},
 	"guard_blade": {"effect_tags": ["shielded"], "source_tags": ["close_skill", "large_body"]},
-	"giant_echo": {"effect_tags": ["shielded"], "source_tags": ["large_body", "close_skill"], "conflict_tags": ["small_body"], "engine_tags": ["bulk_close"]},
+	"giant_echo": {"effect_tags": ["shielded"], "source_tags": ["shielded", "close_skill"], "conflict_tags": ["small_body"], "engine_tags": ["bulk_close"]},
 	"light_edge": {"source_tags": ["small_body", "fast_move"], "conflict_tags": ["large_body", "slow_move"], "engine_tags": ["agile_crit"]},
 	"compressed_core": {"effect_tags": ["heavy_hit", "slow_attack"], "source_tags": ["slow_attack", "blast"], "conflict_tags": ["fast_attack", "multi_projectile"], "engine_tags": ["heavy_blast"]},
 	"reflow_shards": {"effect_tags": ["fast_attack"], "source_tags": ["moving", "chain_skill", "fast_attack"], "conflict_tags": ["stationary", "slow_attack"], "engine_tags": ["agile_chain"]},
-	"crimson_leech": {"effect_tags": ["low_life"], "source_tags": ["low_life", "high_health"], "conflict_tags": ["shielded"], "engine_tags": ["blood_risk"]}
+	"crimson_leech": {"effect_tags": ["low_life"], "source_tags": ["low_life", "high_health", "blood_risk"], "conflict_tags": ["shielded"], "engine_tags": ["blood_risk"]}
 }
 
 const UPGRADE_DEFINITIONS := {

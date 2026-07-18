@@ -12,6 +12,7 @@ const SKILL_TAG_ROUTE_WEIGHT_PER_STACK: float = 0.10
 const SKILL_TAG_ROUTE_WEIGHT_CAP: float = 1.70
 const SKILL_TAG_CONFLICT_WEIGHT: float = 0.48
 const SKILL_ENGINE_FIRST_PICK_WEIGHT: float = 1.35
+const SKILL_ENGINE_REPEAT_BASE_WEIGHT: int = 10
 
 const REPORT_PATH := "res://docs/skill-offer-audit.md"
 const TOP_COUNT := 10
@@ -44,6 +45,7 @@ func _build_report() -> String:
 	lines.append("- 标签读取命中：每个命中标签 x%.2f，上限 x%.2f。" % [1.0 + SKILL_TAG_SOURCE_WEIGHT_PER_MATCH, SKILL_TAG_SOURCE_WEIGHT_CAP])
 	lines.append("- 已成型路线：每路线层 x%.2f，上限 x%.2f。" % [1.0 + SKILL_TAG_ROUTE_WEIGHT_PER_STACK, SKILL_TAG_ROUTE_WEIGHT_CAP])
 	lines.append("- 首次核心引擎且命中读取条件：x%.2f。" % SKILL_ENGINE_FIRST_PICK_WEIGHT)
+	lines.append("- 已拥有核心引擎：基础权重至少按 %d 计算，再进入重复和协同权重。" % SKILL_ENGINE_REPEAT_BASE_WEIGHT)
 	lines.append("- 冲突标签命中：每个冲突标签 x%.2f。" % SKILL_TAG_CONFLICT_WEIGHT)
 	lines.append("")
 	lines.append("## 结论摘要")
@@ -170,7 +172,10 @@ func _build_upgrade_weights(use_shop_weight: bool) -> Array[Dictionary]:
 	return rows
 
 func _apply_skill_momentum_weight(base_weight: int, upgrade_id: String) -> int:
-	var weighted := _apply_repeat_skill_weight(base_weight, upgrade_id)
+	var weighted_base := base_weight
+	if _get_upgrade_stack_count(upgrade_id) > 0 and not SkillCatalog.get_upgrade_tag_list(upgrade_id, "engine_tags").is_empty():
+		weighted_base = maxi(weighted_base, SKILL_ENGINE_REPEAT_BASE_WEIGHT)
+	var weighted := _apply_repeat_skill_weight(weighted_base, upgrade_id)
 	weighted = _apply_synergy_skill_weight(weighted, upgrade_id)
 	weighted = _apply_tag_skill_weight(weighted, upgrade_id)
 	return weighted

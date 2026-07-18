@@ -23,6 +23,7 @@ const SKILL_TAG_ROUTE_WEIGHT_PER_STACK: float = 0.10
 const SKILL_TAG_ROUTE_WEIGHT_CAP: float = 1.70
 const SKILL_TAG_CONFLICT_WEIGHT: float = 0.48
 const SKILL_ENGINE_FIRST_PICK_WEIGHT: float = 1.35
+const SKILL_ENGINE_REPEAT_BASE_WEIGHT: int = 10
 
 signal gold_changed(total: int)
 signal enemy_killed(total: int)
@@ -1731,7 +1732,10 @@ func _get_upgrade_choice_weight(upgrade: Dictionary) -> int:
 	return _apply_skill_momentum_weight(base_weight, upgrade_id)
 
 func _apply_skill_momentum_weight(base_weight: int, upgrade_id: String) -> int:
-	var weighted := _apply_repeat_skill_weight(base_weight, upgrade_id)
+	var weighted_base := base_weight
+	if _get_upgrade_stack_count(upgrade_id) > 0 and not SkillCatalog.get_upgrade_tag_list(upgrade_id, "engine_tags").is_empty():
+		weighted_base = maxi(weighted_base, SKILL_ENGINE_REPEAT_BASE_WEIGHT)
+	var weighted := _apply_repeat_skill_weight(weighted_base, upgrade_id)
 	weighted = _apply_synergy_skill_weight(weighted, upgrade_id)
 	weighted = _apply_tag_skill_weight(weighted, upgrade_id)
 	return weighted

@@ -12,27 +12,27 @@ const BUILD_ROUTE_ORDER := ["bulk", "agile", "pierce", "blast", "chain", "close"
 const BUILD_ROUTE_DEFINITIONS := {
 	"bulk": {
 		"upgrades": ["multishot", "mass_resonance", "slow_resonance", "giant_echo", "still_focus", "heavy_shot", "compressed_core", "blast_core"],
-		"shop_offers": ["shop_multishot_skill", "shop_mass_resonance_skill", "shop_slow_resonance_skill", "shop_giant_echo_skill", "shop_still_focus_skill", "shop_heavy_skill", "shop_compressed_core_skill", "shop_blast_skill"]
+		"shop_offers": ["shop_multishot_skill", "shop_mass_resonance_skill", "shop_slow_resonance_skill", "shop_giant_echo_skill", "shop_still_focus_skill", "shop_heavy_skill", "shop_compressed_core_skill", "shop_blast_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
 	},
 	"agile": {
 		"upgrades": ["light_frame", "light_resonance", "haste_resonance", "motion_focus", "light_edge", "reflow_shards", "attack_speed", "orbit_blade"],
-		"shop_offers": ["shop_light_frame_skill", "shop_light_resonance_skill", "shop_haste_resonance_skill", "shop_motion_focus_skill", "shop_light_edge_skill", "shop_reflow_shards_skill", "shop_attack_speed_skill", "shop_orbit_skill"]
+		"shop_offers": ["shop_light_frame_skill", "shop_light_resonance_skill", "shop_haste_resonance_skill", "shop_motion_focus_skill", "shop_light_edge_skill", "shop_reflow_shards_skill", "shop_attack_speed_skill", "shop_orbit_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
 	},
 	"pierce": {
 		"upgrades": ["piercing_rounds", "pierce_amp", "light_edge", "damage", "attack_speed", "multishot"],
-		"shop_offers": ["shop_pierce_skill", "shop_pierce_amp_skill", "shop_light_edge_skill", "shop_damage_skill", "shop_attack_speed_skill", "shop_multishot_skill"]
+		"shop_offers": ["shop_pierce_skill", "shop_pierce_amp_skill", "shop_light_edge_skill", "shop_damage_skill", "shop_attack_speed_skill", "shop_multishot_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
 	},
 	"blast": {
 		"upgrades": ["blast_core", "shatter_blast", "overload_burst", "heavy_shot", "compressed_core", "damage"],
-		"shop_offers": ["shop_blast_skill", "shop_shatter_blast_skill", "shop_overload_skill", "shop_heavy_skill", "shop_compressed_core_skill", "shop_damage_skill"]
+		"shop_offers": ["shop_blast_skill", "shop_shatter_blast_skill", "shop_overload_skill", "shop_heavy_skill", "shop_compressed_core_skill", "shop_damage_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
 	},
 	"chain": {
 		"upgrades": ["chain_spark", "homing_shards", "orbit_blade", "conduit_coil", "channel_beam", "reflow_shards", "attack_speed", "rapid_resonance"],
-		"shop_offers": ["shop_chain_skill", "shop_homing_skill", "shop_orbit_skill", "shop_conduit_coil_skill", "shop_channel_beam_skill", "shop_reflow_shards_skill", "shop_attack_speed_skill", "shop_rapid_resonance_skill"]
+		"shop_offers": ["shop_chain_skill", "shop_homing_skill", "shop_orbit_skill", "shop_conduit_coil_skill", "shop_channel_beam_skill", "shop_reflow_shards_skill", "shop_attack_speed_skill", "shop_rapid_resonance_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
 	},
 	"close": {
 		"upgrades": ["close_slash", "pulse_field", "guard_blade", "giant_echo", "blood_pact", "crimson_leech", "graze_barrier", "clear_barrier", "move_speed"],
-		"shop_offers": ["shop_close_slash_skill", "shop_pulse_field_skill", "shop_guard_blade_skill", "shop_giant_echo_skill", "shop_blood_pact_skill", "shop_crimson_leech_skill"]
+		"shop_offers": ["shop_close_slash_skill", "shop_pulse_field_skill", "shop_guard_blade_skill", "shop_giant_echo_skill", "shop_blood_pact_skill", "shop_crimson_leech_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
 	}
 }
 
@@ -110,7 +110,10 @@ const UPGRADE_TAGS := {
 	"light_edge": {"source_tags": ["small_body", "fast_move"], "conflict_tags": ["large_body", "slow_move"], "engine_tags": ["agile_crit"]},
 	"compressed_core": {"effect_tags": ["heavy_hit", "slow_attack"], "source_tags": ["slow_attack", "blast"], "conflict_tags": ["fast_attack", "multi_projectile"], "engine_tags": ["heavy_blast"]},
 	"reflow_shards": {"effect_tags": ["fast_attack"], "source_tags": ["moving", "chain_skill", "fast_attack"], "conflict_tags": ["stationary", "slow_attack"], "engine_tags": ["agile_chain"]},
-	"crimson_leech": {"effect_tags": ["low_life"], "source_tags": ["low_life", "high_health", "blood_risk"], "conflict_tags": ["shielded"], "engine_tags": ["blood_risk"]}
+	"crimson_leech": {"effect_tags": ["low_life"], "source_tags": ["low_life", "high_health", "blood_risk"], "conflict_tags": ["shielded"], "engine_tags": ["blood_risk"]},
+	"recycle_protocol": {"effect_tags": ["shop_discount"], "route_tags": ["economy"]},
+	"filter_core": {"effect_tags": ["shop_filter"], "route_tags": ["economy"]},
+	"rare_magnet": {"effect_tags": ["shop_rare"], "route_tags": ["economy"]}
 }
 
 const UPGRADE_DEFINITIONS := {
@@ -342,6 +345,24 @@ const UPGRADE_DEFINITIONS := {
 		"preview": "本层：当前生命 -15（最低 1）；生命低于 35% 时投射物伤害独立 x1.60、吸血 +8%",
 		"rarity": "purple"
 	},
+	"recycle_protocol": {
+		"title": "回收协议",
+		"description": "每层：刷新商店后，刷出的技能商品价格 -4 金币；最多 -12 金币",
+		"preview": "每层：刷新后技能商品价格 -4 金币；最多 -12 金币",
+		"rarity": "blue"
+	},
+	"filter_core": {
+		"title": "筛选核心",
+		"description": "每层：刷新商店时，当前主路线技能出货权重 +25%；第 2 个技能位也优先当前主路线",
+		"preview": "每层：刷新时当前主路线技能权重 +25%；第 2 个技能位优先当前主路线",
+		"rarity": "blue"
+	},
+	"rare_magnet": {
+		"title": "稀有牵引",
+		"description": "每层：刷新商店后，紫色和金色技能出货权重 +75%；刷新后的技能商品价格 +15%",
+		"preview": "每层：刷新后紫色/金色技能权重 +75%；技能商品价格 +15%",
+		"rarity": "purple"
+	},
 	"form_focused": {
 		"title": "聚能强化",
 		"description": "当前武器为聚能法杖：投射物伤害 +8",
@@ -375,7 +396,7 @@ const UPGRADE_ORDER := [
 	"graze_barrier", "clear_barrier", "chain_spark", "orbit_blade", "overload_burst", "homing_shards",
 	"heavy_shot", "close_slash", "pulse_field", "channel_beam", "shatter_blast", "pierce_amp",
 	"conduit_coil", "guard_blade", "giant_echo", "light_edge", "compressed_core", "reflow_shards",
-	"crimson_leech"
+	"crimson_leech", "recycle_protocol", "filter_core", "rare_magnet"
 ]
 
 const SHOP_SKILL_OFFERS := {
@@ -409,7 +430,10 @@ const SHOP_SKILL_OFFERS := {
 	"shop_light_edge_skill": {"title": "轻锋协议", "reward_upgrade_id": "light_edge", "base_cost": 24, "stage_cost": 3},
 	"shop_compressed_core_skill": {"title": "压缩弹芯", "reward_upgrade_id": "compressed_core", "base_cost": 30, "stage_cost": 4},
 	"shop_reflow_shards_skill": {"title": "碎片回流", "reward_upgrade_id": "reflow_shards", "base_cost": 25, "stage_cost": 3},
-	"shop_crimson_leech_skill": {"title": "血怒汲取", "reward_upgrade_id": "crimson_leech", "base_cost": 24, "stage_cost": 3}
+	"shop_crimson_leech_skill": {"title": "血怒汲取", "reward_upgrade_id": "crimson_leech", "base_cost": 24, "stage_cost": 3},
+	"shop_recycle_protocol_skill": {"title": "回收协议", "reward_upgrade_id": "recycle_protocol", "base_cost": 18, "stage_cost": 2},
+	"shop_filter_core_skill": {"title": "筛选核心", "reward_upgrade_id": "filter_core", "base_cost": 20, "stage_cost": 2},
+	"shop_rare_magnet_skill": {"title": "稀有牵引", "reward_upgrade_id": "rare_magnet", "base_cost": 22, "stage_cost": 3}
 }
 
 const UPGRADE_VALUES := {

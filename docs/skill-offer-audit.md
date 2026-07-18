@@ -43,7 +43,7 @@
 | 迅捷步伐 | 58 | green | mobility |  |  |
 | 穿透弹芯 | 58 | green | pierce |  |  |
 | 复苏训练 | 58 | green |  |  |  |
-| 巨体回响 | 30 | blue | bulk, close |  |  |
+| 筛选核心 | 30 | blue | economy |  |  |
 
 商店权重前 10：
 
@@ -58,7 +58,7 @@
 | 迅捷步伐 | 52 | green | mobility |  |  |
 | 穿透弹芯 | 52 | green | pierce |  |  |
 | 复苏训练 | 52 | green |  |  |  |
-| 巨体回响 | 32 | blue | bulk, close |  |  |
+| 筛选核心 | 32 | blue | economy |  |  |
 
 ### 体积迟缓
 

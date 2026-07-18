@@ -24,6 +24,13 @@ const SKILL_TAG_ROUTE_WEIGHT_CAP: float = 1.70
 const SKILL_TAG_CONFLICT_WEIGHT: float = 0.48
 const SKILL_ENGINE_FIRST_PICK_WEIGHT: float = 1.35
 const SKILL_ENGINE_REPEAT_BASE_WEIGHT: int = 10
+const SHOP_RECYCLE_DISCOUNT_PER_STACK: int = 4
+const SHOP_RECYCLE_DISCOUNT_CAP: int = 12
+const SHOP_FILTER_ROUTE_WEIGHT_PER_STACK: float = 0.25
+const SHOP_FILTER_ROUTE_WEIGHT_CAP: float = 2.00
+const SHOP_RARE_MAGNET_WEIGHT_PER_STACK: float = 0.75
+const SHOP_RARE_MAGNET_WEIGHT_CAP: float = 3.25
+const SHOP_RARE_MAGNET_PRICE_PER_STACK: float = 0.15
 
 signal gold_changed(total: int)
 signal enemy_killed(total: int)
@@ -1597,6 +1604,8 @@ func _roll_between_stage_shop_offers(completed_stage: int) -> Array[Dictionary]:
 	var starter_route := _get_random_build_route("")
 	var first_skill_route := primary_route if not primary_route.is_empty() else starter_route
 	var second_skill_route := _get_branch_build_route(first_skill_route)
+	if _is_refreshed_shop_roll() and _get_upgrade_stack_count("filter_core") > 0 and not primary_route.is_empty():
+		second_skill_route = primary_route
 	offers.append(_roll_stage_shop_offer(survival_pool, survival_preferred_id, survival_preferred_chance))
 	offers.append(_roll_stage_shop_offer(gear_pool, "shop_boss_clear" if is_boss_prep or is_final_prep else ""))
 	var first_skill_offer := _roll_shop_offer_for_route(skill_pool, first_skill_route, used_offer_ids)
@@ -1683,7 +1692,10 @@ func _get_shop_offer_weight(offer: Dictionary) -> int:
 		return 100
 	var rarity := _get_upgrade_rarity(reward_upgrade_id)
 	var base_weight := SkillCatalog.get_shop_rarity_weight(rarity)
-	return _apply_skill_momentum_weight(base_weight, reward_upgrade_id)
+	var weighted := _apply_skill_momentum_weight(base_weight, reward_upgrade_id)
+	if _is_refreshed_shop_roll():
+		weighted = _apply_shop_refresh_economy_weight(weighted, reward_upgrade_id, rarity)
+	return weighted
 
 func _build_shop_offers(event: Dictionary) -> Array[Dictionary]:
 	var offers: Array[Dictionary] = []
@@ -1704,6 +1716,46 @@ func _annotate_shop_offer_context(offer: Dictionary) -> Dictionary:
 	var purchase_preview := _get_upgrade_purchase_preview(reward_upgrade_id, current_stack)
 	if not purchase_preview.is_empty():
 		offer["purchase_preview"] = purchase_preview
+	offer = _apply_shop_refresh_economy_pricing(offer)
+	return offer
+
+func _is_refreshed_shop_roll() -> bool:
+	return is_shop_open and shop_refresh_count > 0
+
+func _apply_shop_refresh_economy_weight(base_weight: int, upgrade_id: String, rarity: String) -> int:
+	var weighted := float(maxi(1, base_weight))
+	var filter_stacks := _get_upgrade_stack_count("filter_core")
+	var primary_route := _get_primary_build_route()
+	if filter_stacks > 0 and not primary_route.is_empty() and SkillCatalog.get_upgrade_route_tags(upgrade_id).has(primary_route):
+		weighted *= minf(SHOP_FILTER_ROUTE_WEIGHT_CAP, 1.0 + float(filter_stacks) * SHOP_FILTER_ROUTE_WEIGHT_PER_STACK)
+	var rare_stacks := _get_upgrade_stack_count("rare_magnet")
+	if rare_stacks > 0 and (rarity == "purple" or rarity == "gold"):
+		weighted *= minf(SHOP_RARE_MAGNET_WEIGHT_CAP, 1.0 + float(rare_stacks) * SHOP_RARE_MAGNET_WEIGHT_PER_STACK)
+	return maxi(1, int(round(weighted)))
+
+func _apply_shop_refresh_economy_pricing(offer: Dictionary) -> Dictionary:
+	var reward_upgrade_id := str(offer.get("reward_upgrade_id", ""))
+	if reward_upgrade_id.is_empty() or not _is_refreshed_shop_roll():
+		return offer
+	var cost := maxi(0, int(offer.get("cost", 0)))
+	var notes: Array[String] = []
+	var recycle_stacks := _get_upgrade_stack_count("recycle_protocol")
+	if recycle_stacks > 0:
+		var discount := mini(SHOP_RECYCLE_DISCOUNT_CAP, recycle_stacks * SHOP_RECYCLE_DISCOUNT_PER_STACK)
+		var discounted_cost := maxi(1, cost - discount)
+		var applied_discount := cost - discounted_cost
+		if applied_discount > 0:
+			cost = discounted_cost
+			notes.append("回收协议：价格 -%d 金币" % applied_discount)
+	var rare_stacks := _get_upgrade_stack_count("rare_magnet")
+	if rare_stacks > 0:
+		var surcharge_percent := float(rare_stacks) * SHOP_RARE_MAGNET_PRICE_PER_STACK
+		var surcharge := maxi(1, int(ceil(float(cost) * surcharge_percent)))
+		cost += surcharge
+		notes.append("稀有牵引：价格 +%d 金币" % surcharge)
+	offer["cost"] = cost
+	if not notes.is_empty():
+		offer["shop_economy_note"] = "；".join(notes)
 	return offer
 
 func _get_upgrade_stack_count(upgrade_id: String) -> int:

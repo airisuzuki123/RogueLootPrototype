@@ -1301,6 +1301,9 @@ func _format_shop_offer_reward(offer: Dictionary) -> String:
 	var reward_parts := _build_reward_parts(offer)
 	if not reward_parts.is_empty() and purchase_preview.is_empty() and description.is_empty():
 		lines.append("奖励：" + "，".join(reward_parts))
+	var shop_economy_note := str(offer.get("shop_economy_note", ""))
+	if not shop_economy_note.is_empty():
+		lines.append(shop_economy_note)
 	if lines.is_empty():
 		return "无直接奖励"
 	return "\n".join(lines)

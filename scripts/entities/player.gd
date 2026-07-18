@@ -441,6 +441,16 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 				CombatFeedback.show_damage(get_tree().current_scene, global_position, crimson_cost, Color(1.0, 0.18, 0.30, 1.0))
 				CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1.0, 0.16, 0.34, 0.74), 1.05)
 			result["skill_text"] = "当前生命 -%d（最低 1）；生命低于 35%% 时，投射物伤害 +60%%、吸血 +8%%" % crimson_cost
+		"recycle_protocol":
+			var recycle_stack := int(upgrade_stacks.get("recycle_protocol", 0))
+			var recycle_discount := mini(12, recycle_stack * 4)
+			result["skill_text"] = "刷新后技能商品价格 -%d 金币（最多 -12）" % recycle_discount
+		"filter_core":
+			var filter_stack := int(upgrade_stacks.get("filter_core", 0))
+			result["skill_text"] = "刷新时当前主路线技能权重 +%d%%；第 2 个技能位优先当前主路线" % (filter_stack * 25)
+		"rare_magnet":
+			var rare_stack := int(upgrade_stacks.get("rare_magnet", 0))
+			result["skill_text"] = "刷新后紫色/金色技能权重 +%d%%；技能商品价格 +%d%%" % [rare_stack * 75, rare_stack * 15]
 		"form_focused":
 			upgrade_damage_bonus += 8
 			projectile_damage += 8

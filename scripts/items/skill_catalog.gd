@@ -11,38 +11,38 @@ const SKILL_RARITY_DEFINITIONS := {
 const BUILD_ROUTE_ORDER := ["bulk", "agile", "pierce", "blast", "chain", "close"]
 const BUILD_ROUTE_DEFINITIONS := {
 	"bulk": {
-		"upgrades": ["multishot", "mass_resonance", "slow_resonance", "still_focus", "heavy_shot", "blast_core"],
-		"shop_offers": ["shop_multishot_skill", "shop_mass_resonance_skill", "shop_slow_resonance_skill", "shop_still_focus_skill", "shop_heavy_skill", "shop_blast_skill"]
+		"upgrades": ["multishot", "mass_resonance", "slow_resonance", "giant_echo", "still_focus", "heavy_shot", "compressed_core", "blast_core"],
+		"shop_offers": ["shop_multishot_skill", "shop_mass_resonance_skill", "shop_slow_resonance_skill", "shop_giant_echo_skill", "shop_still_focus_skill", "shop_heavy_skill", "shop_compressed_core_skill", "shop_blast_skill"]
 	},
 	"agile": {
-		"upgrades": ["light_frame", "light_resonance", "haste_resonance", "motion_focus", "attack_speed", "orbit_blade"],
-		"shop_offers": ["shop_light_frame_skill", "shop_light_resonance_skill", "shop_haste_resonance_skill", "shop_motion_focus_skill", "shop_attack_speed_skill", "shop_orbit_skill"]
+		"upgrades": ["light_frame", "light_resonance", "haste_resonance", "motion_focus", "light_edge", "reflow_shards", "attack_speed", "orbit_blade"],
+		"shop_offers": ["shop_light_frame_skill", "shop_light_resonance_skill", "shop_haste_resonance_skill", "shop_motion_focus_skill", "shop_light_edge_skill", "shop_reflow_shards_skill", "shop_attack_speed_skill", "shop_orbit_skill"]
 	},
 	"pierce": {
-		"upgrades": ["piercing_rounds", "pierce_amp", "damage", "attack_speed", "multishot"],
-		"shop_offers": ["shop_pierce_skill", "shop_pierce_amp_skill", "shop_damage_skill", "shop_attack_speed_skill", "shop_multishot_skill"]
+		"upgrades": ["piercing_rounds", "pierce_amp", "light_edge", "damage", "attack_speed", "multishot"],
+		"shop_offers": ["shop_pierce_skill", "shop_pierce_amp_skill", "shop_light_edge_skill", "shop_damage_skill", "shop_attack_speed_skill", "shop_multishot_skill"]
 	},
 	"blast": {
-		"upgrades": ["blast_core", "shatter_blast", "overload_burst", "heavy_shot", "damage"],
-		"shop_offers": ["shop_blast_skill", "shop_shatter_blast_skill", "shop_overload_skill", "shop_heavy_skill", "shop_damage_skill"]
+		"upgrades": ["blast_core", "shatter_blast", "overload_burst", "heavy_shot", "compressed_core", "damage"],
+		"shop_offers": ["shop_blast_skill", "shop_shatter_blast_skill", "shop_overload_skill", "shop_heavy_skill", "shop_compressed_core_skill", "shop_damage_skill"]
 	},
 	"chain": {
-		"upgrades": ["chain_spark", "homing_shards", "orbit_blade", "conduit_coil", "channel_beam", "attack_speed", "rapid_resonance"],
-		"shop_offers": ["shop_chain_skill", "shop_homing_skill", "shop_orbit_skill", "shop_conduit_coil_skill", "shop_channel_beam_skill", "shop_attack_speed_skill", "shop_rapid_resonance_skill"]
+		"upgrades": ["chain_spark", "homing_shards", "orbit_blade", "conduit_coil", "channel_beam", "reflow_shards", "attack_speed", "rapid_resonance"],
+		"shop_offers": ["shop_chain_skill", "shop_homing_skill", "shop_orbit_skill", "shop_conduit_coil_skill", "shop_channel_beam_skill", "shop_reflow_shards_skill", "shop_attack_speed_skill", "shop_rapid_resonance_skill"]
 	},
 	"close": {
-		"upgrades": ["close_slash", "pulse_field", "guard_blade", "blood_pact", "graze_barrier", "clear_barrier", "move_speed"],
-		"shop_offers": ["shop_close_slash_skill", "shop_pulse_field_skill", "shop_guard_blade_skill", "shop_blood_pact_skill"]
+		"upgrades": ["close_slash", "pulse_field", "guard_blade", "giant_echo", "blood_pact", "crimson_leech", "graze_barrier", "clear_barrier", "move_speed"],
+		"shop_offers": ["shop_close_slash_skill", "shop_pulse_field_skill", "shop_guard_blade_skill", "shop_giant_echo_skill", "shop_blood_pact_skill", "shop_crimson_leech_skill"]
 	}
 }
 
 const ROUTE_SIGNATURE_UPGRADES := {
-	"bulk": ["multishot", "mass_resonance", "slow_resonance", "still_focus", "heavy_shot", "blast_core"],
-	"agile": ["light_frame", "light_resonance", "haste_resonance", "motion_focus"],
+	"bulk": ["multishot", "mass_resonance", "slow_resonance", "giant_echo", "still_focus", "heavy_shot", "compressed_core", "blast_core"],
+	"agile": ["light_frame", "light_resonance", "haste_resonance", "motion_focus", "light_edge", "reflow_shards"],
 	"pierce": ["piercing_rounds", "pierce_amp"],
-	"blast": ["blast_core", "shatter_blast", "overload_burst", "heavy_shot"],
-	"chain": ["chain_spark", "homing_shards", "orbit_blade", "conduit_coil", "channel_beam", "rapid_resonance"],
-	"close": ["close_slash", "pulse_field", "guard_blade", "blood_pact"]
+	"blast": ["blast_core", "shatter_blast", "overload_burst", "heavy_shot", "compressed_core"],
+	"chain": ["chain_spark", "homing_shards", "orbit_blade", "conduit_coil", "channel_beam", "rapid_resonance", "reflow_shards"],
+	"close": ["close_slash", "pulse_field", "guard_blade", "giant_echo", "blood_pact", "crimson_leech"]
 }
 
 const ROUTE_SYNERGY_DEFINITIONS := {
@@ -66,7 +66,49 @@ const UPGRADE_SYNERGY_SOURCES := {
 	"conduit_coil": ["chain_spark", "homing_shards", "orbit_blade", "channel_beam"],
 	"guard_blade": ["close_slash", "pulse_field"],
 	"blood_pact": ["max_health", "recovery_training", "guard_blade"],
-	"still_focus": ["heavy_shot", "channel_beam"]
+	"still_focus": ["heavy_shot", "channel_beam"],
+	"giant_echo": ["multishot", "blast_core", "heavy_shot", "close_slash", "pulse_field", "guard_blade"],
+	"light_edge": ["light_frame", "light_resonance", "haste_resonance", "motion_focus"],
+	"compressed_core": ["damage", "heavy_shot", "blast_core", "overload_burst"],
+	"reflow_shards": ["motion_focus", "rapid_resonance", "chain_spark", "orbit_blade", "homing_shards"],
+	"crimson_leech": ["blood_pact", "max_health", "recovery_training"]
+}
+
+const UPGRADE_TAGS := {
+	"damage": {"effect_tags": ["slow_attack"], "conflict_tags": ["fast_attack"]},
+	"attack_speed": {"effect_tags": ["fast_attack"], "conflict_tags": ["slow_attack"]},
+	"move_speed": {"effect_tags": ["fast_move", "large_body"], "conflict_tags": ["small_body"]},
+	"max_health": {"effect_tags": ["slow_move", "high_health"], "conflict_tags": ["fast_move"]},
+	"recovery_training": {"effect_tags": ["slow_move", "high_health"], "conflict_tags": ["fast_move"]},
+	"multishot": {"effect_tags": ["large_body", "slow_move", "multi_projectile"], "conflict_tags": ["small_body", "fast_move"]},
+	"mass_resonance": {"source_tags": ["large_body"]},
+	"light_frame": {"effect_tags": ["small_body", "fast_move"], "conflict_tags": ["large_body", "slow_move"]},
+	"light_resonance": {"source_tags": ["small_body"], "conflict_tags": ["large_body"]},
+	"slow_resonance": {"source_tags": ["slow_move"], "conflict_tags": ["fast_move"]},
+	"haste_resonance": {"source_tags": ["fast_move"], "conflict_tags": ["slow_move"]},
+	"rapid_resonance": {"source_tags": ["fast_attack"], "conflict_tags": ["slow_attack"]},
+	"blood_pact": {"effect_tags": ["low_life"], "source_tags": ["high_health"], "conflict_tags": ["shielded"]},
+	"still_focus": {"effect_tags": ["stationary"], "source_tags": ["slow_attack"], "conflict_tags": ["moving"]},
+	"motion_focus": {"effect_tags": ["moving"], "source_tags": ["fast_move"], "conflict_tags": ["stationary"]},
+	"piercing_rounds": {"effect_tags": ["pierce"], "conflict_tags": ["heavy_hit"]},
+	"blast_core": {"effect_tags": ["blast", "large_body", "slow_attack"], "conflict_tags": ["fast_attack", "small_body"]},
+	"chain_spark": {"effect_tags": ["chain_skill"], "source_tags": ["fast_attack"], "conflict_tags": ["slow_attack"]},
+	"orbit_blade": {"effect_tags": ["chain_skill"], "source_tags": ["fast_move", "fast_attack"]},
+	"overload_burst": {"effect_tags": ["blast", "heavy_hit"], "source_tags": ["slow_attack", "blast"], "conflict_tags": ["fast_attack"]},
+	"homing_shards": {"effect_tags": ["chain_skill", "slow_move"], "source_tags": ["fast_attack"], "conflict_tags": ["fast_move"]},
+	"heavy_shot": {"effect_tags": ["heavy_hit", "large_body", "slow_attack"], "conflict_tags": ["fast_attack", "small_body"]},
+	"close_slash": {"effect_tags": ["close_skill"], "source_tags": ["shielded", "large_body"]},
+	"pulse_field": {"effect_tags": ["close_skill"], "source_tags": ["shielded", "large_body"]},
+	"channel_beam": {"effect_tags": ["chain_skill", "stationary", "slow_move"], "source_tags": ["stationary"], "conflict_tags": ["fast_move"]},
+	"shatter_blast": {"source_tags": ["blast"]},
+	"pierce_amp": {"source_tags": ["pierce"]},
+	"conduit_coil": {"source_tags": ["chain_skill", "stationary"]},
+	"guard_blade": {"effect_tags": ["shielded"], "source_tags": ["close_skill", "large_body"]},
+	"giant_echo": {"effect_tags": ["shielded"], "source_tags": ["large_body", "close_skill"], "conflict_tags": ["small_body"], "engine_tags": ["bulk_close"]},
+	"light_edge": {"source_tags": ["small_body", "fast_move"], "conflict_tags": ["large_body", "slow_move"], "engine_tags": ["agile_crit"]},
+	"compressed_core": {"effect_tags": ["heavy_hit", "slow_attack"], "source_tags": ["slow_attack", "blast"], "conflict_tags": ["fast_attack", "multi_projectile"], "engine_tags": ["heavy_blast"]},
+	"reflow_shards": {"effect_tags": ["fast_attack"], "source_tags": ["moving", "chain_skill", "fast_attack"], "conflict_tags": ["stationary", "slow_attack"], "engine_tags": ["agile_chain"]},
+	"crimson_leech": {"effect_tags": ["low_life"], "source_tags": ["low_life", "high_health"], "conflict_tags": ["shielded"], "engine_tags": ["blood_risk"]}
 }
 
 const UPGRADE_DEFINITIONS := {
@@ -268,6 +310,36 @@ const UPGRADE_DEFINITIONS := {
 		"preview": "本层：近身伤害独立 x1.55，立即护盾至少 +20 且每次 +4，近身命中护盾 +4",
 		"rarity": "blue"
 	},
+	"giant_echo": {
+		"title": "巨体回响",
+		"description": "每层：玩家体积每 +10%，近身刀环和脉冲场伤害 +20%；护盾 +18，持续 4 秒",
+		"preview": "每层：玩家体积每 +10%，近身伤害独立 +20%；护盾 +18，持续 4 秒",
+		"rarity": "blue"
+	},
+	"light_edge": {
+		"title": "轻锋协议",
+		"description": "每层：玩家体积每低于 100% 10%，暴击伤害 +25%；只影响暴击伤害倍率",
+		"preview": "每层：玩家体积每低于 100% 10%，暴击伤害独立 +25%",
+		"rarity": "blue"
+	},
+	"compressed_core": {
+		"title": "压缩弹芯",
+		"description": "每层：投射物 -1（最低 1），投射物伤害独立 x2.50，射击间隔 +15%",
+		"preview": "本层：投射物 -1（最低 1），投射物伤害独立 x2.50，射击间隔 +15%",
+		"rarity": "gold"
+	},
+	"reflow_shards": {
+		"title": "碎片回流",
+		"description": "射击间隔 -10%；每层：每层游走使连锁、回旋和追踪伤害 +12%，最多读取 10 层游走",
+		"preview": "本层：射击间隔 -10%；每层游走使连锁/回旋/追踪伤害独立 +12%，最多 10 层",
+		"rarity": "purple"
+	},
+	"crimson_leech": {
+		"title": "血怒汲取",
+		"description": "当前生命 -15（最低 1）；生命低于 35% 时，每层投射物伤害 +60%、吸血 +8%",
+		"preview": "本层：当前生命 -15（最低 1）；生命低于 35% 时投射物伤害独立 x1.60、吸血 +8%",
+		"rarity": "purple"
+	},
 	"form_focused": {
 		"title": "聚能强化",
 		"description": "当前武器为聚能法杖：投射物伤害 +8",
@@ -300,7 +372,8 @@ const UPGRADE_ORDER := [
 	"rapid_resonance", "blood_pact", "still_focus", "motion_focus", "piercing_rounds", "blast_core",
 	"graze_barrier", "clear_barrier", "chain_spark", "orbit_blade", "overload_burst", "homing_shards",
 	"heavy_shot", "close_slash", "pulse_field", "channel_beam", "shatter_blast", "pierce_amp",
-	"conduit_coil", "guard_blade"
+	"conduit_coil", "guard_blade", "giant_echo", "light_edge", "compressed_core", "reflow_shards",
+	"crimson_leech"
 ]
 
 const SHOP_SKILL_OFFERS := {
@@ -329,7 +402,12 @@ const SHOP_SKILL_OFFERS := {
 	"shop_shatter_blast_skill": {"title": "裂片爆破", "reward_upgrade_id": "shatter_blast", "base_cost": 25, "stage_cost": 3},
 	"shop_pierce_amp_skill": {"title": "贯穿增幅", "reward_upgrade_id": "pierce_amp", "base_cost": 24, "stage_cost": 3},
 	"shop_conduit_coil_skill": {"title": "超导线圈", "reward_upgrade_id": "conduit_coil", "base_cost": 26, "stage_cost": 3},
-	"shop_guard_blade_skill": {"title": "护身锋刃", "reward_upgrade_id": "guard_blade", "base_cost": 24, "stage_cost": 3}
+	"shop_guard_blade_skill": {"title": "护身锋刃", "reward_upgrade_id": "guard_blade", "base_cost": 24, "stage_cost": 3},
+	"shop_giant_echo_skill": {"title": "巨体回响", "reward_upgrade_id": "giant_echo", "base_cost": 25, "stage_cost": 3},
+	"shop_light_edge_skill": {"title": "轻锋协议", "reward_upgrade_id": "light_edge", "base_cost": 24, "stage_cost": 3},
+	"shop_compressed_core_skill": {"title": "压缩弹芯", "reward_upgrade_id": "compressed_core", "base_cost": 30, "stage_cost": 4},
+	"shop_reflow_shards_skill": {"title": "碎片回流", "reward_upgrade_id": "reflow_shards", "base_cost": 25, "stage_cost": 3},
+	"shop_crimson_leech_skill": {"title": "血怒汲取", "reward_upgrade_id": "crimson_leech", "base_cost": 24, "stage_cost": 3}
 }
 
 const UPGRADE_VALUES := {
@@ -365,7 +443,12 @@ const UPGRADE_VALUES := {
 	"shatter_blast": {"explosion_damage_per_stack": 0.55, "explosion_radius": 32.0},
 	"pierce_amp": {"pierce_bonus": 1, "damage_per_stack": 0.55},
 	"conduit_coil": {"beam_damage_per_stack": 1.50, "chain_damage_per_stack": 0.75, "beam_interval_reduction": 0.03},
-	"guard_blade": {"close_damage_per_stack": 0.55, "base_shield": 16, "shield_per_stack": 4, "shield_duration": 4.0}
+	"guard_blade": {"close_damage_per_stack": 0.55, "base_shield": 16, "shield_per_stack": 4, "shield_duration": 4.0},
+	"giant_echo": {"close_damage_per_10_percent": 0.20, "shield": 18, "shield_duration": 4.0},
+	"light_edge": {"crit_damage_per_10_percent": 0.25},
+	"compressed_core": {"projectile_count_penalty": 1, "damage_multiplier": 2.50, "fire_interval_multiplier": 1.15},
+	"reflow_shards": {"fire_interval_multiplier": 0.90, "skill_damage_per_movement_tier": 0.12},
+	"crimson_leech": {"health_cost": 15, "low_life_threshold": 0.35, "low_life_damage_bonus": 0.60, "low_life_life_steal": 8}
 }
 
 static func get_upgrade(upgrade_id: String) -> Dictionary:
@@ -408,6 +491,25 @@ static func get_upgrade_preview(upgrade_id: String) -> String:
 static func get_upgrade_value(upgrade_id: String, key: String, fallback) -> Variant:
 	var values: Dictionary = UPGRADE_VALUES.get(upgrade_id, {})
 	return values.get(key, fallback)
+
+static func get_upgrade_tags(upgrade_id: String) -> Dictionary:
+	var tags: Dictionary = UPGRADE_TAGS.get(upgrade_id, {})
+	return tags.duplicate(true)
+
+static func get_upgrade_tag_list(upgrade_id: String, key: String) -> Array:
+	var tags: Dictionary = UPGRADE_TAGS.get(upgrade_id, {})
+	return tags.get(key, [])
+
+static func get_upgrade_route_tags(upgrade_id: String) -> Array:
+	var tags: Array = get_upgrade_tag_list(upgrade_id, "route_tags")
+	if not tags.is_empty():
+		return tags
+	var inferred_tags: Array[String] = []
+	for route_id in BUILD_ROUTE_ORDER:
+		var route_definition: Dictionary = BUILD_ROUTE_DEFINITIONS.get(route_id, {})
+		if route_definition.get("upgrades", []).has(upgrade_id):
+			inferred_tags.append(route_id)
+	return inferred_tags
 
 static func get_skill_rarity_label(rarity: String) -> String:
 	var definition: Dictionary = SKILL_RARITY_DEFINITIONS.get(rarity, SKILL_RARITY_DEFINITIONS["green"])

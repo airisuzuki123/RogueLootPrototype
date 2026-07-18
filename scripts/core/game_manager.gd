@@ -17,6 +17,12 @@ const SKILL_REPEAT_WEIGHT_PER_STACK: float = 0.45
 const SKILL_REPEAT_WEIGHT_CAP: float = 2.80
 const SKILL_SYNERGY_WEIGHT_PER_SOURCE_STACK: float = 0.32
 const SKILL_SYNERGY_WEIGHT_CAP: float = 2.25
+const SKILL_TAG_SOURCE_WEIGHT_PER_MATCH: float = 0.34
+const SKILL_TAG_SOURCE_WEIGHT_CAP: float = 2.60
+const SKILL_TAG_ROUTE_WEIGHT_PER_STACK: float = 0.10
+const SKILL_TAG_ROUTE_WEIGHT_CAP: float = 1.70
+const SKILL_TAG_CONFLICT_WEIGHT: float = 0.48
+const SKILL_ENGINE_FIRST_PICK_WEIGHT: float = 1.35
 
 signal gold_changed(total: int)
 signal enemy_killed(total: int)
@@ -1725,7 +1731,10 @@ func _get_upgrade_choice_weight(upgrade: Dictionary) -> int:
 	return _apply_skill_momentum_weight(base_weight, upgrade_id)
 
 func _apply_skill_momentum_weight(base_weight: int, upgrade_id: String) -> int:
-	return _apply_synergy_skill_weight(_apply_repeat_skill_weight(base_weight, upgrade_id), upgrade_id)
+	var weighted := _apply_repeat_skill_weight(base_weight, upgrade_id)
+	weighted = _apply_synergy_skill_weight(weighted, upgrade_id)
+	weighted = _apply_tag_skill_weight(weighted, upgrade_id)
+	return weighted
 
 func _apply_repeat_skill_weight(base_weight: int, upgrade_id: String) -> int:
 	if upgrade_id.is_empty():
@@ -1746,6 +1755,72 @@ func _apply_synergy_skill_weight(base_weight: int, upgrade_id: String) -> int:
 		return maxi(1, base_weight)
 	var multiplier := minf(SKILL_SYNERGY_WEIGHT_CAP, 1.0 + float(source_stack_total) * SKILL_SYNERGY_WEIGHT_PER_SOURCE_STACK)
 	return maxi(1, int(round(float(base_weight) * multiplier)))
+
+func _apply_tag_skill_weight(base_weight: int, upgrade_id: String) -> int:
+	if upgrade_id.is_empty():
+		return maxi(1, base_weight)
+	var active_tags := _get_active_skill_tags()
+	var route_scores := _get_active_build_route_scores()
+	var weighted := float(maxi(1, base_weight))
+	var source_matches := 0
+	for tag in SkillCatalog.get_upgrade_tag_list(upgrade_id, "source_tags"):
+		if active_tags.has(str(tag)):
+			source_matches += 1
+	if source_matches > 0:
+		weighted *= minf(SKILL_TAG_SOURCE_WEIGHT_CAP, 1.0 + float(source_matches) * SKILL_TAG_SOURCE_WEIGHT_PER_MATCH)
+	for route_id in SkillCatalog.get_upgrade_route_tags(upgrade_id):
+		var route_score := int(route_scores.get(str(route_id), 0))
+		if route_score > 0:
+			weighted *= minf(SKILL_TAG_ROUTE_WEIGHT_CAP, 1.0 + float(route_score) * SKILL_TAG_ROUTE_WEIGHT_PER_STACK)
+	var engine_tags := SkillCatalog.get_upgrade_tag_list(upgrade_id, "engine_tags")
+	if not engine_tags.is_empty() and _get_upgrade_stack_count(upgrade_id) <= 0 and source_matches > 0:
+		weighted *= SKILL_ENGINE_FIRST_PICK_WEIGHT
+	for tag in SkillCatalog.get_upgrade_tag_list(upgrade_id, "conflict_tags"):
+		if active_tags.has(str(tag)):
+			weighted *= SKILL_TAG_CONFLICT_WEIGHT
+	return maxi(1, int(round(weighted)))
+
+func _get_active_skill_tags() -> Dictionary:
+	var active_tags := {}
+	var upgrade_stacks: Dictionary = player_build_summary.get("upgrade_stacks", {})
+	for upgrade_id in upgrade_stacks.keys():
+		if int(upgrade_stacks.get(upgrade_id, 0)) <= 0:
+			continue
+		for tag_key in ["effect_tags", "engine_tags"]:
+			for tag in SkillCatalog.get_upgrade_tag_list(str(upgrade_id), tag_key):
+				active_tags[str(tag)] = true
+	var player_size_bonus := int(player_build_summary.get("player_size_bonus", 0))
+	if player_size_bonus >= 20:
+		active_tags["large_body"] = true
+	elif player_size_bonus <= -10:
+		active_tags["small_body"] = true
+	var move_speed := int(player_build_summary.get("move_speed", 0))
+	if move_speed >= 315:
+		active_tags["fast_move"] = true
+	elif move_speed <= 220:
+		active_tags["slow_move"] = true
+	var attack_interval := float(player_build_summary.get("attack_interval", 0.45))
+	if attack_interval <= 0.34:
+		active_tags["fast_attack"] = true
+	elif attack_interval >= 0.52:
+		active_tags["slow_attack"] = true
+	if int(player_build_summary.get("projectiles", 1)) >= 3:
+		active_tags["multi_projectile"] = true
+	if int(player_build_summary.get("pierce", 0)) > 0:
+		active_tags["pierce"] = true
+	if int(player_build_summary.get("explosion_radius", 0)) >= 40:
+		active_tags["blast"] = true
+	if int(player_build_summary.get("shield", 0)) > 0:
+		active_tags["shielded"] = true
+	if player_max_health > 0 and player_health <= int(round(float(player_max_health) * 0.40)):
+		active_tags["low_life"] = true
+	if player_max_health >= 130:
+		active_tags["high_health"] = true
+	if int(player_build_summary.get("movement_focus_tier", 0)) > 0:
+		active_tags["moving"] = true
+	if int(player_build_summary.get("stationary_focus_tier", 0)) > 0:
+		active_tags["stationary"] = true
+	return active_tags
 
 func _apply_skill_rarity_metadata(data: Dictionary, upgrade_id: String) -> void:
 	var rarity := _get_upgrade_rarity(upgrade_id)

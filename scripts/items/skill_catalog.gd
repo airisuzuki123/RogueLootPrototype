@@ -54,6 +54,21 @@ const ROUTE_SYNERGY_DEFINITIONS := {
 	"close": ["bulk", "agile", "chain"]
 }
 
+const UPGRADE_SYNERGY_SOURCES := {
+	"mass_resonance": ["multishot", "blast_core", "heavy_shot", "move_speed"],
+	"slow_resonance": ["multishot", "homing_shards", "channel_beam", "max_health", "recovery_training"],
+	"light_resonance": ["light_frame"],
+	"haste_resonance": ["light_frame", "move_speed"],
+	"motion_focus": ["light_frame", "move_speed", "haste_resonance"],
+	"rapid_resonance": ["attack_speed", "chain_spark", "orbit_blade", "homing_shards", "channel_beam"],
+	"pierce_amp": ["piercing_rounds", "form_piercing"],
+	"shatter_blast": ["blast_core", "form_burst", "heavy_shot", "overload_burst"],
+	"conduit_coil": ["chain_spark", "homing_shards", "orbit_blade", "channel_beam"],
+	"guard_blade": ["close_slash", "pulse_field"],
+	"blood_pact": ["max_health", "recovery_training", "guard_blade"],
+	"still_focus": ["heavy_shot", "channel_beam"]
+}
+
 const UPGRADE_DEFINITIONS := {
 	"damage": {
 		"title": "强击弹体",
@@ -416,6 +431,9 @@ static func get_route_signature_upgrades(route_id: String) -> Array:
 
 static func get_route_synergy_ids(route_id: String) -> Array:
 	return ROUTE_SYNERGY_DEFINITIONS.get(route_id, [])
+
+static func get_upgrade_synergy_sources(upgrade_id: String) -> Array:
+	return UPGRADE_SYNERGY_SOURCES.get(upgrade_id, [])
 
 static func get_shop_skill_offers(completed_stage: int, offer_ids: Array = []) -> Array[Dictionary]:
 	var ids := offer_ids

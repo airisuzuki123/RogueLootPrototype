@@ -15,6 +15,8 @@ const OVERKILL_BONUS_PER_KILL: int = 2
 const OVERKILL_BONUS_CAP: int = 24
 const SKILL_REPEAT_WEIGHT_PER_STACK: float = 0.45
 const SKILL_REPEAT_WEIGHT_CAP: float = 2.80
+const SKILL_SYNERGY_WEIGHT_PER_SOURCE_STACK: float = 0.32
+const SKILL_SYNERGY_WEIGHT_CAP: float = 2.25
 
 signal gold_changed(total: int)
 signal enemy_killed(total: int)
@@ -1674,7 +1676,7 @@ func _get_shop_offer_weight(offer: Dictionary) -> int:
 		return 100
 	var rarity := _get_upgrade_rarity(reward_upgrade_id)
 	var base_weight := SkillCatalog.get_shop_rarity_weight(rarity)
-	return _apply_repeat_skill_weight(base_weight, reward_upgrade_id)
+	return _apply_skill_momentum_weight(base_weight, reward_upgrade_id)
 
 func _build_shop_offers(event: Dictionary) -> Array[Dictionary]:
 	var offers: Array[Dictionary] = []
@@ -1720,7 +1722,10 @@ func _get_upgrade_choice_weight(upgrade: Dictionary) -> int:
 	var upgrade_id := str(upgrade.get("id", ""))
 	var rarity := str(upgrade.get("rarity", _get_upgrade_rarity(upgrade_id)))
 	var base_weight := _get_skill_rarity_weight(rarity)
-	return _apply_repeat_skill_weight(base_weight, upgrade_id)
+	return _apply_skill_momentum_weight(base_weight, upgrade_id)
+
+func _apply_skill_momentum_weight(base_weight: int, upgrade_id: String) -> int:
+	return _apply_synergy_skill_weight(_apply_repeat_skill_weight(base_weight, upgrade_id), upgrade_id)
 
 func _apply_repeat_skill_weight(base_weight: int, upgrade_id: String) -> int:
 	if upgrade_id.is_empty():
@@ -1729,6 +1734,17 @@ func _apply_repeat_skill_weight(base_weight: int, upgrade_id: String) -> int:
 	if current_stack <= 0:
 		return maxi(1, base_weight)
 	var multiplier := minf(SKILL_REPEAT_WEIGHT_CAP, 1.0 + float(current_stack) * SKILL_REPEAT_WEIGHT_PER_STACK)
+	return maxi(1, int(round(float(base_weight) * multiplier)))
+
+func _apply_synergy_skill_weight(base_weight: int, upgrade_id: String) -> int:
+	if upgrade_id.is_empty():
+		return maxi(1, base_weight)
+	var source_stack_total := 0
+	for source_id in SkillCatalog.get_upgrade_synergy_sources(upgrade_id):
+		source_stack_total += _get_upgrade_stack_count(str(source_id))
+	if source_stack_total <= 0:
+		return maxi(1, base_weight)
+	var multiplier := minf(SKILL_SYNERGY_WEIGHT_CAP, 1.0 + float(source_stack_total) * SKILL_SYNERGY_WEIGHT_PER_SOURCE_STACK)
 	return maxi(1, int(round(float(base_weight) * multiplier)))
 
 func _apply_skill_rarity_metadata(data: Dictionary, upgrade_id: String) -> void:

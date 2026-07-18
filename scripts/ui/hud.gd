@@ -6,6 +6,10 @@ var gold_label: Label
 var kills_label: Label
 var graze_label: Label
 var health_label: Label
+var shield_label: Label
+var player_state_label: Label
+var health_bar: ProgressBar
+var shield_bar: ProgressBar
 var experience_label: Label
 var run_phase_label: Label
 var phase_objective_label: Label
@@ -66,6 +70,9 @@ func _ready() -> void:
 	_layout_for_viewport()
 	_refresh_all()
 
+func _process(_delta: float) -> void:
+	_refresh_vital_status()
+
 func _build_ui() -> void:
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -74,11 +81,10 @@ func _build_ui() -> void:
 
 	var stats := VBoxContainer.new()
 	stats.position = Vector2(16, 16)
-	stats.custom_minimum_size = Vector2(260, 120)
+	stats.custom_minimum_size = Vector2(330, 120)
 	root.add_child(stats)
 
-	health_label = Label.new()
-	stats.add_child(health_label)
+	_build_vital_status_panel(stats)
 
 	experience_label = Label.new()
 	stats.add_child(experience_label)
@@ -271,6 +277,68 @@ func _build_ui() -> void:
 	milestone_label.add_theme_constant_override("outline_size", 5)
 	root.add_child(milestone_label)
 
+func _build_vital_status_panel(parent: Control) -> void:
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(330, 92)
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.02, 0.025, 0.035, 0.72)
+	panel_style.border_color = Color(0.28, 0.34, 0.42, 0.82)
+	panel_style.set_border_width_all(1)
+	panel_style.set_corner_radius_all(6)
+	panel_style.content_margin_left = 10
+	panel_style.content_margin_right = 10
+	panel_style.content_margin_top = 8
+	panel_style.content_margin_bottom = 8
+	panel.add_theme_stylebox_override("panel", panel_style)
+	parent.add_child(panel)
+
+	var layout := VBoxContainer.new()
+	layout.add_theme_constant_override("separation", 4)
+	panel.add_child(layout)
+
+	var top_row := HBoxContainer.new()
+	top_row.add_theme_constant_override("separation", 8)
+	layout.add_child(top_row)
+
+	health_label = Label.new()
+	health_label.add_theme_font_size_override("font_size", 18)
+	top_row.add_child(health_label)
+
+	player_state_label = Label.new()
+	player_state_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	player_state_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	player_state_label.add_theme_font_size_override("font_size", 18)
+	top_row.add_child(player_state_label)
+
+	health_bar = _create_status_bar(Color(0.90, 0.18, 0.23, 1.0), Color(0.22, 0.035, 0.045, 0.82))
+	health_bar.custom_minimum_size = Vector2(0, 14)
+	layout.add_child(health_bar)
+
+	shield_label = Label.new()
+	shield_label.add_theme_font_size_override("font_size", 14)
+	layout.add_child(shield_label)
+
+	shield_bar = _create_status_bar(Color(0.28, 0.78, 1.0, 1.0), Color(0.035, 0.10, 0.14, 0.70))
+	shield_bar.custom_minimum_size = Vector2(0, 8)
+	shield_bar.max_value = 6.0
+	layout.add_child(shield_bar)
+
+func _create_status_bar(fill_color: Color, background_color: Color) -> ProgressBar:
+	var bar := ProgressBar.new()
+	bar.show_percentage = false
+	bar.min_value = 0.0
+	bar.max_value = 1.0
+	bar.value = 0.0
+	var background := StyleBoxFlat.new()
+	background.bg_color = background_color
+	background.set_corner_radius_all(4)
+	bar.add_theme_stylebox_override("background", background)
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = fill_color
+	fill.set_corner_radius_all(4)
+	bar.add_theme_stylebox_override("fill", fill)
+	return bar
+
 func _connect_signals() -> void:
 	GameManager.gold_changed.connect(_on_gold_changed)
 	GameManager.enemy_killed.connect(_on_enemy_killed)
@@ -377,14 +445,53 @@ func _on_enemy_killed(total: int) -> void:
 func _on_graze_changed(total: int) -> void:
 	var charge := int(GameManager.graze_charge)
 	var required := int(GameManager.GRAZE_REWARD_REQUIRED)
-	var shield := int(GameManager.player_graze_shield)
 	var cooldown := float(GameManager.graze_reward_cooldown_remaining)
-	var shield_text := " | 护盾：%d" % shield if shield > 0 else ""
 	var cooldown_text := " | 冷却中" if cooldown > 0.0 else ""
-	graze_label.text = "擦弹：%d | 专注：%d / %d%s%s" % [total, charge, required, shield_text, cooldown_text]
+	graze_label.text = "擦弹：%d | 专注：%d / %d%s" % [total, charge, required, cooldown_text]
+	_refresh_vital_status()
 
 func _on_health_changed(current: int, maximum: int) -> void:
-	health_label.text = "生命：%d / %d" % [current, maximum]
+	_refresh_vital_status(current, maximum)
+
+func _refresh_vital_status(current: int = -1, maximum: int = -1) -> void:
+	if health_label == null or health_bar == null or player_state_label == null or shield_label == null or shield_bar == null:
+		return
+	var health_current := int(GameManager.player_health) if current < 0 else current
+	var health_maximum := int(GameManager.player_max_health) if maximum < 0 else maximum
+	health_maximum = maxi(1, health_maximum)
+	health_current = clampi(health_current, 0, health_maximum)
+	var health_percent := int(round(float(health_current) / float(health_maximum) * 100.0))
+	health_label.text = "生命 %d / %d（%d%%）" % [health_current, health_maximum, health_percent]
+	health_bar.max_value = float(health_maximum)
+	health_bar.value = float(health_current)
+	var state_text := "稳定"
+	var state_color := Color(0.66, 1.0, 0.68, 1.0)
+	var health_fill := Color(0.24, 0.86, 0.42, 1.0)
+	if health_percent <= 30:
+		state_text = "危险"
+		state_color = Color(1.0, 0.28, 0.22, 1.0)
+		health_fill = Color(1.0, 0.18, 0.20, 1.0)
+	elif health_percent <= 60:
+		state_text = "受压"
+		state_color = Color(1.0, 0.80, 0.30, 1.0)
+		health_fill = Color(1.0, 0.62, 0.22, 1.0)
+	player_state_label.text = state_text
+	player_state_label.add_theme_color_override("font_color", state_color)
+	_set_progress_fill_color(health_bar, health_fill)
+	var shield := maxi(0, int(GameManager.player_graze_shield))
+	var shield_remaining := maxf(0.0, float(GameManager.player_graze_shield_remaining))
+	if shield > 0:
+		shield_label.text = "护盾 %d，剩余 %.1f 秒" % [shield, shield_remaining]
+		shield_bar.value = clampf(shield_remaining, 0.0, 6.0)
+	else:
+		shield_label.text = "护盾 0"
+		shield_bar.value = 0.0
+
+func _set_progress_fill_color(bar: ProgressBar, fill_color: Color) -> void:
+	var fill := bar.get_theme_stylebox("fill")
+	if fill is StyleBoxFlat:
+		var fill_style := fill as StyleBoxFlat
+		fill_style.bg_color = fill_color
 
 func _on_experience_changed(current: int, required: int, level: int) -> void:
 	experience_label.text = "等级 %d  经验：%d / %d" % [level, current, required]

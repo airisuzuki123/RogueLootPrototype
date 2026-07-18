@@ -13,6 +13,8 @@ const STAGE_COUNT: int = 10
 const SHOP_REFRESH_BASE_COST: int = 6
 const OVERKILL_BONUS_PER_KILL: int = 2
 const OVERKILL_BONUS_CAP: int = 24
+const SKILL_REPEAT_WEIGHT_PER_STACK: float = 0.45
+const SKILL_REPEAT_WEIGHT_CAP: float = 2.80
 
 signal gold_changed(total: int)
 signal enemy_killed(total: int)
@@ -1671,7 +1673,8 @@ func _get_shop_offer_weight(offer: Dictionary) -> int:
 	if reward_upgrade_id.is_empty():
 		return 100
 	var rarity := _get_upgrade_rarity(reward_upgrade_id)
-	return SkillCatalog.get_shop_rarity_weight(rarity)
+	var base_weight := SkillCatalog.get_shop_rarity_weight(rarity)
+	return _apply_repeat_skill_weight(base_weight, reward_upgrade_id)
 
 func _build_shop_offers(event: Dictionary) -> Array[Dictionary]:
 	var offers: Array[Dictionary] = []
@@ -1712,6 +1715,21 @@ func _get_skill_rarity_label(rarity: String) -> String:
 
 func _get_skill_rarity_weight(rarity: String) -> int:
 	return SkillCatalog.get_skill_rarity_weight(rarity)
+
+func _get_upgrade_choice_weight(upgrade: Dictionary) -> int:
+	var upgrade_id := str(upgrade.get("id", ""))
+	var rarity := str(upgrade.get("rarity", _get_upgrade_rarity(upgrade_id)))
+	var base_weight := _get_skill_rarity_weight(rarity)
+	return _apply_repeat_skill_weight(base_weight, upgrade_id)
+
+func _apply_repeat_skill_weight(base_weight: int, upgrade_id: String) -> int:
+	if upgrade_id.is_empty():
+		return maxi(1, base_weight)
+	var current_stack := _get_upgrade_stack_count(upgrade_id)
+	if current_stack <= 0:
+		return maxi(1, base_weight)
+	var multiplier := minf(SKILL_REPEAT_WEIGHT_CAP, 1.0 + float(current_stack) * SKILL_REPEAT_WEIGHT_PER_STACK)
+	return maxi(1, int(round(float(base_weight) * multiplier)))
 
 func _apply_skill_rarity_metadata(data: Dictionary, upgrade_id: String) -> void:
 	var rarity := _get_upgrade_rarity(upgrade_id)
@@ -1828,13 +1846,13 @@ func _roll_weighted_upgrade_choice(pool: Array[Dictionary]) -> Dictionary:
 		return {}
 	var total_weight := 0
 	for upgrade in pool:
-		total_weight += _get_skill_rarity_weight(str(upgrade.get("rarity", _get_upgrade_rarity(str(upgrade.get("id", ""))))))
+		total_weight += _get_upgrade_choice_weight(upgrade)
 	if total_weight <= 0:
 		return pool[randi_range(0, pool.size() - 1)].duplicate(true)
 	var roll := randi_range(1, total_weight)
 	var cursor := 0
 	for upgrade in pool:
-		cursor += _get_skill_rarity_weight(str(upgrade.get("rarity", _get_upgrade_rarity(str(upgrade.get("id", ""))))))
+		cursor += _get_upgrade_choice_weight(upgrade)
 		if roll <= cursor:
 			return upgrade.duplicate(true)
 	return pool[pool.size() - 1].duplicate(true)

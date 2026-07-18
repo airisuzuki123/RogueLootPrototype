@@ -1851,11 +1851,16 @@ func _annotate_upgrade_choice_context(choice: Dictionary) -> Dictionary:
 		annotated["upgrade_preview"] = upgrade_preview
 	return annotated
 
-func _build_upgrade_utility_pool() -> Array[Dictionary]:
+func _build_upgrade_utility_pool(primary_route: String = "", branch_route: String = "") -> Array[Dictionary]:
 	var utility_ids := ["damage", "attack_speed", "move_speed", "max_health", "graze_barrier", "clear_barrier"]
 	if player_max_health > 0 and player_health <= int(round(float(player_max_health) * 0.55)):
 		utility_ids.append_array(["heal", "strong_heal", "recovery_training"])
-	return _get_upgrade_pool_for_ids(utility_ids)
+	var utility_pool := _get_upgrade_pool_for_ids(utility_ids)
+	if not primary_route.is_empty():
+		utility_pool.append_array(_get_upgrade_pool_for_route(primary_route))
+	if not branch_route.is_empty() and branch_route != primary_route:
+		utility_pool.append_array(_get_upgrade_pool_for_route(branch_route))
+	return utility_pool
 
 func _get_upgrade_purchase_preview(upgrade_id: String, _current_stack: int) -> String:
 	return SkillCatalog.get_upgrade_preview(upgrade_id)
@@ -2078,7 +2083,7 @@ func _request_upgrade_choices() -> void:
 		pending_upgrade_choices.append(annotated_form_upgrade)
 		used_ids[str(annotated_form_upgrade.get("id", ""))] = true
 	if pending_upgrade_choices.size() < 3:
-		_append_upgrade_choice_from_pool(_build_upgrade_utility_pool(), used_ids)
+		_append_upgrade_choice_from_pool(_build_upgrade_utility_pool(first_route, branch_route), used_ids)
 	if not should_offer_form_upgrade and not form_upgrade.is_empty() and pending_upgrade_choices.size() < 3:
 		var annotated_form_upgrade := _annotate_upgrade_choice_context(form_upgrade)
 		pending_upgrade_choices.append(annotated_form_upgrade)

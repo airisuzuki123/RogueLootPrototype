@@ -121,6 +121,9 @@ var stationary_focus_time: float = 0.0
 var movement_focus_time: float = 0.0
 var last_stationary_focus_tier: int = 0
 var last_movement_focus_tier: int = 0
+var last_stand_trigger_used: bool = false
+var momentum_cache_cooldown: float = 0.0
+var anchor_discharge_cooldown: float = 0.0
 var upgrade_stacks := {}
 @onready var visual: Polygon2D = $Visual
 @onready var hit_core: Polygon2D = $HitCore
@@ -137,6 +140,7 @@ func _physics_process(delta: float) -> void:
 		return
 	_update_invulnerability(delta)
 	_update_graze_shield(delta)
+	_update_trigger_cooldowns(delta)
 	_update_close_range_skills(delta)
 	_update_channel_skill(delta)
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -156,8 +160,10 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 	var remaining_damage := _absorb_damage_with_graze_shield(maxi(0, amount))
 	if remaining_damage <= 0:
 		return
+	var old_health := health
 	health -= remaining_damage
 	GameManager.update_player_health(max(health, 0), max_health)
+	_emit_low_life_trigger_if_crossed(old_health, health)
 	_emit_build_summary()
 	CombatFeedback.show_damage(get_tree().current_scene, global_position, remaining_damage, Color(1, 0.25, 0.25, 1))
 	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1, 0.2, 0.2, 0.9), 1.3)
@@ -173,6 +179,17 @@ func sync_health_state() -> void:
 func set_movement_bounds(bounds: Rect2) -> void:
 	movement_bounds = bounds
 	_clamp_to_movement_bounds()
+
+func handle_gameplay_trigger(trigger: Dictionary) -> void:
+	match str(trigger.get("id", "")):
+		"stage_started":
+			last_stand_trigger_used = false
+		"encounter_defeated":
+			_handle_elite_reactor_trigger(str(trigger.get("kind", "")))
+		"low_life_entered":
+			_handle_last_stand_trigger()
+		"focus_tier_changed":
+			_handle_focus_tier_trigger(trigger)
 
 func heal_fixed_amount(amount: int) -> int:
 	if amount <= 0 or health <= 0 or health >= max_health:
@@ -191,12 +208,88 @@ func apply_graze_shield(amount: int, duration: float) -> void:
 	_sync_graze_shield_state()
 	_emit_build_summary()
 
+func _update_trigger_cooldowns(delta: float) -> void:
+	momentum_cache_cooldown = maxf(0.0, momentum_cache_cooldown - delta)
+	anchor_discharge_cooldown = maxf(0.0, anchor_discharge_cooldown - delta)
+
+func _emit_low_life_trigger_if_crossed(old_health: int, new_health: int) -> void:
+	if max_health <= 0:
+		return
+	var threshold := int(round(float(max_health) * _skill_float("last_stand_matrix", "threshold", 0.35)))
+	if old_health > threshold and new_health <= threshold:
+		GameManager.emit_gameplay_trigger("low_life_entered", {
+			"health": new_health,
+			"max_health": max_health
+		})
+
+func _is_low_life_for_trigger() -> bool:
+	if max_health <= 0:
+		return false
+	return health <= int(round(float(max_health) * _skill_float("last_stand_matrix", "threshold", 0.35)))
+
+func _handle_elite_reactor_trigger(kind: String) -> void:
+	var stacks := int(upgrade_stacks.get("elite_reactor", 0))
+	if stacks <= 0 or not ["elite", "boss"].has(kind):
+		return
+	var cleared := GameManager.clear_enemy_projectiles_from_upgrade()
+	var shield := stacks * _skill_int("elite_reactor", "shield_per_stack", 18)
+	var duration := _skill_float("elite_reactor", "shield_duration", 4.0)
+	apply_graze_shield(shield, duration)
+	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(0.42, 0.86, 1.0, 0.82), 1.7)
+	GameManager.show_milestone_message("破阵反应：清除敌弹 %d，护盾 +%d，持续 %.1f 秒" % [cleared, shield, duration])
+
+func _handle_last_stand_trigger() -> void:
+	var stacks := int(upgrade_stacks.get("last_stand_matrix", 0))
+	if stacks <= 0 or last_stand_trigger_used:
+		return
+	last_stand_trigger_used = true
+	var cleared := GameManager.clear_enemy_projectiles_from_upgrade()
+	var shield := stacks * _skill_int("last_stand_matrix", "shield_per_stack", 26)
+	var duration := _skill_float("last_stand_matrix", "shield_duration", 4.0)
+	apply_graze_shield(shield, duration)
+	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1.0, 0.25, 0.42, 0.84), 1.9)
+	GameManager.show_milestone_message("背水矩阵：清除敌弹 %d，护盾 +%d，持续 %.1f 秒" % [cleared, shield, duration])
+
+func _handle_focus_tier_trigger(trigger: Dictionary) -> void:
+	var old_stationary := int(trigger.get("old_stationary_tier", 0))
+	var new_stationary := int(trigger.get("stationary_tier", 0))
+	var old_movement := int(trigger.get("old_movement_tier", 0))
+	var new_movement := int(trigger.get("movement_tier", 0))
+	_handle_momentum_cache_trigger(old_movement, new_movement)
+	_handle_anchor_discharge_trigger(old_stationary, new_stationary)
+
+func _handle_momentum_cache_trigger(old_tier: int, new_tier: int) -> void:
+	var stacks := int(upgrade_stacks.get("momentum_cache", 0))
+	var required_tier := _skill_int("momentum_cache", "required_movement_tier", 8)
+	if stacks <= 0 or momentum_cache_cooldown > 0.0 or old_tier >= required_tier or new_tier < required_tier:
+		return
+	var shield := stacks * _skill_int("momentum_cache", "shield_per_stack", 10)
+	var duration := _skill_float("momentum_cache", "shield_duration", 2.5)
+	momentum_cache_cooldown = _skill_float("momentum_cache", "cooldown", 9.0)
+	apply_graze_shield(shield, duration)
+	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(0.46, 1.0, 0.76, 0.76), 1.25)
+
+func _handle_anchor_discharge_trigger(old_tier: int, new_tier: int) -> void:
+	var stacks := int(upgrade_stacks.get("anchor_discharge", 0))
+	var required_tier := _skill_int("anchor_discharge", "required_stationary_tier", 6)
+	if stacks <= 0 or anchor_discharge_cooldown > 0.0 or old_tier >= required_tier or new_tier < required_tier:
+		return
+	var cleared := GameManager.clear_enemy_projectiles_from_upgrade()
+	var shield := stacks * _skill_int("anchor_discharge", "shield_per_stack", 8)
+	var duration := _skill_float("anchor_discharge", "shield_duration", 2.5)
+	anchor_discharge_cooldown = _skill_float("anchor_discharge", "cooldown", 12.0)
+	apply_graze_shield(shield, duration)
+	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(0.78, 0.72, 1.0, 0.78), 1.55)
+	if cleared > 0:
+		GameManager.show_milestone_message("锚定释放：清除敌弹 %d，护盾 +%d，持续 %.1f 秒" % [cleared, shield, duration])
+
 func take_event_damage(amount: int) -> int:
 	if GameManager.is_run_over or amount <= 0 or health <= 0:
 		return 0
 	var old_health := health
 	health = max(0, health - amount)
 	GameManager.update_player_health(health, max_health)
+	_emit_low_life_trigger_if_crossed(old_health, health)
 	_emit_build_summary()
 	CombatFeedback.show_damage(get_tree().current_scene, global_position, old_health - health, Color(1, 0.25, 0.25, 1))
 	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1, 0.2, 0.2, 0.9), 1.2)
@@ -294,8 +387,10 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			blood_pact_stacks += 1
 			var blood_cost := mini(_skill_int("blood_pact", "health_cost", 22), maxi(0, health - 1))
 			if blood_cost > 0:
+				var blood_old_health := health
 				health -= blood_cost
 				GameManager.update_player_health(health, max_health)
+				_emit_low_life_trigger_if_crossed(blood_old_health, health)
 				CombatFeedback.show_damage(get_tree().current_scene, global_position, blood_cost, Color(1.0, 0.20, 0.32, 1.0))
 				CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1.0, 0.12, 0.24, 0.78), 1.1)
 			result["skill_text"] = "当前生命 -%d（最低 1）；生命每损失 10%%，投射物伤害 +16%%、暴击率 +10%%" % blood_cost
@@ -436,8 +531,10 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			crimson_leech_stacks += 1
 			var crimson_cost := mini(_skill_int("crimson_leech", "health_cost", 15), maxi(0, health - 1))
 			if crimson_cost > 0:
+				var crimson_old_health := health
 				health -= crimson_cost
 				GameManager.update_player_health(health, max_health)
+				_emit_low_life_trigger_if_crossed(crimson_old_health, health)
 				CombatFeedback.show_damage(get_tree().current_scene, global_position, crimson_cost, Color(1.0, 0.18, 0.30, 1.0))
 				CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1.0, 0.16, 0.34, 0.74), 1.05)
 			result["skill_text"] = "当前生命 -%d（最低 1）；生命低于 35%% 时，投射物伤害 +60%%、吸血 +8%%" % crimson_cost
@@ -451,6 +548,32 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 		"rare_magnet":
 			var rare_stack := int(upgrade_stacks.get("rare_magnet", 0))
 			result["skill_text"] = "刷新后紫色/金色技能权重 +%d%%；技能商品价格 +%d%%" % [rare_stack * 75, rare_stack * 15]
+		"elite_reactor":
+			var elite_stack := int(upgrade_stacks.get("elite_reactor", 0))
+			var elite_shield := elite_stack * _skill_int("elite_reactor", "shield_per_stack", 18)
+			result["skill_text"] = "击败精英或 Boss 时清除敌弹，护盾 +%d，持续 %.1f 秒" % [elite_shield, _skill_float("elite_reactor", "shield_duration", 4.0)]
+		"last_stand_matrix":
+			var last_stand_stack := int(upgrade_stacks.get("last_stand_matrix", 0))
+			var last_stand_shield := last_stand_stack * _skill_int("last_stand_matrix", "shield_per_stack", 26)
+			result["skill_text"] = "每关首次生命低于 35%% 时清除敌弹，护盾 +%d，持续 %.1f 秒" % [last_stand_shield, _skill_float("last_stand_matrix", "shield_duration", 4.0)]
+			if _is_low_life_for_trigger():
+				_handle_last_stand_trigger()
+		"momentum_cache":
+			var momentum_stack := int(upgrade_stacks.get("momentum_cache", 0))
+			result["skill_text"] = "游走达到 %d 层时，护盾 +%d，持续 %.1f 秒，冷却 %.1f 秒" % [
+				_skill_int("momentum_cache", "required_movement_tier", 8),
+				momentum_stack * _skill_int("momentum_cache", "shield_per_stack", 10),
+				_skill_float("momentum_cache", "shield_duration", 2.5),
+				_skill_float("momentum_cache", "cooldown", 9.0)
+			]
+		"anchor_discharge":
+			var anchor_stack := int(upgrade_stacks.get("anchor_discharge", 0))
+			result["skill_text"] = "静立达到 %d 层时清除敌弹，护盾 +%d，持续 %.1f 秒，冷却 %.1f 秒" % [
+				_skill_int("anchor_discharge", "required_stationary_tier", 6),
+				anchor_stack * _skill_int("anchor_discharge", "shield_per_stack", 8),
+				_skill_float("anchor_discharge", "shield_duration", 2.5),
+				_skill_float("anchor_discharge", "cooldown", 12.0)
+			]
 		"form_focused":
 			upgrade_damage_bonus += 8
 			projectile_damage += 8
@@ -983,6 +1106,12 @@ func _update_motion_focus(delta: float, input_direction: Vector2) -> void:
 	var new_tier := _get_stationary_focus_tier()
 	var new_movement_tier := _get_movement_focus_tier()
 	if new_tier != old_tier or new_tier != last_stationary_focus_tier or new_movement_tier != old_movement_tier or new_movement_tier != last_movement_focus_tier:
+		GameManager.emit_gameplay_trigger("focus_tier_changed", {
+			"old_stationary_tier": old_tier,
+			"stationary_tier": new_tier,
+			"old_movement_tier": old_movement_tier,
+			"movement_tier": new_movement_tier
+		})
 		last_stationary_focus_tier = new_tier
 		last_movement_focus_tier = new_movement_tier
 		_emit_build_summary()

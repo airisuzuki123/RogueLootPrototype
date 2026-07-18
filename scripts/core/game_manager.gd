@@ -52,6 +52,7 @@ signal run_milestone_message_changed(message: String)
 signal encounter_requested(encounter: Dictionary)
 signal encounter_changed(encounter: Dictionary, active: bool)
 signal encounter_completed(encounter: Dictionary)
+signal gameplay_triggered(trigger: Dictionary)
 signal stage_event_requested(event: Dictionary)
 signal stage_event_changed(event: Dictionary, active: bool)
 signal stage_event_completed(event: Dictionary)
@@ -779,6 +780,15 @@ func show_milestone_message(message: String) -> void:
 		return
 	_set_milestone_message(message)
 
+func emit_gameplay_trigger(trigger_id: String, payload: Dictionary = {}) -> void:
+	if trigger_id.is_empty():
+		return
+	var trigger := payload.duplicate(true)
+	trigger["id"] = trigger_id
+	gameplay_triggered.emit(trigger)
+	if player != null and player.has_method("handle_gameplay_trigger"):
+		player.handle_gameplay_trigger(trigger)
+
 func complete_encounter(encounter_id: String) -> void:
 	if active_encounter.is_empty() or str(active_encounter.get("id", "")) != encounter_id:
 		return
@@ -787,6 +797,10 @@ func complete_encounter(encounter_id: String) -> void:
 	active_encounter.clear()
 	encounter_completed.emit(completed_encounter)
 	encounter_changed.emit(active_encounter, false)
+	emit_gameplay_trigger("encounter_defeated", {
+		"kind": str(completed_encounter.get("kind", "")),
+		"encounter": completed_encounter
+	})
 	if bool(completed_encounter.get("complete_run_on_defeat", false)):
 		complete_run()
 
@@ -849,6 +863,10 @@ func refresh_shop_offers() -> bool:
 	var message := "刷新商店：花费 %d 金币" % cost
 	_set_loot_message(message)
 	_set_milestone_message(message)
+	emit_gameplay_trigger("shop_refreshed", {
+		"cost": cost,
+		"refresh_count": shop_refresh_count
+	})
 	shop_open_changed.emit(is_shop_open, active_shop_event, shop_offers)
 	return true
 
@@ -977,6 +995,10 @@ func buy_shop_offer(offer_index: int) -> bool:
 	var message := "购买：%s，花费 %d 金币，%s" % [str(offer.get("title", "商品")), cost, reward_text]
 	_set_loot_message(message)
 	_set_milestone_message(message)
+	emit_gameplay_trigger("shop_purchased", {
+		"cost": cost,
+		"offer": offer
+	})
 	shop_open_changed.emit(is_shop_open, active_shop_event, shop_offers)
 	return true
 
@@ -1271,6 +1293,10 @@ func _advance_after_stage_shop() -> void:
 	var message := "进入关卡：%s - %s" % [str(phase.get("name", "未知阶段")), str(phase.get("goal", ""))]
 	_set_loot_message(message)
 	_set_milestone_message(message)
+	emit_gameplay_trigger("stage_started", {
+		"stage_index": current_phase_index + 1,
+		"phase": phase
+	})
 	_emit_run_time_changed(true)
 	_emit_phase_objective_changed()
 

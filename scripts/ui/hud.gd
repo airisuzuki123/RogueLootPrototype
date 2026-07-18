@@ -581,6 +581,7 @@ func _on_build_summary_changed(summary: Dictionary) -> void:
 	var flow_damage_text := "+%d%%" % flow_damage_bonus
 	if flow_damage_bonus < 0:
 		flow_damage_text = "%d%%" % flow_damage_bonus
+	var critical_damage_multiplier := float(summary.get("critical_damage_multiplier", 2.0))
 	var player_size_text := "玩家体积 +%d%%" % player_size_bonus
 	if player_size_bonus < 0:
 		player_size_text = "玩家体积 %d%%" % player_size_bonus
@@ -594,9 +595,10 @@ func _on_build_summary_changed(summary: Dictionary) -> void:
 		int(summary.get("explosion_radius", 0)),
 		player_size_text
 	])
-	lines.append("攻速 %.1f/秒 | 暴击 %d%% | 静立 +%d%% | 移速 %d" % [
+	lines.append("攻速 %.1f/秒 | 暴击 %d%%/%.1f倍 | 静立 +%d%% | 移速 %d" % [
 		attacks_per_second,
 		int(summary.get("critical_chance", 0)),
+		critical_damage_multiplier,
 		stationary_critical_bonus,
 		int(summary.get("move_speed", 0))
 	])
@@ -1347,8 +1349,11 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 	var haste_damage_bonus := int(summary.get("haste_damage_bonus_percent", 0))
 	var haste_critical_bonus := int(summary.get("haste_critical_bonus", 0))
 	var rapid_damage_bonus := int(summary.get("rapid_skill_damage_bonus_percent", 0))
+	var reflow_damage_bonus := int(summary.get("reflow_skill_damage_bonus_percent", 0))
 	var blood_damage_bonus := int(summary.get("blood_damage_bonus_percent", 0))
 	var blood_critical_bonus := int(summary.get("blood_critical_bonus", 0))
+	var crimson_damage_bonus := int(summary.get("crimson_leech_damage_bonus_percent", 0))
+	var total_life_steal_percent := int(summary.get("total_life_steal_percent", 0))
 	var still_stacks := int(summary.get("still_focus_stacks", 0))
 	var motion_stacks := int(summary.get("motion_focus_stacks", 0))
 	var movement_damage_bonus := int(summary.get("movement_damage_bonus_percent", 0))
@@ -1365,6 +1370,14 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 	var pierce_amp_stacks := int(summary.get("pierce_amp_stacks", 0))
 	var conduit_stacks := int(summary.get("conduit_coil_stacks", 0))
 	var guard_stacks := int(summary.get("guard_blade_stacks", 0))
+	var giant_echo_stacks := int(summary.get("giant_echo_stacks", 0))
+	var giant_close_damage_bonus := int(summary.get("giant_echo_close_damage_bonus_percent", 0))
+	var light_edge_stacks := int(summary.get("light_edge_stacks", 0))
+	var critical_damage_multiplier := float(summary.get("critical_damage_multiplier", 2.0))
+	var compressed_core_stacks := int(summary.get("compressed_core_stacks", 0))
+	var reflow_stacks := int(summary.get("reflow_shards_stacks", 0))
+	var crimson_stacks := int(summary.get("crimson_leech_stacks", 0))
+	var crimson_active := bool(summary.get("crimson_leech_active", false))
 	if damage_bonus > 0:
 		parts.append("强击 +%d" % damage_bonus)
 	if damage_percent_bonus > 0:
@@ -1391,8 +1404,13 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 		parts.append("疾行 x%d/+%d%%/%d%%暴" % [haste_stacks, haste_damage_bonus, haste_critical_bonus])
 	if rapid_stacks > 0:
 		parts.append("速射 x%d/+%d%%" % [rapid_stacks, rapid_damage_bonus])
+	if reflow_stacks > 0:
+		parts.append("回流 x%d/+%d%%" % [reflow_stacks, reflow_damage_bonus])
 	if blood_stacks > 0:
 		parts.append("血潮 x%d/+%d%%/%d%%暴" % [blood_stacks, blood_damage_bonus, blood_critical_bonus])
+	if crimson_stacks > 0:
+		var crimson_state := "触发" if crimson_active else "未触发"
+		parts.append("血怒 x%d/%s/+%d%%/%d%%吸" % [crimson_stacks, crimson_state, crimson_damage_bonus, total_life_steal_percent])
 	if still_stacks > 0:
 		parts.append("静立 x%d" % still_stacks)
 	if motion_stacks > 0:
@@ -1429,6 +1447,12 @@ func _format_skill_stack_parts(summary: Dictionary) -> Array[String]:
 		parts.append("线圈 x%d" % conduit_stacks)
 	if guard_stacks > 0:
 		parts.append("锋刃 x%d" % guard_stacks)
+	if giant_echo_stacks > 0:
+		parts.append("巨体 x%d/+%d%%近身" % [giant_echo_stacks, giant_close_damage_bonus])
+	if light_edge_stacks > 0:
+		parts.append("轻锋 x%d/暴伤 %.1f倍" % [light_edge_stacks, critical_damage_multiplier])
+	if compressed_core_stacks > 0:
+		parts.append("压缩 x%d" % compressed_core_stacks)
 	return parts
 
 func _format_event_choice_result(choice: Dictionary) -> String:

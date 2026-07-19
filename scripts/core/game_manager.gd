@@ -82,7 +82,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"arena_pattern_interval": 0.0,
 		"goal": "在 30 秒内熟悉直线弹道，尽量多拿金币",
 		"kill_target": 8,
-		"reward_gold": 8,
+		"reward_gold": 18,
 		"reward_experience": 2,
 		"reward_heal": 0
 	},

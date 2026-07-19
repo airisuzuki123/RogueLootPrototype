@@ -27,8 +27,8 @@ const BUILD_ROUTE_DEFINITIONS := {
 		"shop_offers": ["shop_blast_skill", "shop_shatter_blast_skill", "shop_overload_skill", "shop_heavy_skill", "shop_compressed_core_skill", "shop_damage_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
 	},
 	"chain": {
-		"upgrades": ["chain_spark", "homing_shards", "orbit_blade", "conduit_coil", "channel_beam", "reflow_shards", "attack_speed", "rapid_resonance"],
-		"shop_offers": ["shop_chain_skill", "shop_homing_skill", "shop_orbit_skill", "shop_conduit_coil_skill", "shop_channel_beam_skill", "shop_reflow_shards_skill", "shop_attack_speed_skill", "shop_rapid_resonance_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
+		"upgrades": ["chain_spark", "homing_shards", "conduit_coil", "channel_beam", "reflow_shards", "attack_speed", "rapid_resonance"],
+		"shop_offers": ["shop_chain_skill", "shop_homing_skill", "shop_conduit_coil_skill", "shop_channel_beam_skill", "shop_reflow_shards_skill", "shop_attack_speed_skill", "shop_rapid_resonance_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
 	},
 	"close": {
 		"upgrades": ["close_slash", "pulse_field", "guard_blade", "giant_echo", "blood_pact", "crimson_leech", "elite_reactor", "last_stand_matrix", "graze_barrier", "clear_barrier", "move_speed"],
@@ -41,7 +41,7 @@ const ROUTE_SIGNATURE_UPGRADES := {
 	"agile": ["light_frame", "light_resonance", "haste_resonance", "motion_focus", "light_edge", "reflow_shards", "momentum_cache"],
 	"pierce": ["piercing_rounds", "pierce_amp"],
 	"blast": ["blast_core", "shatter_blast", "overload_burst", "heavy_shot", "compressed_core"],
-	"chain": ["chain_spark", "homing_shards", "orbit_blade", "conduit_coil", "channel_beam", "rapid_resonance", "reflow_shards"],
+	"chain": ["chain_spark", "homing_shards", "conduit_coil", "channel_beam", "rapid_resonance", "reflow_shards"],
 	"close": ["close_slash", "pulse_field", "guard_blade", "giant_echo", "blood_pact", "crimson_leech", "elite_reactor", "last_stand_matrix"]
 }
 
@@ -50,7 +50,7 @@ const ROUTE_SYNERGY_DEFINITIONS := {
 	"agile": ["chain", "close", "pierce"],
 	"pierce": ["blast", "bulk", "chain"],
 	"blast": ["bulk", "pierce", "chain"],
-	"chain": ["agile", "pierce", "blast"],
+	"chain": ["pierce", "blast"],
 	"close": ["bulk", "agile", "chain"]
 }
 

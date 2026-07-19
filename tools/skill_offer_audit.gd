@@ -123,10 +123,12 @@ func _summarize_scenario(scenario: Dictionary) -> String:
 	var top_upgrades := _top_weight_rows(upgrade_weights, 5)
 	var route_summary := _route_weight_summary(upgrade_weights)
 	var active_tags := _get_active_skill_tags()
-	return "- %s：升级前五为 %s；路线权重为 %s；主动标签 %s。" % [
+	var route_selection := _summarize_route_selection(scenario)
+	return "- %s：升级前五为 %s；路线权重为 %s；%s；主动标签 %s。" % [
 		str(scenario.get("title", "")),
 		_format_top_titles(top_upgrades),
 		route_summary,
+		route_selection,
 		", ".join(active_tags.keys())
 	]
 
@@ -135,6 +137,7 @@ func _append_scenario_detail(lines: Array[String], scenario: Dictionary) -> void
 	lines.append("")
 	lines.append("- 主动标签：`%s`" % "`, `".join(_get_active_skill_tags().keys()))
 	lines.append("- 路线分数：%s" % _format_route_scores(_get_active_build_route_scores()))
+	lines.append("- 路线选择：%s" % _summarize_route_selection(scenario))
 	lines.append("")
 	lines.append("升级权重前 %d：" % TOP_COUNT)
 	lines.append("")
@@ -347,3 +350,56 @@ func _format_route_scores(route_scores: Dictionary) -> String:
 	for route_id in SkillCatalog.BUILD_ROUTE_ORDER:
 		parts.append("%s %d" % [str(route_id), int(route_scores.get(route_id, 0))])
 	return " / ".join(parts)
+
+func _summarize_route_selection(_scenario: Dictionary) -> String:
+	var route_scores := _get_active_build_route_scores()
+	var primary_route := _pick_primary_route(route_scores)
+	if primary_route.is_empty():
+		return "主路线 无 / 分支 无"
+	var branch_route := _pick_branch_route(route_scores, primary_route)
+	if branch_route.is_empty():
+		return "主路线 %s / 分支 无" % primary_route
+	return "主路线 %s / 分支 %s" % [primary_route, branch_route]
+
+func _pick_primary_route(route_scores: Dictionary) -> String:
+	var best_route := ""
+	var best_score := -1
+	for route_id in SkillCatalog.BUILD_ROUTE_ORDER:
+		var score := int(route_scores.get(route_id, 0))
+		if score > best_score:
+			best_score = score
+			best_route = route_id
+	return best_route if best_score > 0 else ""
+
+func _pick_branch_route(route_scores: Dictionary, excluded_route_id: String) -> String:
+	var synergy_candidates: Array[String] = []
+	for route_id in SkillCatalog.get_route_synergy_ids(excluded_route_id):
+		var candidate_id := str(route_id)
+		if candidate_id == excluded_route_id or not SkillCatalog.BUILD_ROUTE_DEFINITIONS.has(candidate_id):
+			continue
+		synergy_candidates.append(candidate_id)
+	if not synergy_candidates.is_empty():
+		var best_synergy_score := -1
+		var best_synergies: Array[String] = []
+		for route_id in synergy_candidates:
+			var score := int(route_scores.get(route_id, 0))
+			if score > best_synergy_score:
+				best_synergy_score = score
+				best_synergies.clear()
+			if score == best_synergy_score:
+				best_synergies.append(route_id)
+		if not best_synergies.is_empty() and best_synergy_score > 0:
+			return best_synergies[0]
+		return synergy_candidates[0]
+	var candidates: Array[String] = []
+	var lowest_score := 999999
+	for route_id in SkillCatalog.BUILD_ROUTE_ORDER:
+		if route_id == excluded_route_id:
+			continue
+		var score := int(route_scores.get(route_id, 0))
+		if score < lowest_score:
+			lowest_score = score
+			candidates.clear()
+		if score == lowest_score:
+			candidates.append(route_id)
+	return candidates[0] if not candidates.is_empty() else ""

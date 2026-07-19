@@ -20,6 +20,9 @@ var build_summary_label: Label
 var loot_message_label: Label
 var hint_label: Label
 var milestone_label: Label
+var hud_toggle_button: Button
+var is_compact_hud: bool = false
+var compact_hidden_nodes: Array[Control] = []
 var equipment_choice_panel: PanelContainer
 var current_weapon_label: Label
 var candidate_weapon_label: Label
@@ -129,6 +132,22 @@ func _build_ui() -> void:
 	hint_label.text = "WASD 移动 | 自动攻击 | 拾取掉落 | B 背包 | 升级时选择强化"
 	hint_label.position = Vector2(16, 690)
 	root.add_child(hint_label)
+
+	compact_hidden_nodes = [
+		experience_label,
+		run_phase_label,
+		phase_objective_label,
+		encounter_label,
+		stage_event_label,
+		gold_label,
+		kills_label,
+		graze_label,
+		equipment_label,
+		build_summary_label,
+		loot_message_label,
+		hint_label
+	]
+	_build_hud_toggle_button(root)
 
 	_build_inventory_panel(root)
 
@@ -277,6 +296,16 @@ func _build_ui() -> void:
 	milestone_label.add_theme_constant_override("outline_size", 5)
 	root.add_child(milestone_label)
 
+func _build_hud_toggle_button(root: Control) -> void:
+	hud_toggle_button = Button.new()
+	hud_toggle_button.text = "隐藏"
+	hud_toggle_button.tooltip_text = "隐藏非关键 HUD 信息"
+	hud_toggle_button.custom_minimum_size = Vector2(76, 32)
+	hud_toggle_button.z_index = 20
+	hud_toggle_button.pressed.connect(_on_hud_toggle_pressed)
+	_apply_icon_button_style(hud_toggle_button, Color(0.34, 0.40, 0.48, 0.92), Color(0.03, 0.04, 0.05, 0.82), 1)
+	root.add_child(hud_toggle_button)
+
 func _build_vital_status_panel(parent: Control) -> void:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(370, 112)
@@ -389,6 +418,8 @@ func _layout_for_viewport() -> void:
 	var viewport_size := get_viewport().get_visible_rect().size
 	if hint_label != null:
 		hint_label.position = Vector2(16.0, maxf(16.0, viewport_size.y - 34.0))
+	if hud_toggle_button != null:
+		hud_toggle_button.position = Vector2(maxf(16.0, viewport_size.x - 92.0), 16.0)
 	if shop_panel != null:
 		_center_control(shop_panel, Vector2(980.0, 640.0), viewport_size, 0.52)
 	if upgrade_panel != null:
@@ -437,6 +468,18 @@ func _unhandled_input(event: InputEvent) -> void:
 			detail_modal_overlay.visible = false
 		else:
 			GameManager.set_inventory_open(false)
+
+func _on_hud_toggle_pressed() -> void:
+	_set_compact_hud(not is_compact_hud)
+
+func _set_compact_hud(enabled: bool) -> void:
+	is_compact_hud = enabled
+	for node in compact_hidden_nodes:
+		if node != null:
+			node.visible = not is_compact_hud
+	if hud_toggle_button != null:
+		hud_toggle_button.text = "展开" if is_compact_hud else "隐藏"
+		hud_toggle_button.tooltip_text = "显示 HUD 信息" if is_compact_hud else "隐藏非关键 HUD 信息"
 
 func _on_gold_changed(total: int) -> void:
 	gold_label.text = "金币：%d" % total

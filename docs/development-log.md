@@ -2,6 +2,13 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-19 - Push stage 4, stage 5, and initial class selection
+
+- Commit message: `记录阶段五点五版本推送`
+- Main changes: added stage 4 timed elite encounters, chest/shop/random events, Boss phases, and encounter variants; rebuilt stage 5 into a 10-stage 30-second combat loop with automatic cleanup, between-stage shop, shop refresh economy, richer skill pool, rarity-weighted skill offers, trigger-skill event handling, build summary feedback, economy/offer audit tools, and stage 5 closeout documentation; started stage 5.5 with initial class selection, five starting classes, class-biased opening attributes, class multipliers for existing skill channels, and a Chinese class selection UI.
+- Validation performed: ran `git diff --check`; ran Godot 4.6.1 headless outside the sandbox with no script errors.
+- Push result: pushed `main` to `origin/main` successfully.
+
 ## 2026-07-14 - Stage 3 bullet-hell run closeout
 
 - Fixed the staged plan at eight stages and continued from stage 3 without moving into stage 4.

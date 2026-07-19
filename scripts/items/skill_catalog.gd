@@ -2,10 +2,10 @@ extends RefCounted
 
 const SKILL_RARITY_ORDER := ["green", "blue", "purple", "gold"]
 const SKILL_RARITY_DEFINITIONS := {
-	"green": {"label": "绿色", "weight": 58, "shop_weight": 52},
-	"blue": {"label": "蓝色", "weight": 30, "shop_weight": 32},
-	"purple": {"label": "紫色", "weight": 10, "shop_weight": 13},
-	"gold": {"label": "金色", "weight": 2, "shop_weight": 3}
+	"green": {"label": "绿色", "weight": 48, "shop_weight": 43},
+	"blue": {"label": "蓝色", "weight": 34, "shop_weight": 35},
+	"purple": {"label": "紫色", "weight": 18, "shop_weight": 20},
+	"gold": {"label": "金色", "weight": 4, "shop_weight": 6}
 }
 
 const SKILL_REPEAT_WEIGHT_PER_STACK: float = 0.24

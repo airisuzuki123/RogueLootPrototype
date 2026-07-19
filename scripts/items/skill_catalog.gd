@@ -15,8 +15,8 @@ const BUILD_ROUTE_DEFINITIONS := {
 		"shop_offers": ["shop_multishot_skill", "shop_mass_resonance_skill", "shop_slow_resonance_skill", "shop_giant_echo_skill", "shop_still_focus_skill", "shop_heavy_skill", "shop_compressed_core_skill", "shop_blast_skill", "shop_anchor_discharge_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
 	},
 	"agile": {
-		"upgrades": ["light_frame", "light_resonance", "haste_resonance", "motion_focus", "light_edge", "reflow_shards", "attack_speed", "orbit_blade", "momentum_cache"],
-		"shop_offers": ["shop_light_frame_skill", "shop_light_resonance_skill", "shop_haste_resonance_skill", "shop_motion_focus_skill", "shop_light_edge_skill", "shop_reflow_shards_skill", "shop_attack_speed_skill", "shop_orbit_skill", "shop_momentum_cache_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
+		"upgrades": ["light_frame", "light_resonance", "haste_resonance", "motion_focus", "light_edge", "attack_speed", "orbit_blade", "momentum_cache"],
+		"shop_offers": ["shop_light_frame_skill", "shop_light_resonance_skill", "shop_haste_resonance_skill", "shop_motion_focus_skill", "shop_light_edge_skill", "shop_attack_speed_skill", "shop_orbit_skill", "shop_momentum_cache_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
 	},
 	"pierce": {
 		"upgrades": ["piercing_rounds", "pierce_amp", "light_edge", "damage", "attack_speed", "multishot"],
@@ -38,7 +38,7 @@ const BUILD_ROUTE_DEFINITIONS := {
 
 const ROUTE_SIGNATURE_UPGRADES := {
 	"bulk": ["multishot", "mass_resonance", "slow_resonance", "giant_echo", "still_focus", "heavy_shot", "compressed_core", "blast_core", "anchor_discharge"],
-	"agile": ["light_frame", "light_resonance", "haste_resonance", "motion_focus", "light_edge", "reflow_shards", "momentum_cache"],
+	"agile": ["light_frame", "light_resonance", "haste_resonance", "motion_focus", "light_edge", "momentum_cache"],
 	"pierce": ["piercing_rounds", "pierce_amp"],
 	"blast": ["blast_core", "shatter_blast", "overload_burst", "heavy_shot", "compressed_core"],
 	"chain": ["chain_spark", "homing_shards", "conduit_coil", "channel_beam", "rapid_resonance", "reflow_shards"],

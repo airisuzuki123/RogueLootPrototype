@@ -15,13 +15,13 @@
 
 ## 结论摘要
 
-- 无构筑开局：升级前五为 急速施放(58)、清弹屏障(58)、强击弹体(58)、折光护盾(58)、轻装骨架(58)；路线权重为 bulk 182 / agile 228 / pierce 128 / blast 54 / chain 52 / close 160；主路线 无 / 分支 无；主动标签 。
-- 体积迟缓：升级前五为 体积共鸣(173)、巨体回响(160)、迟缓共鸣(145)、锚定释放(109)、静立聚焦(80)；路线权重为 bulk 743 / agile 123 / pierce 94 / blast 110 / chain 37 / close 317；主路线 bulk / 分支 blast；主动标签 large_body, slow_move, multi_projectile, heavy_hit, slow_attack, blast, shielded, high_health。
-- 轻装疾行：升级前五为 轻锋协议(262)、游走聚焦(196)、疾行缓存(189)、轻装骨架(187)、疾行共鸣(164)；路线权重为 bulk 93 / agile 1241 / pierce 352 / blast 36 / chain 89 / close 144；主路线 agile / 分支 chain；主动标签 small_body, fast_move, moving, fast_attack。
-- 爆裂重弹：升级前五为 裂片爆破(212)、压缩弹芯(128)、锚定释放(124)、体积共鸣(111)、静立聚焦(92)；路线权重为 bulk 685 / agile 123 / pierce 79 / blast 425 / chain 37 / close 240；主路线 blast / 分支 bulk；主动标签 blast, large_body, slow_attack, heavy_hit, heavy_blast, slow_move, high_health。
-- 连锁追踪：升级前五为 碎片回流(113)、疾行缓存(82)、速射共鸣(68)、急速施放(58)、清弹屏障(58)；路线权重为 bulk 130 / agile 396 / pierce 134 / blast 42 / chain 254 / close 160；主路线 chain / 分支 pierce；主动标签 chain_skill, slow_move, fast_move, fast_attack, pierce, moving。
-- 近身护盾：升级前五为 巨体回响(274)、护身锋刃(217)、破阵反应(167)、急速施放(58)、清弹屏障(58)；路线权重为 bulk 452 / agile 166 / pierce 113 / blast 56 / chain 52 / close 792；主路线 close / 分支 bulk；主动标签 close_skill, shielded, bulk_close, large_body, high_health。
-- 血潮低血：升级前五为 背水矩阵(200)、生命强化(84)、血怒汲取(76)、血潮契约(66)、急速施放(58)；路线权重为 bulk 215 / agile 166 / pierce 112 / blast 54 / chain 52 / close 485；主路线 close / 分支 bulk；主动标签 low_life, blood_risk, slow_move, high_health。
+- 无构筑开局：升级前五为 急速施放(58)、清弹屏障(58)、强击弹体(58)、折光护盾(58)、轻装骨架(58)；路线权重为 bulk 182 / agile 218 / pierce 128 / blast 54 / chain 52 / close 160；主路线 无 / 分支 无；主动标签 。
+- 体积迟缓：升级前五为 体积共鸣(173)、巨体回响(160)、迟缓共鸣(145)、锚定释放(109)、静立聚焦(80)；路线权重为 bulk 743 / agile 118 / pierce 94 / blast 110 / chain 37 / close 317；主路线 bulk / 分支 blast；主动标签 large_body, slow_move, multi_projectile, heavy_hit, slow_attack, blast, shielded, high_health。
+- 轻装疾行：升级前五为 轻锋协议(262)、游走聚焦(196)、疾行缓存(189)、轻装骨架(187)、疾行共鸣(164)；路线权重为 bulk 93 / agile 1191 / pierce 352 / blast 36 / chain 68 / close 144；主路线 agile / 分支 chain；主动标签 small_body, fast_move, moving, fast_attack。
+- 爆裂重弹：升级前五为 裂片爆破(212)、压缩弹芯(128)、锚定释放(124)、体积共鸣(111)、静立聚焦(92)；路线权重为 bulk 685 / agile 118 / pierce 79 / blast 425 / chain 37 / close 240；主路线 blast / 分支 bulk；主动标签 blast, large_body, slow_attack, heavy_hit, heavy_blast, slow_move, high_health。
+- 连锁追踪：升级前五为 碎片回流(94)、疾行缓存(82)、速射共鸣(68)、急速施放(58)、清弹屏障(58)；路线权重为 bulk 130 / agile 283 / pierce 134 / blast 42 / chain 235 / close 160；主路线 chain / 分支 pierce；主动标签 chain_skill, slow_move, fast_move, fast_attack, pierce, moving。
+- 近身护盾：升级前五为 巨体回响(274)、护身锋刃(217)、破阵反应(167)、急速施放(58)、清弹屏障(58)；路线权重为 bulk 452 / agile 156 / pierce 113 / blast 56 / chain 52 / close 792；主路线 close / 分支 bulk；主动标签 close_skill, shielded, bulk_close, large_body, high_health。
+- 血潮低血：升级前五为 背水矩阵(200)、生命强化(84)、血怒汲取(76)、血潮契约(66)、急速施放(58)；路线权重为 bulk 215 / agile 156 / pierce 112 / blast 54 / chain 52 / close 485；主路线 close / 分支 bulk；主动标签 low_life, blood_risk, slow_move, high_health。
 
 ## 场景明细
 
@@ -128,10 +128,10 @@
 | 疾行共鸣 | 171 | blue | agile | fast_move |  |
 | 轻盈共鸣 | 171 | blue | agile | small_body |  |
 | 轻装骨架 | 168 | green | agile |  |  |
-| 碎片回流 | 66 | purple | agile, chain | moving, fast_attack |  |
 | 急速施放 | 52 | green | utility |  |  |
 | 清弹屏障 | 52 | green | survival |  |  |
 | 折光护盾 | 52 | green | survival |  |  |
+| 穿透弹芯 | 52 | green | pierce |  |  |
 
 ### 爆裂重弹
 
@@ -179,7 +179,7 @@
 
 | 技能 | 权重 | 稀有度 | 路线 | 标签命中 | 冲突命中 |
 |---|---:|---|---|---|---|
-| 碎片回流 | 113 | purple | agile, chain | moving, chain_skill, fast_attack |  |
+| 碎片回流 | 94 | purple | chain | moving, chain_skill, fast_attack |  |
 | 疾行缓存 | 82 | blue | agile | moving, fast_move |  |
 | 速射共鸣 | 68 | purple | chain | fast_attack |  |
 | 急速施放 | 58 | green | utility |  |  |
@@ -194,7 +194,7 @@
 
 | 技能 | 权重 | 稀有度 | 路线 | 标签命中 | 冲突命中 |
 |---|---:|---|---|---|---|
-| 碎片回流 | 142 | purple | agile, chain | moving, chain_skill, fast_attack |  |
+| 碎片回流 | 119 | purple | chain | moving, chain_skill, fast_attack |  |
 | 疾行缓存 | 87 | blue | agile | moving, fast_move |  |
 | 速射共鸣 | 86 | purple | chain | fast_attack |  |
 | 急速施放 | 52 | green | utility |  |  |

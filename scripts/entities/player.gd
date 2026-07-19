@@ -236,6 +236,7 @@ func _handle_elite_reactor_trigger(kind: String) -> void:
 	var duration := _skill_float("elite_reactor", "shield_duration", 4.0)
 	apply_graze_shield(shield, duration)
 	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(0.42, 0.86, 1.0, 0.82), 1.7)
+	GameManager.record_gameplay_trigger_effect("破阵反应")
 	GameManager.show_milestone_message("破阵反应：清除敌弹 %d，护盾 +%d，持续 %.1f 秒" % [cleared, shield, duration])
 
 func _handle_last_stand_trigger() -> void:
@@ -248,6 +249,7 @@ func _handle_last_stand_trigger() -> void:
 	var duration := _skill_float("last_stand_matrix", "shield_duration", 4.0)
 	apply_graze_shield(shield, duration)
 	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1.0, 0.25, 0.42, 0.84), 1.9)
+	GameManager.record_gameplay_trigger_effect("背水矩阵")
 	GameManager.show_milestone_message("背水矩阵：清除敌弹 %d，护盾 +%d，持续 %.1f 秒" % [cleared, shield, duration])
 
 func _handle_focus_tier_trigger(trigger: Dictionary) -> void:
@@ -268,6 +270,7 @@ func _handle_momentum_cache_trigger(old_tier: int, new_tier: int) -> void:
 	momentum_cache_cooldown = _skill_float("momentum_cache", "cooldown", 9.0)
 	apply_graze_shield(shield, duration)
 	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(0.46, 1.0, 0.76, 0.76), 1.25)
+	GameManager.record_gameplay_trigger_effect("疾行缓存")
 
 func _handle_anchor_discharge_trigger(old_tier: int, new_tier: int) -> void:
 	var stacks := int(upgrade_stacks.get("anchor_discharge", 0))
@@ -280,6 +283,7 @@ func _handle_anchor_discharge_trigger(old_tier: int, new_tier: int) -> void:
 	anchor_discharge_cooldown = _skill_float("anchor_discharge", "cooldown", 12.0)
 	apply_graze_shield(shield, duration)
 	CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(0.78, 0.72, 1.0, 0.78), 1.55)
+	GameManager.record_gameplay_trigger_effect("锚定释放")
 	if cleared > 0:
 		GameManager.show_milestone_message("锚定释放：清除敌弹 %d，护盾 +%d，持续 %.1f 秒" % [cleared, shield, duration])
 

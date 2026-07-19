@@ -693,14 +693,27 @@ func _on_run_ended(kills: int, gold: int) -> void:
 		int(summary.get("shop_refreshes", 0)),
 		int(summary.get("shop_gold_spent", 0))
 	]
-	game_over_label.text = "%s\n时间：%s\n击杀：%d\n金币：%d\n%s\n%s" % [
+	var trigger_line := _format_trigger_summary(summary)
+	game_over_label.text = "%s\n时间：%s\n击杀：%d\n金币：%d\n%s\n%s%s" % [
 		title,
 		_format_time(GameManager.get_run_elapsed_seconds()),
 		kills,
 		gold,
 		stage_line,
-		shop_line
+		shop_line,
+		trigger_line
 	]
+
+func _format_trigger_summary(summary: Dictionary) -> String:
+	var trigger_effects := int(summary.get("trigger_effects", 0))
+	if trigger_effects <= 0:
+		return ""
+	var counts: Dictionary = summary.get("trigger_effect_counts", {})
+	var parts: Array[String] = []
+	for title in counts.keys():
+		parts.append("%s x%d" % [str(title), int(counts.get(title, 0))])
+	parts.sort()
+	return "\n触发技能：%d 次（%s）" % [trigger_effects, "，".join(parts)]
 
 func _on_shop_open_changed(is_open: bool, event: Dictionary, offers: Array) -> void:
 	if shop_panel == null:

@@ -499,6 +499,8 @@ var highest_stage_reached: int = 1
 var run_shop_purchases: int = 0
 var run_shop_refreshes: int = 0
 var run_shop_gold_spent: int = 0
+var run_trigger_effects: int = 0
+var run_trigger_effect_counts: Dictionary = {}
 var latest_run_time_second: int = -1
 var phase_bullet_pattern_counters := {}
 var graze_charge: int = 0
@@ -554,6 +556,8 @@ func reset_run() -> void:
 	run_shop_purchases = 0
 	run_shop_refreshes = 0
 	run_shop_gold_spent = 0
+	run_trigger_effects = 0
+	run_trigger_effect_counts.clear()
 	latest_run_time_second = -1
 	phase_bullet_pattern_counters.clear()
 	graze_charge = 0
@@ -789,6 +793,12 @@ func emit_gameplay_trigger(trigger_id: String, payload: Dictionary = {}) -> void
 	if player != null and player.has_method("handle_gameplay_trigger"):
 		player.handle_gameplay_trigger(trigger)
 
+func record_gameplay_trigger_effect(trigger_title: String) -> void:
+	if trigger_title.is_empty():
+		return
+	run_trigger_effects += 1
+	run_trigger_effect_counts[trigger_title] = int(run_trigger_effect_counts.get(trigger_title, 0)) + 1
+
 func complete_encounter(encounter_id: String) -> void:
 	if active_encounter.is_empty() or str(active_encounter.get("id", "")) != encounter_id:
 		return
@@ -882,6 +892,8 @@ func get_run_summary() -> Dictionary:
 		"shop_purchases": run_shop_purchases,
 		"shop_refreshes": run_shop_refreshes,
 		"shop_gold_spent": run_shop_gold_spent,
+		"trigger_effects": run_trigger_effects,
+		"trigger_effect_counts": run_trigger_effect_counts.duplicate(true),
 		"last_stage_summary": last_stage_summary.duplicate(true)
 	}
 

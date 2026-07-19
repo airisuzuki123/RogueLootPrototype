@@ -1854,6 +1854,9 @@ func _apply_class_skill_weight(base_weight: float, upgrade_id: String) -> float:
 	if selected_class.is_empty() or upgrade_id.is_empty():
 		return base_weight
 	var weighted := base_weight
+	var upgrade_bias: Dictionary = selected_class.get("upgrade_bias", {})
+	if upgrade_bias.has(upgrade_id):
+		weighted *= clampf(float(upgrade_bias.get(upgrade_id, 1.0)), 0.65, 1.35)
 	var route_bias: Dictionary = selected_class.get("route_bias", {})
 	for route_id in SkillCatalog.get_upgrade_route_tags(upgrade_id):
 		var bias := int(route_bias.get(str(route_id), 0))

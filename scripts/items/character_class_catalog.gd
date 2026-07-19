@@ -15,6 +15,7 @@ const CLASS_DEFINITIONS := {
 		"effects": ["玩家体积 +15%", "当前移速 -10%", "体积共鸣伤害最终值 x1.20"],
 		"initial_stats": {"player_size_bonus": 0.15, "move_speed_multiplier": 0.90},
 		"multipliers": {"mass_resonance_damage": 1.20},
+		"upgrade_bias": {"mass_resonance": 1.15, "slow_resonance": 1.15, "giant_echo": 1.10},
 		"route_bias": {"bulk": 2, "close": 1, "blast": 1},
 		"tag_bias": ["large_body", "slow_move"]
 	},
@@ -25,8 +26,9 @@ const CLASS_DEFINITIONS := {
 		"initial_stats": {"critical_chance": 5},
 		"multipliers": {"stationary_crit": 1.25},
 		"focus_decay": {"stationary_move_decay_multiplier": 0.80},
+		"upgrade_bias": {"still_focus": 1.35, "anchor_discharge": 0.90, "channel_beam": 1.12, "damage": 1.08},
 		"route_bias": {"bulk": 1, "pierce": 1, "chain": 1},
-		"tag_bias": ["stationary", "slow_attack"]
+		"tag_bias": ["stationary"]
 	},
 	"close_blade_guard": {
 		"name": "贴身刃卫",
@@ -34,6 +36,7 @@ const CLASS_DEFINITIONS := {
 		"effects": ["开局护盾 +20，持续 999 秒", "近身刀环和脉冲场伤害 x1.20", "近身技能半径 +8%"],
 		"initial_stats": {"shield": 20, "shield_duration": 999.0},
 		"multipliers": {"close_damage": 1.20, "close_radius": 1.08},
+		"upgrade_bias": {"close_slash": 1.25, "pulse_field": 1.25, "guard_blade": 1.15},
 		"route_bias": {"close": 2, "bulk": 1, "agile": 1},
 		"tag_bias": ["shielded", "close_skill"]
 	},
@@ -43,6 +46,7 @@ const CLASS_DEFINITIONS := {
 		"effects": ["当前移速 +15%", "玩家体积 -12%", "连锁、回旋和追踪伤害 x1.15"],
 		"initial_stats": {"move_speed_multiplier": 1.15, "player_size_bonus": -0.12},
 		"multipliers": {"chain_orbit_homing_damage": 1.15},
+		"upgrade_bias": {"chain_spark": 1.18, "orbit_blade": 1.35, "homing_shards": 1.18, "motion_focus": 1.12},
 		"route_bias": {"agile": 2, "chain": 2, "pierce": 1},
 		"tag_bias": ["fast_move", "small_body", "chain_skill"]
 	},
@@ -52,8 +56,9 @@ const CLASS_DEFINITIONS := {
 		"effects": ["爆裂范围 +20", "重压弹芯和过载爆发伤害 x1.15", "射击间隔 +8%"],
 		"initial_stats": {"explosion_radius": 20.0, "fire_interval_multiplier": 1.08},
 		"multipliers": {"heavy_overload_damage": 1.15},
+		"upgrade_bias": {"blast_core": 1.20, "shatter_blast": 1.20, "heavy_shot": 1.20, "overload_burst": 1.12, "compressed_core": 1.12},
 		"route_bias": {"blast": 2, "bulk": 1, "pierce": 1},
-		"tag_bias": ["blast", "heavy_hit", "slow_attack"]
+		"tag_bias": ["blast", "heavy_hit"]
 	}
 }
 

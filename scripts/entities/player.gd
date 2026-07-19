@@ -649,9 +649,16 @@ func _update_auto_attack(delta: float) -> void:
 	var base_direction: Vector2 = global_position.direction_to(target.global_position)
 	var total_projectiles := _get_total_projectile_count()
 	for index in range(total_projectiles):
-		var spread: float = deg_to_rad(equipment_spread_degrees * (index - (total_projectiles - 1) / 2.0))
+		var spread: float = _get_primary_projectile_spread_angle(index, total_projectiles)
 		_spawn_player_projectile(base_direction.rotated(spread), 1.0, [])
 	_fire_extra_skill_projectiles(base_direction)
+
+func _get_primary_projectile_spread_angle(index: int, total_projectiles: int) -> float:
+	if total_projectiles <= 1 or index == 0:
+		return 0.0
+	var pair_index := int(ceil(float(index) / 2.0))
+	var side := -1.0 if index % 2 == 1 else 1.0
+	return deg_to_rad(equipment_spread_degrees * float(pair_index) * side)
 
 func _find_nearest_enemy() -> Node2D:
 	var nearest: Node2D = null

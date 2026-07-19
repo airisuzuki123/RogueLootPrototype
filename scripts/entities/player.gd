@@ -47,6 +47,7 @@ const CONDUIT_CHAIN_DAMAGE_PER_STACK := 0.75
 const CONDUIT_BEAM_INTERVAL_REDUCTION := 0.03
 const LIFE_STEAL_BASE_CAP_RATIO := 0.06
 const LIFE_STEAL_CAP_PER_PERCENT := 1.0
+const EXPLOSION_RADIUS_CAP := 72.0
 
 @export var move_speed: float = 260.0
 @export var max_health: int = 100
@@ -421,7 +422,7 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			upgrade_pierce_bonus += 1
 			result["skill_text"] = "穿透 +1，投射物伤害 -10%"
 		"blast_core":
-			var blast_radius := _skill_float("blast_core", "explosion_radius", 70.0)
+			var blast_radius := _skill_float("blast_core", "explosion_radius", 40.0)
 			upgrade_explosion_radius_bonus += blast_radius
 			var blast_old_size_bonus := upgrade_player_size_bonus
 			upgrade_player_size_bonus = minf(PLAYER_SIZE_BONUS_CAP, upgrade_player_size_bonus + _skill_float("blast_core", "player_size_bonus", BLAST_CORE_SIZE_BONUS))
@@ -517,7 +518,7 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			]
 		"shatter_blast":
 			shatter_blast_stacks += 1
-			var shatter_radius := _skill_float("shatter_blast", "explosion_radius", 32.0)
+			var shatter_radius := _skill_float("shatter_blast", "explosion_radius", 16.0)
 			upgrade_explosion_radius_bonus += shatter_radius
 			result["explosion_radius"] = int(round(shatter_radius))
 			result["skill_text"] = "爆裂伤害 +55%%"
@@ -594,9 +595,10 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			upgrade_pierce_bonus += 1
 			result["skill_text"] = "穿透强化：投射物穿透 +1"
 		"form_burst":
-			upgrade_explosion_radius_bonus += 28.0
-			result["explosion_radius"] = 28
-			result["skill_text"] = "爆裂强化：爆裂范围 +28"
+			var form_burst_radius := _skill_float("form_burst", "explosion_radius", 14.0)
+			upgrade_explosion_radius_bonus += form_burst_radius
+			result["explosion_radius"] = int(round(form_burst_radius))
+			result["skill_text"] = "爆裂强化：爆裂范围 +%d" % int(round(form_burst_radius))
 	_emit_build_summary()
 	return result
 
@@ -962,7 +964,7 @@ func _get_final_projectile_damage() -> int:
 	return maxi(1, int(round(float(_get_base_projectile_damage()) * _get_flow_damage_multiplier())))
 
 func _get_total_explosion_radius() -> float:
-	return equipment_explosion_radius + affix_explosion_radius_bonus + upgrade_explosion_radius_bonus
+	return minf(EXPLOSION_RADIUS_CAP, equipment_explosion_radius + affix_explosion_radius_bonus + upgrade_explosion_radius_bonus)
 
 func _get_total_explosion_damage_ratio() -> float:
 	var total_radius := _get_total_explosion_radius()
@@ -1025,7 +1027,7 @@ func _spawn_player_projectile(direction: Vector2, damage_multiplier: float = 1.0
 	projectile.pierce_remaining = _get_total_pierce()
 	projectile.explosion_radius = _get_total_explosion_radius()
 	if extra_tags.has("overload") and projectile.explosion_radius <= 0.0:
-		projectile.explosion_radius = 56.0 + float(overload_burst_stacks) * 8.0
+		projectile.explosion_radius = minf(EXPLOSION_RADIUS_CAP, 34.0 + float(overload_burst_stacks) * 5.0)
 	projectile.explosion_damage = int(round(float(projectile.damage) * _get_total_explosion_damage_ratio()))
 	if extra_tags.has("overload") and projectile.explosion_damage <= 0:
 		projectile.explosion_damage = maxi(1, int(round(float(projectile.damage) * (0.30 + float(overload_burst_stacks) * 0.04))))
@@ -1047,7 +1049,7 @@ func _spawn_player_projectile(direction: Vector2, damage_multiplier: float = 1.0
 		projectile.knockback_force *= 1.45 + float(heavy_shot_stacks) * 0.12
 		projectile.lifetime = maxf(projectile.lifetime, 1.65)
 		if projectile.explosion_radius <= 0.0 and heavy_shot_stacks >= 2:
-			projectile.explosion_radius = 38.0 + float(heavy_shot_stacks) * 8.0
+			projectile.explosion_radius = minf(EXPLOSION_RADIUS_CAP, 26.0 + float(heavy_shot_stacks) * 5.0)
 			projectile.explosion_damage = maxi(projectile.explosion_damage, int(round(float(projectile.damage) * 0.28)))
 	for tag in extra_tags:
 		if not projectile.power_tags.has(tag):

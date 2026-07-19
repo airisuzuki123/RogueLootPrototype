@@ -244,8 +244,8 @@ const UPGRADE_DEFINITIONS := {
 	},
 	"blast_core": {
 		"title": "爆裂核心",
-		"description": "爆裂范围 +70，玩家体积 +20%（最高 +240%），射击间隔 +15%",
-		"preview": "爆裂范围 +70、玩家体积 +20%（最高 +240%）、射击间隔 +15%",
+		"description": "爆裂范围 +40，玩家体积 +20%（最高 +240%），射击间隔 +15%",
+		"preview": "爆裂范围 +40、玩家体积 +20%（最高 +240%）、射击间隔 +15%",
 		"rarity": "purple"
 	},
 	"graze_barrier": {
@@ -310,8 +310,8 @@ const UPGRADE_DEFINITIONS := {
 	},
 	"shatter_blast": {
 		"title": "裂片爆破",
-		"description": "爆裂伤害 +55%，爆裂范围 +32",
-		"preview": "爆裂伤害 +55%，爆裂范围 +32",
+		"description": "爆裂伤害 +55%，爆裂范围 +16",
+		"preview": "爆裂伤害 +55%，爆裂范围 +16",
 		"rarity": "blue"
 	},
 	"pierce_amp": {
@@ -406,8 +406,8 @@ const UPGRADE_DEFINITIONS := {
 	},
 	"form_burst": {
 		"title": "爆裂强化",
-		"description": "当前武器为爆裂法杖：爆裂范围 +28",
-		"preview": "爆裂范围 +28",
+		"description": "当前武器为爆裂法杖：爆裂范围 +14",
+		"preview": "爆裂范围 +14",
 		"rarity": "blue"
 	}
 }
@@ -479,7 +479,7 @@ const UPGRADE_VALUES := {
 	"still_focus": {"interval": 0.70, "crit_per_tier": 10, "max_tier": 12},
 	"motion_focus": {"interval": 0.60, "damage_per_tier": 0.08, "crit_per_tier": 5, "max_tier": 10},
 	"piercing_rounds": {"pierce_bonus": 1, "projectile_damage_penalty": 0.10},
-	"blast_core": {"explosion_radius": 70.0, "player_size_bonus": 0.20, "fire_interval_multiplier": 1.15},
+	"blast_core": {"explosion_radius": 40.0, "player_size_bonus": 0.20, "fire_interval_multiplier": 1.15},
 	"graze_barrier": {"shield": 22, "shield_duration": 4.0},
 	"clear_barrier": {"shield": 16, "shield_duration": 3.5},
 	"chain_spark": {"projectile_damage_penalty": 0.12, "base_damage_multiplier": 1.15, "damage_per_extra_stack": 0.20, "lifetime_bonus": 0.08},
@@ -490,7 +490,7 @@ const UPGRADE_VALUES := {
 	"close_slash": {"base_radius": 72.0, "radius_per_stack": 22.0, "base_cooldown": 1.18, "cooldown_reduction": 0.12, "min_cooldown": 0.22, "base_damage_multiplier": 1.20, "damage_per_extra_stack": 0.25},
 	"pulse_field": {"base_radius": 96.0, "radius_per_stack": 24.0, "base_cooldown": 2.25, "cooldown_reduction": 0.18, "min_cooldown": 0.55, "base_damage_multiplier": 1.00, "damage_per_extra_stack": 0.20},
 	"channel_beam": {"base_range": 330.0, "range_per_stack": 28.0, "base_interval": 0.32, "interval_reduction": 0.035, "base_damage_multiplier": 0.85, "damage_per_extra_stack": 0.18, "move_speed_multiplier": 0.90},
-	"shatter_blast": {"explosion_damage_per_stack": 0.55, "explosion_radius": 32.0},
+	"shatter_blast": {"explosion_damage_per_stack": 0.55, "explosion_radius": 16.0},
 	"pierce_amp": {"pierce_bonus": 1, "damage_per_stack": 0.55},
 	"conduit_coil": {"beam_damage_per_stack": 1.50, "chain_damage_per_stack": 0.75, "beam_interval_reduction": 0.03},
 	"guard_blade": {"close_damage_per_stack": 0.55, "base_shield": 16, "shield_per_stack": 4, "shield_duration": 4.0},
@@ -502,7 +502,8 @@ const UPGRADE_VALUES := {
 	"elite_reactor": {"shield_per_stack": 18, "shield_duration": 4.0},
 	"last_stand_matrix": {"threshold": 0.35, "shield_per_stack": 26, "shield_duration": 4.0},
 	"momentum_cache": {"required_movement_tier": 8, "shield_per_stack": 10, "shield_duration": 2.5, "cooldown": 9.0},
-	"anchor_discharge": {"required_stationary_tier": 6, "shield_per_stack": 8, "shield_duration": 2.5, "cooldown": 12.0}
+	"anchor_discharge": {"required_stationary_tier": 6, "shield_per_stack": 8, "shield_duration": 2.5, "cooldown": 12.0},
+	"form_burst": {"explosion_radius": 14.0}
 }
 
 static func get_upgrade(upgrade_id: String) -> Dictionary:

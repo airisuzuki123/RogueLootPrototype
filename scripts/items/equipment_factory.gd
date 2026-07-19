@@ -20,16 +20,15 @@ const AFFIXES := [
 	{"id": "damage", "label": "伤害", "min": 3, "max": 8},
 	{"id": "max_health", "label": "最大生命", "min": 10, "max": 25},
 	{"id": "critical_chance", "label": "暴击率", "min": 4, "max": 9},
-	{"id": "life_steal", "label": "吸血", "min": 3, "max": 7},
 	{"id": "gold_bonus", "label": "金币获取", "min": 8, "max": 18}
 ]
 
 const SLOT_AFFIXES := {
-	"weapon": ["damage", "critical_chance", "life_steal"],
+	"weapon": ["damage", "critical_chance"],
 	"helmet": ["max_health", "critical_chance"],
-	"armor": ["max_health", "life_steal", "gold_bonus"],
+	"armor": ["max_health", "gold_bonus"],
 	"boots": ["max_health", "gold_bonus"],
-	"necklace": ["critical_chance", "life_steal", "gold_bonus"],
+	"necklace": ["critical_chance", "gold_bonus"],
 	"ring": ["damage", "critical_chance", "gold_bonus"]
 }
 
@@ -65,8 +64,8 @@ const WEAPON_FORMS := [
 		"description": "命中时造成小范围爆裂伤害",
 		"weight": 16,
 		"score": 20,
-		"explosion_radius": 72.0,
-		"explosion_damage_ratio": 0.35
+		"explosion_radius": 44.0,
+		"explosion_damage_ratio": 0.32
 	}
 ]
 

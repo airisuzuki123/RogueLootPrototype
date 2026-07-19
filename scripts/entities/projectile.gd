@@ -168,7 +168,16 @@ func _on_body_entered(body: Node) -> void:
 		body.take_damage(damage, direction.normalized() * knockback_force, is_critical)
 		_apply_life_steal(damage)
 	if explosion_radius > 0.0 and explosion_damage > 0:
-		_deal_explosion_damage(body)
+		var explosion_hits := _deal_explosion_damage(body)
+		if explosion_hits > 0:
+			CombatFeedback.show_ring(
+				get_tree().current_scene,
+				global_position,
+				explosion_radius,
+				Color(1.0, 0.48, 0.16, 0.62),
+				3.0,
+				0.14
+			)
 	var burst_color := _get_hit_burst_color()
 	var burst_size := 0.7
 	if power_tags.has("blast"):
@@ -183,7 +192,8 @@ func _on_body_entered(body: Node) -> void:
 		return
 	queue_free()
 
-func _deal_explosion_damage(primary_body: Node) -> void:
+func _deal_explosion_damage(primary_body: Node) -> int:
+	var hit_count := 0
 	for enemy_node in get_tree().get_nodes_in_group("enemies"):
 		if enemy_node == primary_body:
 			continue
@@ -195,7 +205,8 @@ func _deal_explosion_damage(primary_body: Node) -> void:
 		if enemy.has_method("take_damage"):
 			var knockback := global_position.direction_to(enemy.global_position) * knockback_force * 0.55
 			enemy.take_damage(explosion_damage, knockback)
-			_apply_life_steal(explosion_damage)
+			hit_count += 1
+	return hit_count
 
 func _apply_life_steal(hit_damage: int) -> void:
 	if life_steal_percent <= 0 or source_player == null or not is_instance_valid(source_player):

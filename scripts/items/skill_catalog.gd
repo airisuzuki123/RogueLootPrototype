@@ -8,6 +8,26 @@ const SKILL_RARITY_DEFINITIONS := {
 	"gold": {"label": "金色", "weight": 2, "shop_weight": 3}
 }
 
+const SKILL_REPEAT_WEIGHT_PER_STACK: float = 0.45
+const SKILL_REPEAT_WEIGHT_CAP: float = 2.80
+const SKILL_SYNERGY_WEIGHT_PER_SOURCE_STACK: float = 0.32
+const SKILL_SYNERGY_WEIGHT_CAP: float = 2.25
+const SKILL_TAG_SOURCE_WEIGHT_PER_MATCH: float = 0.34
+const SKILL_TAG_SOURCE_WEIGHT_CAP: float = 2.60
+const SKILL_TAG_ROUTE_WEIGHT_PER_STACK: float = 0.10
+const SKILL_TAG_ROUTE_WEIGHT_CAP: float = 1.70
+const SKILL_TAG_CONFLICT_WEIGHT: float = 0.48
+const SKILL_ENGINE_FIRST_PICK_WEIGHT: float = 1.35
+const SKILL_ENGINE_REPEAT_BASE_WEIGHT: int = 10
+
+const SHOP_RECYCLE_DISCOUNT_PER_STACK: int = 4
+const SHOP_RECYCLE_DISCOUNT_CAP: int = 12
+const SHOP_FILTER_ROUTE_WEIGHT_PER_STACK: float = 0.25
+const SHOP_FILTER_ROUTE_WEIGHT_CAP: float = 2.00
+const SHOP_RARE_MAGNET_WEIGHT_PER_STACK: float = 0.75
+const SHOP_RARE_MAGNET_WEIGHT_CAP: float = 3.25
+const SHOP_RARE_MAGNET_PRICE_PER_STACK: float = 0.15
+
 const BUILD_ROUTE_ORDER := ["bulk", "agile", "pierce", "blast", "chain", "close"]
 const BUILD_ROUTE_DEFINITIONS := {
 	"bulk": {

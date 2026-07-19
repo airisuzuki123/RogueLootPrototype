@@ -13,24 +13,6 @@ const STAGE_COUNT: int = 10
 const SHOP_REFRESH_BASE_COST: int = 6
 const OVERKILL_BONUS_PER_KILL: int = 2
 const OVERKILL_BONUS_CAP: int = 24
-const SKILL_REPEAT_WEIGHT_PER_STACK: float = 0.45
-const SKILL_REPEAT_WEIGHT_CAP: float = 2.80
-const SKILL_SYNERGY_WEIGHT_PER_SOURCE_STACK: float = 0.32
-const SKILL_SYNERGY_WEIGHT_CAP: float = 2.25
-const SKILL_TAG_SOURCE_WEIGHT_PER_MATCH: float = 0.34
-const SKILL_TAG_SOURCE_WEIGHT_CAP: float = 2.60
-const SKILL_TAG_ROUTE_WEIGHT_PER_STACK: float = 0.10
-const SKILL_TAG_ROUTE_WEIGHT_CAP: float = 1.70
-const SKILL_TAG_CONFLICT_WEIGHT: float = 0.48
-const SKILL_ENGINE_FIRST_PICK_WEIGHT: float = 1.35
-const SKILL_ENGINE_REPEAT_BASE_WEIGHT: int = 10
-const SHOP_RECYCLE_DISCOUNT_PER_STACK: int = 4
-const SHOP_RECYCLE_DISCOUNT_CAP: int = 12
-const SHOP_FILTER_ROUTE_WEIGHT_PER_STACK: float = 0.25
-const SHOP_FILTER_ROUTE_WEIGHT_CAP: float = 2.00
-const SHOP_RARE_MAGNET_WEIGHT_PER_STACK: float = 0.75
-const SHOP_RARE_MAGNET_WEIGHT_CAP: float = 3.25
-const SHOP_RARE_MAGNET_PRICE_PER_STACK: float = 0.15
 
 signal gold_changed(total: int)
 signal enemy_killed(total: int)
@@ -1765,10 +1747,10 @@ func _apply_shop_refresh_economy_weight(base_weight: int, upgrade_id: String, ra
 	var filter_stacks := _get_upgrade_stack_count("filter_core")
 	var primary_route := _get_primary_build_route()
 	if filter_stacks > 0 and not primary_route.is_empty() and SkillCatalog.get_upgrade_route_tags(upgrade_id).has(primary_route):
-		weighted *= minf(SHOP_FILTER_ROUTE_WEIGHT_CAP, 1.0 + float(filter_stacks) * SHOP_FILTER_ROUTE_WEIGHT_PER_STACK)
+		weighted *= minf(SkillCatalog.SHOP_FILTER_ROUTE_WEIGHT_CAP, 1.0 + float(filter_stacks) * SkillCatalog.SHOP_FILTER_ROUTE_WEIGHT_PER_STACK)
 	var rare_stacks := _get_upgrade_stack_count("rare_magnet")
 	if rare_stacks > 0 and (rarity == "purple" or rarity == "gold"):
-		weighted *= minf(SHOP_RARE_MAGNET_WEIGHT_CAP, 1.0 + float(rare_stacks) * SHOP_RARE_MAGNET_WEIGHT_PER_STACK)
+		weighted *= minf(SkillCatalog.SHOP_RARE_MAGNET_WEIGHT_CAP, 1.0 + float(rare_stacks) * SkillCatalog.SHOP_RARE_MAGNET_WEIGHT_PER_STACK)
 	return maxi(1, int(round(weighted)))
 
 func _apply_shop_refresh_economy_pricing(offer: Dictionary) -> Dictionary:
@@ -1779,7 +1761,7 @@ func _apply_shop_refresh_economy_pricing(offer: Dictionary) -> Dictionary:
 	var notes: Array[String] = []
 	var recycle_stacks := _get_upgrade_stack_count("recycle_protocol")
 	if recycle_stacks > 0:
-		var discount := mini(SHOP_RECYCLE_DISCOUNT_CAP, recycle_stacks * SHOP_RECYCLE_DISCOUNT_PER_STACK)
+		var discount := mini(SkillCatalog.SHOP_RECYCLE_DISCOUNT_CAP, recycle_stacks * SkillCatalog.SHOP_RECYCLE_DISCOUNT_PER_STACK)
 		var discounted_cost := maxi(1, cost - discount)
 		var applied_discount := cost - discounted_cost
 		if applied_discount > 0:
@@ -1787,7 +1769,7 @@ func _apply_shop_refresh_economy_pricing(offer: Dictionary) -> Dictionary:
 			notes.append("回收协议：价格 -%d 金币" % applied_discount)
 	var rare_stacks := _get_upgrade_stack_count("rare_magnet")
 	if rare_stacks > 0:
-		var surcharge_percent := float(rare_stacks) * SHOP_RARE_MAGNET_PRICE_PER_STACK
+		var surcharge_percent := float(rare_stacks) * SkillCatalog.SHOP_RARE_MAGNET_PRICE_PER_STACK
 		var surcharge := maxi(1, int(ceil(float(cost) * surcharge_percent)))
 		cost += surcharge
 		notes.append("稀有牵引：价格 +%d 金币" % surcharge)
@@ -1824,7 +1806,7 @@ func _get_upgrade_choice_weight(upgrade: Dictionary) -> int:
 func _apply_skill_momentum_weight(base_weight: int, upgrade_id: String) -> int:
 	var weighted_base := base_weight
 	if _get_upgrade_stack_count(upgrade_id) > 0 and not SkillCatalog.get_upgrade_tag_list(upgrade_id, "engine_tags").is_empty():
-		weighted_base = maxi(weighted_base, SKILL_ENGINE_REPEAT_BASE_WEIGHT)
+		weighted_base = maxi(weighted_base, SkillCatalog.SKILL_ENGINE_REPEAT_BASE_WEIGHT)
 	var weighted := _apply_repeat_skill_weight(weighted_base, upgrade_id)
 	weighted = _apply_synergy_skill_weight(weighted, upgrade_id)
 	weighted = _apply_tag_skill_weight(weighted, upgrade_id)
@@ -1836,7 +1818,7 @@ func _apply_repeat_skill_weight(base_weight: int, upgrade_id: String) -> int:
 	var current_stack := _get_upgrade_stack_count(upgrade_id)
 	if current_stack <= 0:
 		return maxi(1, base_weight)
-	var multiplier := minf(SKILL_REPEAT_WEIGHT_CAP, 1.0 + float(current_stack) * SKILL_REPEAT_WEIGHT_PER_STACK)
+	var multiplier := minf(SkillCatalog.SKILL_REPEAT_WEIGHT_CAP, 1.0 + float(current_stack) * SkillCatalog.SKILL_REPEAT_WEIGHT_PER_STACK)
 	return maxi(1, int(round(float(base_weight) * multiplier)))
 
 func _apply_synergy_skill_weight(base_weight: int, upgrade_id: String) -> int:
@@ -1847,7 +1829,7 @@ func _apply_synergy_skill_weight(base_weight: int, upgrade_id: String) -> int:
 		source_stack_total += _get_upgrade_stack_count(str(source_id))
 	if source_stack_total <= 0:
 		return maxi(1, base_weight)
-	var multiplier := minf(SKILL_SYNERGY_WEIGHT_CAP, 1.0 + float(source_stack_total) * SKILL_SYNERGY_WEIGHT_PER_SOURCE_STACK)
+	var multiplier := minf(SkillCatalog.SKILL_SYNERGY_WEIGHT_CAP, 1.0 + float(source_stack_total) * SkillCatalog.SKILL_SYNERGY_WEIGHT_PER_SOURCE_STACK)
 	return maxi(1, int(round(float(base_weight) * multiplier)))
 
 func _apply_tag_skill_weight(base_weight: int, upgrade_id: String) -> int:
@@ -1861,17 +1843,17 @@ func _apply_tag_skill_weight(base_weight: int, upgrade_id: String) -> int:
 		if active_tags.has(str(tag)):
 			source_matches += 1
 	if source_matches > 0:
-		weighted *= minf(SKILL_TAG_SOURCE_WEIGHT_CAP, 1.0 + float(source_matches) * SKILL_TAG_SOURCE_WEIGHT_PER_MATCH)
+		weighted *= minf(SkillCatalog.SKILL_TAG_SOURCE_WEIGHT_CAP, 1.0 + float(source_matches) * SkillCatalog.SKILL_TAG_SOURCE_WEIGHT_PER_MATCH)
 	for route_id in SkillCatalog.get_upgrade_route_tags(upgrade_id):
 		var route_score := int(route_scores.get(str(route_id), 0))
 		if route_score > 0:
-			weighted *= minf(SKILL_TAG_ROUTE_WEIGHT_CAP, 1.0 + float(route_score) * SKILL_TAG_ROUTE_WEIGHT_PER_STACK)
+			weighted *= minf(SkillCatalog.SKILL_TAG_ROUTE_WEIGHT_CAP, 1.0 + float(route_score) * SkillCatalog.SKILL_TAG_ROUTE_WEIGHT_PER_STACK)
 	var engine_tags := SkillCatalog.get_upgrade_tag_list(upgrade_id, "engine_tags")
 	if not engine_tags.is_empty() and _get_upgrade_stack_count(upgrade_id) <= 0 and source_matches > 0:
-		weighted *= SKILL_ENGINE_FIRST_PICK_WEIGHT
+		weighted *= SkillCatalog.SKILL_ENGINE_FIRST_PICK_WEIGHT
 	for tag in SkillCatalog.get_upgrade_tag_list(upgrade_id, "conflict_tags"):
 		if active_tags.has(str(tag)):
-			weighted *= SKILL_TAG_CONFLICT_WEIGHT
+			weighted *= SkillCatalog.SKILL_TAG_CONFLICT_WEIGHT
 	return maxi(1, int(round(weighted)))
 
 func _get_active_skill_tags() -> Dictionary:

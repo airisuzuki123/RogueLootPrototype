@@ -64,6 +64,9 @@ var event_choices: Array = []
 var game_over_label: Label
 var milestone_tween: Tween
 var hud_root: Control
+var class_selection_panel: PanelContainer
+var class_selection_list: GridContainer
+var class_options: Array = []
 
 func _ready() -> void:
 	layer = 10
@@ -148,6 +151,7 @@ func _build_ui() -> void:
 		hint_label
 	]
 	_build_hud_toggle_button(root)
+	_build_class_selection_panel(root)
 
 	_build_inventory_panel(root)
 
@@ -306,6 +310,39 @@ func _build_hud_toggle_button(root: Control) -> void:
 	_apply_icon_button_style(hud_toggle_button, Color(0.34, 0.40, 0.48, 0.92), Color(0.03, 0.04, 0.05, 0.82), 1)
 	root.add_child(hud_toggle_button)
 
+func _build_class_selection_panel(root: Control) -> void:
+	class_selection_panel = PanelContainer.new()
+	class_selection_panel.visible = false
+	class_selection_panel.position = Vector2(300, 90)
+	class_selection_panel.custom_minimum_size = Vector2(980, 620)
+	root.add_child(class_selection_panel)
+
+	var panel_root := VBoxContainer.new()
+	panel_root.add_theme_constant_override("separation", 12)
+	class_selection_panel.add_child(panel_root)
+
+	var title := Label.new()
+	title.text = "选择初始职业"
+	title.add_theme_font_size_override("font_size", 26)
+	panel_root.add_child(title)
+
+	var description := Label.new()
+	description.text = "职业只影响本局开局方向；后续仍通过升级、商店和装备完成构筑。"
+	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	description.custom_minimum_size = Vector2(900, 0)
+	panel_root.add_child(description)
+
+	var class_scroll := ScrollContainer.new()
+	class_scroll.custom_minimum_size = Vector2(900, 470)
+	class_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel_root.add_child(class_scroll)
+
+	class_selection_list = GridContainer.new()
+	class_selection_list.columns = 2
+	class_selection_list.add_theme_constant_override("h_separation", 12)
+	class_selection_list.add_theme_constant_override("v_separation", 12)
+	class_scroll.add_child(class_selection_list)
+
 func _build_vital_status_panel(parent: Control) -> void:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(370, 112)
@@ -391,6 +428,8 @@ func _connect_signals() -> void:
 	GameManager.stage_event_changed.connect(_on_stage_event_changed)
 	GameManager.shop_open_changed.connect(_on_shop_open_changed)
 	GameManager.event_choice_open_changed.connect(_on_event_choice_open_changed)
+	GameManager.class_selection_requested.connect(_on_class_selection_requested)
+	GameManager.class_selected.connect(_on_class_selected)
 
 func _refresh_all() -> void:
 	_on_gold_changed(GameManager.gold)
@@ -413,6 +452,8 @@ func _refresh_all() -> void:
 	_on_build_summary_changed(GameManager.player_build_summary)
 	_on_loot_message_changed(GameManager.latest_loot_message)
 	_on_inventory_changed(GameManager.get_inventory_items())
+	if GameManager.is_class_selection_open:
+		_on_class_selection_requested(GameManager.get_character_classes())
 
 func _layout_for_viewport() -> void:
 	var viewport_size := get_viewport().get_visible_rect().size
@@ -422,6 +463,8 @@ func _layout_for_viewport() -> void:
 		hud_toggle_button.position = Vector2(maxf(16.0, viewport_size.x - 92.0), 16.0)
 	if shop_panel != null:
 		_center_control(shop_panel, Vector2(980.0, 640.0), viewport_size, 0.52)
+	if class_selection_panel != null:
+		_center_control(class_selection_panel, Vector2(980.0, 620.0), viewport_size, 0.50)
 	if upgrade_panel != null:
 		_center_control(upgrade_panel, Vector2(500.0, 260.0), viewport_size, 0.45)
 	if equipment_choice_panel != null:
@@ -458,6 +501,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	var key_event: InputEventKey = event as InputEventKey
 	if key_event.keycode == KEY_B:
+		if GameManager.is_class_selection_open:
+			return
 		GameManager.toggle_inventory_open()
 	elif key_event.keycode == KEY_ESCAPE and GameManager.is_shop_open:
 		GameManager.close_shop_event()
@@ -642,6 +687,9 @@ func _on_build_summary_changed(summary: Dictionary) -> void:
 	if life_steal > 0:
 		life_steal_text = "吸血 %d%%（%d/秒）" % [life_steal, life_steal_cap]
 	var lines: Array[String] = []
+	var selected_class_name := str(summary.get("class_name", ""))
+	if not selected_class_name.is_empty():
+		lines.append("职业：%s" % selected_class_name)
 	lines.append("构筑：单发 %d（基础 %d） | 加成 %s | 弹体 %d | 穿透 %d | 爆裂 %d | %s" % [
 		final_damage,
 		base_damage,
@@ -666,6 +714,46 @@ func _on_build_summary_changed(summary: Dictionary) -> void:
 
 func _on_loot_message_changed(message: String) -> void:
 	loot_message_label.text = message
+
+func _on_class_selection_requested(classes: Array) -> void:
+	class_options = classes.duplicate(true)
+	if class_selection_panel == null or class_selection_list == null:
+		return
+	for child in class_selection_list.get_children():
+		child.queue_free()
+	for index in range(class_options.size()):
+		var class_data: Dictionary = class_options[index]
+		var button := Button.new()
+		button.text = _format_class_option_text(class_data)
+		button.custom_minimum_size = Vector2(438, 168)
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		button.pressed.connect(_on_class_option_pressed.bind(index))
+		_apply_class_button_style(button)
+		class_selection_list.add_child(button)
+	class_selection_panel.visible = true
+	_layout_for_viewport()
+
+func _format_class_option_text(class_data: Dictionary) -> String:
+	var lines: Array[String] = []
+	lines.append(str(class_data.get("name", "未知职业")))
+	var summary := str(class_data.get("summary", ""))
+	if not summary.is_empty():
+		lines.append(summary)
+	var effects: Array = class_data.get("effects", [])
+	if not effects.is_empty():
+		lines.append("效果：" + "；".join(effects))
+	return "\n".join(lines)
+
+func _on_class_option_pressed(index: int) -> void:
+	if index < 0 or index >= class_options.size():
+		return
+	var class_data: Dictionary = class_options[index]
+	GameManager.choose_character_class(str(class_data.get("id", "")))
+
+func _on_class_selected(_class_data: Dictionary) -> void:
+	if class_selection_panel != null:
+		class_selection_panel.visible = false
 
 func _on_inventory_changed(items: Array) -> void:
 	inventory_items = items.duplicate(true)
@@ -1383,6 +1471,24 @@ func _apply_rarity_button_style(button: Button, data: Dictionary) -> void:
 	button.add_theme_color_override("font_color", color)
 	button.add_theme_color_override("font_hover_color", color.lightened(0.12))
 	button.add_theme_color_override("font_pressed_color", color.darkened(0.08))
+
+func _apply_class_button_style(button: Button) -> void:
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(0.07, 0.085, 0.105, 0.94)
+	normal.border_color = Color(0.30, 0.36, 0.42, 0.92)
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(6)
+	normal.content_margin_left = 12
+	normal.content_margin_right = 12
+	normal.content_margin_top = 10
+	normal.content_margin_bottom = 10
+	var hover := normal.duplicate()
+	hover.bg_color = Color(0.10, 0.13, 0.16, 0.96)
+	var pressed := normal.duplicate()
+	pressed.bg_color = Color(0.04, 0.055, 0.07, 0.98)
+	button.add_theme_stylebox_override("normal", normal)
+	button.add_theme_stylebox_override("hover", hover)
+	button.add_theme_stylebox_override("pressed", pressed)
 
 func _get_rarity_color(rarity: String) -> Color:
 	match rarity:

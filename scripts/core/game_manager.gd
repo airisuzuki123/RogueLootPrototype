@@ -2,6 +2,7 @@ extends Node
 
 const EquipmentFactory := preload("res://scripts/items/equipment_factory.gd")
 const SkillCatalog := preload("res://scripts/items/skill_catalog.gd")
+const CharacterClassCatalog := preload("res://scripts/items/character_class_catalog.gd")
 
 const GRAZE_REWARD_REQUIRED: int = 6
 const GRAZE_REWARD_SHIELD: int = 8
@@ -41,6 +42,8 @@ signal stage_event_completed(event: Dictionary)
 signal shop_open_changed(is_open: bool, event: Dictionary, offers: Array)
 signal event_choice_open_changed(is_open: bool, event: Dictionary, choices: Array)
 signal combat_cleanup_requested()
+signal class_selection_requested(classes: Array)
+signal class_selected(class_data: Dictionary)
 
 const MAX_INVENTORY_SIZE: int = 36
 const RUN_PHASES: Array[Dictionary] = [
@@ -487,6 +490,9 @@ var latest_run_time_second: int = -1
 var phase_bullet_pattern_counters := {}
 var graze_charge: int = 0
 var graze_reward_cooldown_remaining: float = 0.0
+var is_class_selection_open: bool = false
+var selected_class_id: String = ""
+var selected_class: Dictionary = {}
 
 func reset_run() -> void:
 	gold = 0
@@ -544,6 +550,9 @@ func reset_run() -> void:
 	phase_bullet_pattern_counters.clear()
 	graze_charge = 0
 	graze_reward_cooldown_remaining = 0.0
+	is_class_selection_open = true
+	selected_class_id = ""
+	selected_class.clear()
 	gold_changed.emit(gold)
 	enemy_killed.emit(kills)
 	graze_changed.emit(grazes)
@@ -559,8 +568,32 @@ func reset_run() -> void:
 	encounter_changed.emit(active_encounter, false)
 	stage_event_changed.emit(active_stage_event, false)
 	run_phase_changed.emit(get_current_run_phase())
+	class_selection_requested.emit(CharacterClassCatalog.get_class_list())
 	_emit_run_time_changed(true)
 	_emit_phase_objective_changed()
+
+func choose_character_class(class_id: String) -> bool:
+	if is_run_over or not is_class_selection_open:
+		return false
+	var class_data := CharacterClassCatalog.get_class_data(class_id)
+	if class_data.is_empty():
+		return false
+	selected_class_id = str(class_data.get("id", ""))
+	selected_class = class_data.duplicate(true)
+	is_class_selection_open = false
+	if player != null and player.has_method("apply_character_class"):
+		player.apply_character_class(selected_class)
+	var message := "选择职业：%s" % str(selected_class.get("name", "未知职业"))
+	_set_loot_message(message)
+	_set_milestone_message(message)
+	class_selected.emit(selected_class)
+	return true
+
+func get_character_classes() -> Array[Dictionary]:
+	return CharacterClassCatalog.get_class_list()
+
+func get_selected_class() -> Dictionary:
+	return selected_class.duplicate(true)
 
 func update_run_time(delta: float) -> void:
 	if is_run_over or is_gameplay_paused() or is_between_stages:
@@ -928,6 +961,8 @@ func choose_event_option(choice_index: int) -> bool:
 
 func register_player(player_node: Node) -> void:
 	player = player_node
+	if not selected_class.is_empty() and player.has_method("apply_character_class"):
+		player.apply_character_class(selected_class)
 	if player.has_method("sync_health_state"):
 		player.sync_health_state()
 
@@ -1216,7 +1251,7 @@ func apply_upgrade(choice_index: int) -> void:
 		_set_milestone_message(message)
 
 func is_gameplay_paused() -> bool:
-	return is_upgrade_pending or is_equipment_choice_pending or is_inventory_open or is_shop_open or is_event_choice_open
+	return is_class_selection_open or is_upgrade_pending or is_equipment_choice_pending or is_inventory_open or is_shop_open or is_event_choice_open
 
 func end_run(completed: bool = false) -> void:
 	if is_run_over:
@@ -1812,7 +1847,24 @@ func _apply_tag_skill_weight(base_weight: int, upgrade_id: String) -> int:
 	for tag in SkillCatalog.get_upgrade_tag_list(upgrade_id, "conflict_tags"):
 		if active_tags.has(str(tag)):
 			weighted *= SkillCatalog.SKILL_TAG_CONFLICT_WEIGHT
+	weighted = _apply_class_skill_weight(weighted, upgrade_id)
 	return maxi(1, int(round(weighted)))
+
+func _apply_class_skill_weight(base_weight: float, upgrade_id: String) -> float:
+	if selected_class.is_empty() or upgrade_id.is_empty():
+		return base_weight
+	var weighted := base_weight
+	var route_bias: Dictionary = selected_class.get("route_bias", {})
+	for route_id in SkillCatalog.get_upgrade_route_tags(upgrade_id):
+		var bias := int(route_bias.get(str(route_id), 0))
+		if bias > 0:
+			weighted *= minf(1.30, 1.0 + float(bias) * 0.10)
+	var tag_bias: Array = selected_class.get("tag_bias", [])
+	for tag_key in ["effect_tags", "source_tags", "engine_tags"]:
+		for tag in SkillCatalog.get_upgrade_tag_list(upgrade_id, tag_key):
+			if tag_bias.has(str(tag)):
+				weighted *= 1.10
+	return weighted
 
 func _get_active_skill_tags() -> Dictionary:
 	var active_tags := {}
@@ -1854,6 +1906,9 @@ func _get_active_skill_tags() -> Dictionary:
 		active_tags["moving"] = true
 	if int(player_build_summary.get("stationary_focus_tier", 0)) > 0:
 		active_tags["stationary"] = true
+	if not selected_class.is_empty():
+		for tag in selected_class.get("tag_bias", []):
+			active_tags[str(tag)] = true
 	return active_tags
 
 func _apply_skill_rarity_metadata(data: Dictionary, upgrade_id: String) -> void:
@@ -1876,6 +1931,10 @@ func _get_active_build_route_scores() -> Dictionary:
 		for upgrade_id in SkillCatalog.get_route_signature_upgrades(route_id):
 			score += _get_upgrade_stack_count(str(upgrade_id))
 		route_scores[route_id] = score
+	if not selected_class.is_empty():
+		var route_bias: Dictionary = selected_class.get("route_bias", {})
+		for route_id in route_bias.keys():
+			route_scores[str(route_id)] = int(route_scores.get(str(route_id), 0)) + int(route_bias.get(route_id, 0))
 	var weapon: Dictionary = equipped_items.get("weapon", {})
 	var form: Dictionary = weapon.get("form", {})
 	match str(form.get("id", "")):

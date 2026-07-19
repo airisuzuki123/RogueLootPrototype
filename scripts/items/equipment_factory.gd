@@ -37,10 +37,10 @@ const WEAPON_FORMS := [
 	{
 		"id": "focused",
 		"name": "聚能法杖",
-		"description": "单发伤害更高",
+		"description": "基础伤害 +4",
 		"weight": 34,
 		"score": 12,
-		"damage_multiplier": 1.15
+		"damage_bonus": 4
 	},
 	{
 		"id": "scatter",
@@ -49,7 +49,6 @@ const WEAPON_FORMS := [
 		"weight": 28,
 		"score": 16,
 		"projectile_bonus": 1,
-		"damage_multiplier": 1.0,
 		"spread_degrees": 16.0
 	},
 	{
@@ -58,8 +57,7 @@ const WEAPON_FORMS := [
 		"description": "投射物可额外穿透 1 名敌人",
 		"weight": 22,
 		"score": 18,
-		"pierce": 1,
-		"damage_multiplier": 1.0
+		"pierce": 1
 	},
 	{
 		"id": "burst",
@@ -67,7 +65,6 @@ const WEAPON_FORMS := [
 		"description": "命中时造成小范围爆裂伤害",
 		"weight": 16,
 		"score": 20,
-		"damage_multiplier": 1.0,
 		"explosion_radius": 72.0,
 		"explosion_damage_ratio": 0.35
 	}
@@ -412,6 +409,7 @@ static func _build_combat_profile(equipment: Dictionary) -> Dictionary:
 	var form: Dictionary = equipment.get("form", {})
 	if not form.is_empty():
 		profile["form_name"] = str(form.get("name", "未知形态"))
+		profile["damage"] = int(profile["damage"]) + int(form.get("damage_bonus", 0))
 		profile["projectile_count"] = int(form.get("projectile_bonus", 0))
 		profile["pierce"] = int(form.get("pierce", 0))
 		profile["explosion_radius"] = int(round(float(form.get("explosion_radius", 0.0))))

@@ -636,8 +636,13 @@ func _on_build_summary_changed(summary: Dictionary) -> void:
 	var player_size_text := "玩家体积 +%d%%" % player_size_bonus
 	if player_size_bonus < 0:
 		player_size_text = "玩家体积 %d%%" % player_size_bonus
+	var life_steal := int(summary.get("total_life_steal_percent", 0))
+	var life_steal_cap := int(summary.get("life_steal_cap_per_second", 0))
+	var life_steal_text := "吸血 %d%%" % life_steal
+	if life_steal > 0:
+		life_steal_text = "吸血 %d%%（%d/秒）" % [life_steal, life_steal_cap]
 	var lines: Array[String] = []
-	lines.append("构筑：单发 %d（基础 %d） | 乘区 %s | 弹体 %d | 穿透 %d | 爆裂 %d | %s" % [
+	lines.append("构筑：单发 %d（基础 %d） | 加成 %s | 弹体 %d | 穿透 %d | 爆裂 %d | %s" % [
 		final_damage,
 		base_damage,
 		flow_damage_text,
@@ -646,10 +651,11 @@ func _on_build_summary_changed(summary: Dictionary) -> void:
 		int(summary.get("explosion_radius", 0)),
 		player_size_text
 	])
-	lines.append("攻速 %.1f/秒 | 暴击 %d%%/%.1f倍 | 静立 +%d%% | 移速 %d" % [
+	lines.append("攻速 %.1f/秒 | 暴击 %d%%/%.1f倍 | %s | 静立 +%d%% | 移速 %d" % [
 		attacks_per_second,
 		int(summary.get("critical_chance", 0)),
 		critical_damage_multiplier,
+		life_steal_text,
 		stationary_critical_bonus,
 		int(summary.get("move_speed", 0))
 	])

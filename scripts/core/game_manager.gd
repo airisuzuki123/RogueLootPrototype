@@ -2275,7 +2275,7 @@ func _get_current_form_upgrade_choice() -> Dictionary:
 			return {
 				"id": "form_burst",
 				"title": "爆裂强化",
-				"description": "当前武器为爆裂法杖：爆裂范围 +28"
+				"description": "当前武器为爆裂法杖：爆裂范围 +14"
 			}
 	return {}
 

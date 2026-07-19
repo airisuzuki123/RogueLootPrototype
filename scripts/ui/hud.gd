@@ -81,7 +81,7 @@ func _build_ui() -> void:
 
 	var stats := VBoxContainer.new()
 	stats.position = Vector2(16, 16)
-	stats.custom_minimum_size = Vector2(330, 120)
+	stats.custom_minimum_size = Vector2(370, 120)
 	root.add_child(stats)
 
 	_build_vital_status_panel(stats)
@@ -279,7 +279,7 @@ func _build_ui() -> void:
 
 func _build_vital_status_panel(parent: Control) -> void:
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(330, 92)
+	panel.custom_minimum_size = Vector2(370, 112)
 	var panel_style := StyleBoxFlat.new()
 	panel_style.bg_color = Color(0.02, 0.025, 0.035, 0.72)
 	panel_style.border_color = Color(0.28, 0.34, 0.42, 0.82)
@@ -301,25 +301,27 @@ func _build_vital_status_panel(parent: Control) -> void:
 	layout.add_child(top_row)
 
 	health_label = Label.new()
-	health_label.add_theme_font_size_override("font_size", 18)
+	health_label.add_theme_font_size_override("font_size", 22)
+	health_label.add_theme_color_override("font_color", Color(0.98, 1.0, 0.96, 1.0))
 	top_row.add_child(health_label)
 
 	player_state_label = Label.new()
 	player_state_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	player_state_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	player_state_label.add_theme_font_size_override("font_size", 18)
+	player_state_label.add_theme_font_size_override("font_size", 20)
 	top_row.add_child(player_state_label)
 
 	health_bar = _create_status_bar(Color(0.90, 0.18, 0.23, 1.0), Color(0.22, 0.035, 0.045, 0.82))
-	health_bar.custom_minimum_size = Vector2(0, 14)
+	health_bar.custom_minimum_size = Vector2(0, 20)
 	layout.add_child(health_bar)
 
 	shield_label = Label.new()
-	shield_label.add_theme_font_size_override("font_size", 14)
+	shield_label.add_theme_font_size_override("font_size", 15)
+	shield_label.add_theme_color_override("font_color", Color(0.76, 0.92, 1.0, 1.0))
 	layout.add_child(shield_label)
 
 	shield_bar = _create_status_bar(Color(0.28, 0.78, 1.0, 1.0), Color(0.035, 0.10, 0.14, 0.70))
-	shield_bar.custom_minimum_size = Vector2(0, 8)
+	shield_bar.custom_minimum_size = Vector2(0, 10)
 	shield_bar.max_value = 6.0
 	layout.add_child(shield_bar)
 
@@ -480,11 +482,17 @@ func _refresh_vital_status(current: int = -1, maximum: int = -1) -> void:
 	_set_progress_fill_color(health_bar, health_fill)
 	var shield := maxi(0, int(GameManager.player_graze_shield))
 	var shield_remaining := maxf(0.0, float(GameManager.player_graze_shield_remaining))
+	var effective_health := health_current + shield
 	if shield > 0:
-		shield_label.text = "护盾 %d，剩余 %.1f 秒" % [shield, shield_remaining]
+		shield_label.text = "有效生命 %d（生命 %d + 护盾 %d） | 护盾 %.1f 秒" % [
+			effective_health,
+			health_current,
+			shield,
+			shield_remaining
+		]
 		shield_bar.value = clampf(shield_remaining, 0.0, 6.0)
 	else:
-		shield_label.text = "护盾 0"
+		shield_label.text = "有效生命 %d | 护盾 0" % effective_health
 		shield_bar.value = 0.0
 
 func _set_progress_fill_color(bar: ProgressBar, fill_color: Color) -> void:

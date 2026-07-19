@@ -359,7 +359,7 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			result["skill_text"] = "投射物 +1，玩家体积 +%d%%（最高 +240%%），当前移速 -%d%%（最低 80）" % [multishot_applied_size_percent, multishot_applied_slow_percent]
 		"mass_resonance":
 			mass_resonance_stacks += 1
-			result["skill_text"] = "玩家体积每 +10%%，投射物伤害 +16%%，无层数上限"
+			result["skill_text"] = "玩家体积每 +10%%，投射物伤害 +16%%"
 		"light_frame":
 			light_frame_stacks += 1
 			var light_old_size_bonus := upgrade_player_size_bonus
@@ -376,7 +376,7 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			result["skill_text"] = "玩家体积每低于 100%% 10%%，暴击伤害 +25%%，当前暴击倍率 %.2f 倍" % _get_critical_damage_multiplier()
 		"slow_resonance":
 			slow_resonance_stacks += 1
-			result["skill_text"] = "移速每低于初始值 10%%，投射物伤害 +18%%，无层数上限"
+			result["skill_text"] = "移速每低于初始值 10%%，投射物伤害 +18%%"
 		"haste_resonance":
 			haste_resonance_stacks += 1
 			result["skill_text"] = "当前移速每高于初始值 10%%，投射物伤害 +10%%、暴击率 +8%%"
@@ -386,7 +386,7 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 		"reflow_shards":
 			reflow_shards_stacks += 1
 			_apply_fire_interval_multiplier(_skill_float("reflow_shards", "fire_interval_multiplier", 0.90))
-			result["skill_text"] = "射击间隔 -10%%；每层游走使连锁/回旋/追踪伤害 +12%%，最多 10 层游走"
+			result["skill_text"] = "射击间隔 -10%%；游走层数使连锁/回旋/追踪伤害 +12%%，最多 10 层"
 		"blood_pact":
 			blood_pact_stacks += 1
 			var blood_cost := mini(_skill_int("blood_pact", "health_cost", 22), maxi(0, health - 1))
@@ -542,16 +542,6 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 				CombatFeedback.show_damage(get_tree().current_scene, global_position, crimson_cost, Color(1.0, 0.18, 0.30, 1.0))
 				CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(1.0, 0.16, 0.34, 0.74), 1.05)
 			result["skill_text"] = "当前生命 -%d（最低 1）；生命低于 35%% 时，投射物伤害 +60%%、吸血 +8%%" % crimson_cost
-		"recycle_protocol":
-			var recycle_stack := int(upgrade_stacks.get("recycle_protocol", 0))
-			var recycle_discount := mini(12, recycle_stack * 4)
-			result["skill_text"] = "刷新后技能商品价格 -%d 金币（最多 -12）" % recycle_discount
-		"filter_core":
-			var filter_stack := int(upgrade_stacks.get("filter_core", 0))
-			result["skill_text"] = "刷新时当前主路线技能权重 +%d%%；第 2 个技能位优先当前主路线" % (filter_stack * 25)
-		"rare_magnet":
-			var rare_stack := int(upgrade_stacks.get("rare_magnet", 0))
-			result["skill_text"] = "刷新后紫色/金色技能权重 +%d%%；技能商品价格 +%d%%" % [rare_stack * 75, rare_stack * 15]
 		"elite_reactor":
 			var elite_stack := int(upgrade_stacks.get("elite_reactor", 0))
 			var elite_shield := elite_stack * _skill_int("elite_reactor", "shield_per_stack", 18)

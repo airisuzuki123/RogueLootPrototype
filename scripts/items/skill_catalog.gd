@@ -20,39 +20,31 @@ const SKILL_TAG_CONFLICT_WEIGHT: float = 0.48
 const SKILL_ENGINE_FIRST_PICK_WEIGHT: float = 1.35
 const SKILL_ENGINE_REPEAT_BASE_WEIGHT: int = 10
 
-const SHOP_RECYCLE_DISCOUNT_PER_STACK: int = 4
-const SHOP_RECYCLE_DISCOUNT_CAP: int = 12
-const SHOP_FILTER_ROUTE_WEIGHT_PER_STACK: float = 0.25
-const SHOP_FILTER_ROUTE_WEIGHT_CAP: float = 2.00
-const SHOP_RARE_MAGNET_WEIGHT_PER_STACK: float = 0.75
-const SHOP_RARE_MAGNET_WEIGHT_CAP: float = 3.25
-const SHOP_RARE_MAGNET_PRICE_PER_STACK: float = 0.15
-
 const BUILD_ROUTE_ORDER := ["bulk", "agile", "pierce", "blast", "chain", "close"]
 const BUILD_ROUTE_DEFINITIONS := {
 	"bulk": {
 		"upgrades": ["multishot", "mass_resonance", "slow_resonance", "giant_echo", "still_focus", "heavy_shot", "compressed_core", "blast_core", "anchor_discharge"],
-		"shop_offers": ["shop_multishot_skill", "shop_mass_resonance_skill", "shop_slow_resonance_skill", "shop_giant_echo_skill", "shop_still_focus_skill", "shop_heavy_skill", "shop_compressed_core_skill", "shop_blast_skill", "shop_anchor_discharge_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
+		"shop_offers": ["shop_multishot_skill", "shop_mass_resonance_skill", "shop_slow_resonance_skill", "shop_giant_echo_skill", "shop_still_focus_skill", "shop_heavy_skill", "shop_compressed_core_skill", "shop_blast_skill", "shop_anchor_discharge_skill"]
 	},
 	"agile": {
 		"upgrades": ["light_frame", "light_resonance", "haste_resonance", "motion_focus", "light_edge", "attack_speed", "orbit_blade", "momentum_cache"],
-		"shop_offers": ["shop_light_frame_skill", "shop_light_resonance_skill", "shop_haste_resonance_skill", "shop_motion_focus_skill", "shop_light_edge_skill", "shop_attack_speed_skill", "shop_orbit_skill", "shop_momentum_cache_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
+		"shop_offers": ["shop_light_frame_skill", "shop_light_resonance_skill", "shop_haste_resonance_skill", "shop_motion_focus_skill", "shop_light_edge_skill", "shop_attack_speed_skill", "shop_orbit_skill", "shop_momentum_cache_skill"]
 	},
 	"pierce": {
 		"upgrades": ["piercing_rounds", "pierce_amp", "light_edge", "damage", "attack_speed", "multishot"],
-		"shop_offers": ["shop_pierce_skill", "shop_pierce_amp_skill", "shop_light_edge_skill", "shop_damage_skill", "shop_attack_speed_skill", "shop_multishot_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
+		"shop_offers": ["shop_pierce_skill", "shop_pierce_amp_skill", "shop_light_edge_skill", "shop_damage_skill", "shop_attack_speed_skill", "shop_multishot_skill"]
 	},
 	"blast": {
 		"upgrades": ["blast_core", "shatter_blast", "overload_burst", "heavy_shot", "compressed_core", "damage"],
-		"shop_offers": ["shop_blast_skill", "shop_shatter_blast_skill", "shop_overload_skill", "shop_heavy_skill", "shop_compressed_core_skill", "shop_damage_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
+		"shop_offers": ["shop_blast_skill", "shop_shatter_blast_skill", "shop_overload_skill", "shop_heavy_skill", "shop_compressed_core_skill", "shop_damage_skill"]
 	},
 	"chain": {
 		"upgrades": ["chain_spark", "homing_shards", "conduit_coil", "channel_beam", "reflow_shards", "attack_speed", "rapid_resonance"],
-		"shop_offers": ["shop_chain_skill", "shop_homing_skill", "shop_conduit_coil_skill", "shop_channel_beam_skill", "shop_reflow_shards_skill", "shop_attack_speed_skill", "shop_rapid_resonance_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
+		"shop_offers": ["shop_chain_skill", "shop_homing_skill", "shop_conduit_coil_skill", "shop_channel_beam_skill", "shop_reflow_shards_skill", "shop_attack_speed_skill", "shop_rapid_resonance_skill"]
 	},
 	"close": {
 		"upgrades": ["close_slash", "pulse_field", "guard_blade", "giant_echo", "blood_pact", "crimson_leech", "elite_reactor", "last_stand_matrix", "graze_barrier", "clear_barrier", "move_speed"],
-		"shop_offers": ["shop_close_slash_skill", "shop_pulse_field_skill", "shop_guard_blade_skill", "shop_giant_echo_skill", "shop_blood_pact_skill", "shop_crimson_leech_skill", "shop_elite_reactor_skill", "shop_last_stand_matrix_skill", "shop_recycle_protocol_skill", "shop_filter_core_skill", "shop_rare_magnet_skill"]
+		"shop_offers": ["shop_close_slash_skill", "shop_pulse_field_skill", "shop_guard_blade_skill", "shop_giant_echo_skill", "shop_blood_pact_skill", "shop_crimson_leech_skill", "shop_elite_reactor_skill", "shop_last_stand_matrix_skill"]
 	}
 }
 
@@ -135,9 +127,6 @@ const UPGRADE_TAGS := {
 	"compressed_core": {"effect_tags": ["heavy_hit", "slow_attack"], "source_tags": ["slow_attack", "blast"], "conflict_tags": ["fast_attack", "multi_projectile"], "engine_tags": ["heavy_blast"]},
 	"reflow_shards": {"effect_tags": ["fast_attack"], "source_tags": ["moving", "chain_skill", "fast_attack"], "conflict_tags": ["stationary", "slow_attack"], "engine_tags": ["agile_chain"]},
 	"crimson_leech": {"effect_tags": ["low_life"], "source_tags": ["low_life", "high_health", "blood_risk"], "conflict_tags": ["shielded"], "engine_tags": ["blood_risk"]},
-	"recycle_protocol": {"effect_tags": ["shop_discount"], "route_tags": ["economy"]},
-	"filter_core": {"effect_tags": ["shop_filter"], "route_tags": ["economy"]},
-	"rare_magnet": {"effect_tags": ["shop_rare"], "route_tags": ["economy"]},
 	"elite_reactor": {"source_tags": ["shielded", "close_skill"], "route_tags": ["close"], "engine_tags": ["elite_trigger"]},
 	"last_stand_matrix": {"source_tags": ["low_life", "blood_risk"], "route_tags": ["close"], "conflict_tags": ["shielded"], "engine_tags": ["low_life_trigger"]},
 	"momentum_cache": {"source_tags": ["moving", "fast_move"], "route_tags": ["agile"], "conflict_tags": ["stationary"], "engine_tags": ["movement_trigger"]},
@@ -148,295 +137,277 @@ const UPGRADE_DEFINITIONS := {
 	"damage": {
 		"title": "强击弹体",
 		"description": "投射物伤害 +25%，射击间隔 +10%",
-		"preview": "本层：投射物伤害 +25%，射击间隔 +10%",
+		"preview": "投射物伤害 +25%，射击间隔 +10%",
 		"rarity": "green"
 	},
 	"attack_speed": {
 		"title": "急速施放",
 		"description": "射击间隔 -25%，投射物伤害 -10%",
-		"preview": "本层：射击间隔 -25%，投射物伤害 -10%",
+		"preview": "射击间隔 -25%，投射物伤害 -10%",
 		"rarity": "green"
 	},
 	"move_speed": {
 		"title": "迅捷步伐",
 		"description": "移动速度 +70，玩家体积 +5%（最高 +240%）",
-		"preview": "本层：移动速度 +70，玩家体积 +5%（最高 +240%）",
+		"preview": "移动速度 +70，玩家体积 +5%（最高 +240%）",
 		"rarity": "green"
 	},
 	"max_health": {
 		"title": "生命强化",
 		"description": "最大生命 +30，并回复 30 生命，当前移速 -5%（最低 80）",
-		"preview": "本层：最大生命 +30，并回复 30 生命，当前移速 -5%（最低 80）",
+		"preview": "最大生命 +30，并回复 30 生命，当前移速 -5%（最低 80）",
 		"rarity": "green"
 	},
 	"heal": {
 		"title": "喘息之机",
 		"description": "回复 40 生命",
-		"preview": "本层：回复 40 生命",
+		"preview": "回复 40 生命",
 		"rarity": "green"
 	},
 	"strong_heal": {
 		"title": "紧急治疗",
 		"description": "回复 70 生命",
-		"preview": "本层：回复 70 生命",
+		"preview": "回复 70 生命",
 		"rarity": "green"
 	},
 	"recovery_training": {
 		"title": "复苏训练",
 		"description": "最大生命 +25，并回复 60 生命，当前移速 -5%（最低 80）",
-		"preview": "本层：最大生命 +25，并回复 60 生命，当前移速 -5%（最低 80）",
+		"preview": "最大生命 +25，并回复 60 生命，当前移速 -5%（最低 80）",
 		"rarity": "green"
 	},
 	"multishot": {
 		"title": "分裂射击",
 		"description": "投射物 +1，玩家体积 +30%（最高 +240%），当前移速 -25%（最低 80）",
-		"preview": "本层：投射物 +1，玩家体积 +30%（最高 +240%），当前移速 -25%（最低 80）",
+		"preview": "投射物 +1，玩家体积 +30%（最高 +240%），当前移速 -25%（最低 80）",
 		"rarity": "purple"
 	},
 	"mass_resonance": {
 		"title": "体积共鸣",
-		"description": "每层：玩家体积每 +10%，投射物伤害 +16%，无层数上限",
-		"preview": "每层：玩家体积每 +10%，投射物伤害 +16%，无层数上限",
+		"description": "玩家体积每 +10%，投射物伤害 +16%",
+		"preview": "玩家体积每 +10%，投射物伤害 +16%",
 		"rarity": "blue"
 	},
 	"light_frame": {
 		"title": "轻装骨架",
 		"description": "玩家体积 -12%（最低 -40%），移动速度 +70，投射物伤害 -10%",
-		"preview": "本层：玩家体积 -12%（最低 -40%），移动速度 +70，投射物伤害 -10%",
+		"preview": "玩家体积 -12%（最低 -40%），移动速度 +70，投射物伤害 -10%",
 		"rarity": "green"
 	},
 	"light_resonance": {
 		"title": "轻盈共鸣",
-		"description": "每层：玩家体积每低于 100% 10%，投射物伤害 +8%、暴击率 +10%",
-		"preview": "每层：玩家体积每低于 100% 10%，投射物伤害 +8%、暴击率 +10%",
+		"description": "玩家体积每低于 100% 10%，投射物伤害 +8%、暴击率 +10%",
+		"preview": "玩家体积每低于 100% 10%，投射物伤害 +8%、暴击率 +10%",
 		"rarity": "blue"
 	},
 	"slow_resonance": {
 		"title": "迟缓共鸣",
-		"description": "每层：当前移速每低于初始值 10%，投射物伤害 +18%，无层数上限",
-		"preview": "每层：当前移速每低于初始值 10%，投射物伤害 +18%，无层数上限",
+		"description": "当前移速每低于初始值 10%，投射物伤害 +18%",
+		"preview": "当前移速每低于初始值 10%，投射物伤害 +18%",
 		"rarity": "blue"
 	},
 	"haste_resonance": {
 		"title": "疾行共鸣",
-		"description": "每层：当前移速每高于初始值 10%，投射物伤害 +10%、暴击率 +8%",
-		"preview": "每层：当前移速每高于初始值 10%，投射物伤害 +10%、暴击率 +8%",
+		"description": "当前移速每高于初始值 10%，投射物伤害 +10%、暴击率 +8%",
+		"preview": "当前移速每高于初始值 10%，投射物伤害 +10%、暴击率 +8%",
 		"rarity": "blue"
 	},
 	"rapid_resonance": {
 		"title": "速射共鸣",
-		"description": "每层：射击间隔每低于初始值 10%，连锁、回旋、追踪和过载伤害 +22%",
-		"preview": "每层：射击间隔每低于初始值 10%，连锁、回旋、追踪和过载伤害 +22%",
+		"description": "射击间隔每低于初始值 10%，连锁、回旋、追踪和过载伤害 +22%",
+		"preview": "射击间隔每低于初始值 10%，连锁、回旋、追踪和过载伤害 +22%",
 		"rarity": "purple"
 	},
 	"blood_pact": {
 		"title": "血潮契约",
-		"description": "当前生命 -22（最低 1）；每层：生命每损失 10%，投射物伤害 +16%、暴击率 +10%",
-		"preview": "本层：当前生命 -22（最低 1）；每层：生命每损失 10%，投射物伤害 +16%、暴击率 +10%",
+		"description": "当前生命 -22（最低 1）；生命每损失 10%，投射物伤害 +16%、暴击率 +10%",
+		"preview": "当前生命 -22（最低 1）；生命每损失 10%，投射物伤害 +16%、暴击率 +10%",
 		"rarity": "purple"
 	},
 	"still_focus": {
 		"title": "静立聚焦",
-		"description": "静止每 0.7 秒暴击率 +10%，最多 12 层专注；技能可重复提高每层暴击",
-		"preview": "每层：静止每 0.7 秒暴击率 +10%，最多 12 层专注",
+		"description": "静止每 0.7 秒暴击率 +10%，最多 12 层专注",
+		"preview": "静止每 0.7 秒暴击率 +10%，最多 12 层专注",
 		"rarity": "blue"
 	},
 	"motion_focus": {
 		"title": "游走聚焦",
-		"description": "移动每 0.6 秒游走伤害 +8%、暴击率 +5%，最多 10 层游走；技能可重复提高每层收益",
-		"preview": "每层：移动每 0.6 秒游走伤害 +8%、暴击率 +5%，最多 10 层游走",
+		"description": "移动每 0.6 秒游走伤害 +8%、暴击率 +5%，最多 10 层游走",
+		"preview": "移动每 0.6 秒游走伤害 +8%、暴击率 +5%，最多 10 层游走",
 		"rarity": "blue"
 	},
 	"piercing_rounds": {
 		"title": "穿透弹芯",
 		"description": "投射物穿透 +1，投射物伤害 -10%",
-		"preview": "本层：穿透 +1，投射物伤害 -10%",
+		"preview": "穿透 +1，投射物伤害 -10%",
 		"rarity": "green"
 	},
 	"blast_core": {
 		"title": "爆裂核心",
 		"description": "爆裂范围 +70，玩家体积 +20%（最高 +240%），射击间隔 +15%",
-		"preview": "本层：爆裂范围 +70、玩家体积 +20%（最高 +240%）、射击间隔 +15%",
+		"preview": "爆裂范围 +70、玩家体积 +20%（最高 +240%）、射击间隔 +15%",
 		"rarity": "purple"
 	},
 	"graze_barrier": {
 		"title": "折光护盾",
 		"description": "护盾 +22，持续 4 秒",
-		"preview": "本层：护盾 +22，持续 4 秒",
+		"preview": "护盾 +22，持续 4 秒",
 		"rarity": "green"
 	},
 	"clear_barrier": {
 		"title": "清弹屏障",
 		"description": "立即清除敌弹，护盾 +16，持续 3.5 秒",
-		"preview": "本层：立即清除敌弹，护盾 +16，持续 3.5 秒",
+		"preview": "立即清除敌弹，护盾 +16，持续 3.5 秒",
 		"rarity": "green"
 	},
 	"chain_spark": {
 		"title": "连锁电弧",
-		"description": "每次攻击连锁弹 +1，单枚伤害 115%；每层伤害 +20%，投射物伤害 -12%",
-		"preview": "本层：连锁弹 +1，单枚伤害 115%，重复拿取独立 x1.20，寿命每次 +0.08 秒，投射物伤害 -12%",
+		"description": "连锁弹 +1，单枚伤害 115%，投射物伤害 -12%",
+		"preview": "连锁弹 +1，单枚伤害 115%，投射物伤害 -12%",
 		"rarity": "purple"
 	},
 	"orbit_blade": {
 		"title": "回旋刃",
-		"description": "每次攻击两侧回旋弹各 +1，单枚伤害 105%；每层伤害 +18%",
-		"preview": "本层：两侧回旋弹各 +1，单枚伤害 105%，重复拿取独立 x1.18，寿命每次 +0.08 秒",
+		"description": "两侧回旋弹各 +1，单枚伤害 105%",
+		"preview": "两侧回旋弹各 +1，单枚伤害 105%",
 		"rarity": "purple"
 	},
 	"overload_burst": {
 		"title": "过载爆发",
-		"description": "每 4 次攻击释放 8 枚爆裂弹，单枚伤害 250%；每层 +2 枚、单枚伤害 +25%，无弹数上限",
-		"preview": "本层：每 4 次攻击爆裂弹 +2，单枚伤害 250%，重复拿取独立 x1.25",
+		"description": "每 4 次攻击释放 8 枚爆裂弹，单枚伤害 250%",
+		"preview": "每 4 次攻击释放 8 枚爆裂弹，单枚伤害 250%",
 		"rarity": "gold"
 	},
 	"homing_shards": {
 		"title": "寻迹碎片",
-		"description": "每次攻击追踪碎片 +1，单枚伤害 115%；每层伤害 +20%，当前移速 -12%（最低 80）",
-		"preview": "本层：追踪碎片 +1，单枚伤害 115%，重复拿取独立 x1.20，追踪强度 4.8 且每次 +0.85，当前移速 -12%（最低 80）",
+		"description": "追踪碎片 +1，单枚伤害 115%，当前移速 -12%（最低 80）",
+		"preview": "追踪碎片 +1，单枚伤害 115%，当前移速 -12%（最低 80）",
 		"rarity": "purple"
 	},
 	"heavy_shot": {
 		"title": "重压弹芯",
 		"description": "投射物伤害 +20%；每 3 次攻击发射 1 枚 220% 重弹，击退 +45%，玩家体积 +15%（最高 +240%），射击间隔 +10%",
-		"preview": "本层：投射物伤害 +20%、玩家体积 +15%（最高 +240%）、射击间隔 +10%；每 3 次攻击发射 1 枚 220% 重弹，击退 +45%",
+		"preview": "投射物伤害 +20%、玩家体积 +15%（最高 +240%）、射击间隔 +10%；每 3 次攻击发射 1 枚 220% 重弹，击退 +45%",
 		"rarity": "purple"
 	},
 	"close_slash": {
 		"title": "近身刀环",
-		"description": "每 1.18 秒造成 120% 近身斩击；每层半径 +22，伤害 +25%，冷却 -0.12 秒，最低 0.22 秒",
-		"preview": "本层：刀环伤害 120%，重复拿取独立 x1.25，半径 +22，冷却 -0.12 秒，最低 0.22 秒",
+		"description": "每 1.18 秒造成 120% 近身斩击",
+		"preview": "每 1.18 秒造成 120% 近身斩击",
 		"rarity": "purple"
 	},
 	"pulse_field": {
 		"title": "脉冲场",
-		"description": "每 2.25 秒造成 100% 脉冲；每层半径 +24，伤害 +20%，冷却 -0.18 秒，最低 0.55 秒",
-		"preview": "本层：脉冲伤害 100%，重复拿取独立 x1.20，半径 +24，冷却 -0.18 秒，最低 0.55 秒",
+		"description": "每 2.25 秒造成 100% 脉冲",
+		"preview": "每 2.25 秒造成 100% 脉冲",
 		"rarity": "purple"
 	},
 	"channel_beam": {
 		"title": "引导光束",
-		"description": "每 0.32 秒对 330 范围内最近敌人造成 85% 投射物伤害；每层射程 +28、伤害 +18%、间隔 -0.035 秒，当前移速 -10%（最低 80）",
-		"preview": "本层：光束单跳伤害 85%，重复拿取独立 x1.18，射程 +28，间隔 -0.035 秒，当前移速 -10%（最低 80）",
+		"description": "每 0.32 秒对 330 范围内最近敌人造成 85% 伤害，当前移速 -10%（最低 80）",
+		"preview": "每 0.32 秒对 330 范围内最近敌人造成 85% 伤害，当前移速 -10%（最低 80）",
 		"rarity": "purple"
 	},
 	"shatter_blast": {
 		"title": "裂片爆破",
 		"description": "爆裂伤害 +55%，爆裂范围 +32",
-		"preview": "本层：爆裂伤害独立 x1.55，爆裂范围 +32",
+		"preview": "爆裂伤害 +55%，爆裂范围 +32",
 		"rarity": "blue"
 	},
 	"pierce_amp": {
 		"title": "贯穿增幅",
 		"description": "穿透 +1，投射物伤害 +55%",
-		"preview": "本层：穿透 +1，投射物伤害独立 x1.55",
+		"preview": "穿透 +1，投射物伤害 +55%",
 		"rarity": "blue"
 	},
 	"conduit_coil": {
 		"title": "超导线圈",
 		"description": "光束伤害 +150%，连锁弹和追踪碎片伤害 +75%，光束间隔 -0.03 秒",
-		"preview": "本层：光束伤害独立 x2.50，连锁/追踪伤害独立 x1.75，光束间隔 -0.03 秒",
+		"preview": "光束伤害 +150%，连锁/追踪伤害 +75%，光束间隔 -0.03 秒",
 		"rarity": "gold"
 	},
 	"guard_blade": {
 		"title": "护身锋刃",
-		"description": "近身刀环和脉冲场伤害 +55%，获得护盾 +20；近身命中时每层护盾 +4",
-		"preview": "本层：近身伤害独立 x1.55，立即护盾至少 +20 且每次 +4，近身命中护盾 +4",
+		"description": "近身刀环和脉冲场伤害 +55%，护盾 +20",
+		"preview": "近身刀环和脉冲场伤害 +55%，护盾 +20",
 		"rarity": "blue"
 	},
 	"giant_echo": {
 		"title": "巨体回响",
-		"description": "每层：玩家体积每 +10%，近身刀环和脉冲场伤害 +20%；护盾 +18，持续 4 秒",
-		"preview": "每层：玩家体积每 +10%，近身伤害独立 +20%；护盾 +18，持续 4 秒",
+		"description": "玩家体积每 +10%，近身刀环和脉冲场伤害 +20%；护盾 +18，持续 4 秒",
+		"preview": "玩家体积每 +10%，近身伤害 +20%；护盾 +18，持续 4 秒",
 		"rarity": "blue"
 	},
 	"light_edge": {
 		"title": "轻锋协议",
-		"description": "每层：玩家体积每低于 100% 10%，暴击伤害 +25%；只影响暴击伤害倍率",
-		"preview": "每层：玩家体积每低于 100% 10%，暴击伤害独立 +25%",
+		"description": "玩家体积每低于 100% 10%，暴击伤害 +25%",
+		"preview": "玩家体积每低于 100% 10%，暴击伤害 +25%",
 		"rarity": "blue"
 	},
 	"compressed_core": {
 		"title": "压缩弹芯",
-		"description": "每层：投射物 -1（最低 1），投射物伤害独立 x2.50，射击间隔 +15%",
-		"preview": "本层：投射物 -1（最低 1），投射物伤害独立 x2.50，射击间隔 +15%",
+		"description": "投射物 -1（最低 1），投射物伤害 x2.50，射击间隔 +15%",
+		"preview": "投射物 -1（最低 1），投射物伤害 x2.50，射击间隔 +15%",
 		"rarity": "gold"
 	},
 	"reflow_shards": {
 		"title": "碎片回流",
-		"description": "射击间隔 -10%；每层：每层游走使连锁、回旋和追踪伤害 +12%，最多读取 10 层游走",
-		"preview": "本层：射击间隔 -10%；每层游走使连锁/回旋/追踪伤害独立 +12%，最多 10 层",
+		"description": "射击间隔 -10%；游走层数使连锁、回旋和追踪伤害 +12%，最多 10 层",
+		"preview": "射击间隔 -10%；游走层数使连锁、回旋和追踪伤害 +12%，最多 10 层",
 		"rarity": "purple"
 	},
 	"crimson_leech": {
 		"title": "血怒汲取",
-		"description": "当前生命 -15（最低 1）；生命低于 35% 时，每层投射物伤害 +60%、吸血 +8%",
-		"preview": "本层：当前生命 -15（最低 1）；生命低于 35% 时投射物伤害独立 x1.60、吸血 +8%",
-		"rarity": "purple"
-	},
-	"recycle_protocol": {
-		"title": "回收协议",
-		"description": "每层：刷新商店后，刷出的技能商品价格 -4 金币；最多 -12 金币",
-		"preview": "每层：刷新后技能商品价格 -4 金币；最多 -12 金币",
-		"rarity": "blue"
-	},
-	"filter_core": {
-		"title": "筛选核心",
-		"description": "每层：刷新商店时，当前主路线技能出货权重 +25%；第 2 个技能位也优先当前主路线",
-		"preview": "每层：刷新时当前主路线技能权重 +25%；第 2 个技能位优先当前主路线",
-		"rarity": "blue"
-	},
-	"rare_magnet": {
-		"title": "稀有牵引",
-		"description": "每层：刷新商店后，紫色和金色技能出货权重 +75%；刷新后的技能商品价格 +15%",
-		"preview": "每层：刷新后紫色/金色技能权重 +75%；技能商品价格 +15%",
+		"description": "当前生命 -15（最低 1）；生命低于 35% 时投射物伤害 +60%、吸血 +8%",
+		"preview": "当前生命 -15（最低 1）；生命低于 35% 时投射物伤害 +60%、吸血 +8%",
 		"rarity": "purple"
 	},
 	"elite_reactor": {
 		"title": "破阵反应",
-		"description": "击败精英或 Boss 时，立即清除敌弹；每层护盾 +18，持续 4 秒",
-		"preview": "每层：击败精英或 Boss 时清除敌弹，护盾 +18，持续 4 秒",
+		"description": "击败精英或 Boss 时清除敌弹，护盾 +18，持续 4 秒",
+		"preview": "击败精英或 Boss 时清除敌弹，护盾 +18，持续 4 秒",
 		"rarity": "blue"
 	},
 	"last_stand_matrix": {
 		"title": "背水矩阵",
-		"description": "每关首次生命低于 35% 时，立即清除敌弹；每层护盾 +26，持续 4 秒",
-		"preview": "每层：每关首次生命低于 35% 时清除敌弹，护盾 +26，持续 4 秒",
+		"description": "每关首次生命低于 35% 时清除敌弹，护盾 +26，持续 4 秒",
+		"preview": "每关首次生命低于 35% 时清除敌弹，护盾 +26，持续 4 秒",
 		"rarity": "blue"
 	},
 	"momentum_cache": {
 		"title": "疾行缓存",
-		"description": "游走达到 8 层时，每层护盾 +10，持续 2.5 秒；冷却 9 秒",
-		"preview": "每层：游走达到 8 层时护盾 +10，持续 2.5 秒；冷却 9 秒",
+		"description": "游走达到 8 层时护盾 +10，持续 2.5 秒；冷却 9 秒",
+		"preview": "游走达到 8 层时护盾 +10，持续 2.5 秒；冷却 9 秒",
 		"rarity": "blue"
 	},
 	"anchor_discharge": {
 		"title": "锚定释放",
-		"description": "静立达到 6 层时，立即清除敌弹；每层护盾 +8，持续 2.5 秒；冷却 12 秒",
-		"preview": "每层：静立达到 6 层时清除敌弹，护盾 +8，持续 2.5 秒；冷却 12 秒",
+		"description": "静立达到 6 层时清除敌弹，护盾 +8，持续 2.5 秒；冷却 12 秒",
+		"preview": "静立达到 6 层时清除敌弹，护盾 +8，持续 2.5 秒；冷却 12 秒",
 		"rarity": "blue"
 	},
 	"form_focused": {
 		"title": "聚能强化",
 		"description": "当前武器为聚能法杖：投射物伤害 +8",
-		"preview": "本层：投射物伤害 +8",
+		"preview": "投射物伤害 +8",
 		"rarity": "blue"
 	},
 	"form_scatter": {
 		"title": "散射强化",
 		"description": "当前武器为散射法杖：每次攻击投射物 +1",
-		"preview": "本层：每次攻击投射物 +1",
+		"preview": "每次攻击投射物 +1",
 		"rarity": "blue"
 	},
 	"form_piercing": {
 		"title": "穿透强化",
 		"description": "当前武器为穿透法杖：投射物穿透 +1",
-		"preview": "本层：投射物穿透 +1",
+		"preview": "投射物穿透 +1",
 		"rarity": "blue"
 	},
 	"form_burst": {
 		"title": "爆裂强化",
 		"description": "当前武器为爆裂法杖：爆裂范围 +28",
-		"preview": "本层：爆裂范围 +28",
+		"preview": "爆裂范围 +28",
 		"rarity": "blue"
 	}
 }
@@ -448,8 +419,7 @@ const UPGRADE_ORDER := [
 	"graze_barrier", "clear_barrier", "chain_spark", "orbit_blade", "overload_burst", "homing_shards",
 	"heavy_shot", "close_slash", "pulse_field", "channel_beam", "shatter_blast", "pierce_amp",
 	"conduit_coil", "guard_blade", "giant_echo", "light_edge", "compressed_core", "reflow_shards",
-	"crimson_leech", "recycle_protocol", "filter_core", "rare_magnet",
-	"elite_reactor", "last_stand_matrix", "momentum_cache", "anchor_discharge"
+	"crimson_leech", "elite_reactor", "last_stand_matrix", "momentum_cache", "anchor_discharge"
 ]
 
 const SHOP_SKILL_OFFERS := {
@@ -484,9 +454,6 @@ const SHOP_SKILL_OFFERS := {
 	"shop_compressed_core_skill": {"title": "压缩弹芯", "reward_upgrade_id": "compressed_core", "base_cost": 30, "stage_cost": 4},
 	"shop_reflow_shards_skill": {"title": "碎片回流", "reward_upgrade_id": "reflow_shards", "base_cost": 25, "stage_cost": 3},
 	"shop_crimson_leech_skill": {"title": "血怒汲取", "reward_upgrade_id": "crimson_leech", "base_cost": 24, "stage_cost": 3},
-	"shop_recycle_protocol_skill": {"title": "回收协议", "reward_upgrade_id": "recycle_protocol", "base_cost": 18, "stage_cost": 2},
-	"shop_filter_core_skill": {"title": "筛选核心", "reward_upgrade_id": "filter_core", "base_cost": 20, "stage_cost": 2},
-	"shop_rare_magnet_skill": {"title": "稀有牵引", "reward_upgrade_id": "rare_magnet", "base_cost": 22, "stage_cost": 3},
 	"shop_elite_reactor_skill": {"title": "破阵反应", "reward_upgrade_id": "elite_reactor", "base_cost": 22, "stage_cost": 3},
 	"shop_last_stand_matrix_skill": {"title": "背水矩阵", "reward_upgrade_id": "last_stand_matrix", "base_cost": 22, "stage_cost": 3},
 	"shop_momentum_cache_skill": {"title": "疾行缓存", "reward_upgrade_id": "momentum_cache", "base_cost": 22, "stage_cost": 3},

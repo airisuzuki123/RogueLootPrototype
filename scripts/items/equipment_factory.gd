@@ -19,23 +19,18 @@ const EQUIPMENT_SLOTS := [
 const AFFIXES := [
 	{"id": "damage", "label": "伤害", "min": 3, "max": 8},
 	{"id": "max_health", "label": "最大生命", "min": 10, "max": 25},
-	{"id": "attack_speed", "label": "攻击速度", "min": 6, "max": 14},
-	{"id": "move_speed", "label": "移动速度", "min": 12, "max": 24},
 	{"id": "critical_chance", "label": "暴击率", "min": 4, "max": 9},
-	{"id": "projectile_count", "label": "额外投射物", "min": 1, "max": 1, "level_scale": false},
-	{"id": "pierce", "label": "穿透", "min": 1, "max": 1, "level_scale": false},
-	{"id": "explosion_radius", "label": "爆裂范围", "min": 18, "max": 32},
 	{"id": "life_steal", "label": "吸血", "min": 3, "max": 7},
 	{"id": "gold_bonus", "label": "金币获取", "min": 8, "max": 18}
 ]
 
 const SLOT_AFFIXES := {
-	"weapon": ["damage", "attack_speed", "critical_chance", "projectile_count", "pierce", "explosion_radius"],
+	"weapon": ["damage", "critical_chance", "life_steal"],
 	"helmet": ["max_health", "critical_chance"],
-	"armor": ["max_health", "move_speed", "gold_bonus"],
-	"boots": ["move_speed", "attack_speed", "gold_bonus"],
-	"necklace": ["critical_chance", "explosion_radius", "gold_bonus"],
-	"ring": ["attack_speed", "projectile_count", "pierce", "gold_bonus"]
+	"armor": ["max_health", "life_steal", "gold_bonus"],
+	"boots": ["max_health", "gold_bonus"],
+	"necklace": ["critical_chance", "life_steal", "gold_bonus"],
+	"ring": ["damage", "critical_chance", "gold_bonus"]
 }
 
 const WEAPON_FORMS := [
@@ -50,11 +45,11 @@ const WEAPON_FORMS := [
 	{
 		"id": "scatter",
 		"name": "散射法杖",
-		"description": "额外发射 2 枚投射物",
+		"description": "额外发射 1 枚投射物",
 		"weight": 28,
 		"score": 16,
-		"projectile_bonus": 2,
-		"damage_multiplier": 0.75,
+		"projectile_bonus": 1,
+		"damage_multiplier": 1.0,
 		"spread_degrees": 16.0
 	},
 	{
@@ -64,7 +59,7 @@ const WEAPON_FORMS := [
 		"weight": 22,
 		"score": 18,
 		"pierce": 1,
-		"damage_multiplier": 0.9
+		"damage_multiplier": 1.0
 	},
 	{
 		"id": "burst",
@@ -72,9 +67,9 @@ const WEAPON_FORMS := [
 		"description": "命中时造成小范围爆裂伤害",
 		"weight": 16,
 		"score": 20,
-		"damage_multiplier": 0.85,
+		"damage_multiplier": 1.0,
 		"explosion_radius": 72.0,
-		"explosion_damage_ratio": 0.45
+		"explosion_damage_ratio": 0.35
 	}
 ]
 
@@ -134,13 +129,14 @@ static func describe(equipment: Dictionary) -> String:
 	if not form.is_empty():
 		lines.append(str(form["description"]))
 	for affix in equipment["affixes"]:
-		var prefix := "+"
+		var value := int(affix["value"])
+		var prefix := "+" if value >= 0 else ""
 		if affix["id"] in ["attack_speed", "critical_chance", "life_steal", "gold_bonus"]:
-			lines.append("%s%d%% %s" % [prefix, affix["value"], affix["label"]])
+			lines.append("%s%d%% %s" % [prefix, value, affix["label"]])
 		elif affix["id"] == "projectile_count":
-			lines.append("%s%d %s" % [prefix, affix["value"], affix["label"]])
+			lines.append("%s%d %s" % [prefix, value, affix["label"]])
 		else:
-			lines.append("%s%d %s" % [prefix, affix["value"], affix["label"]])
+			lines.append("%s%d %s" % [prefix, value, affix["label"]])
 	return "\n".join(lines)
 
 static func describe_with_score(equipment: Dictionary) -> String:
@@ -470,7 +466,8 @@ static func _add_percent_delta(lines: Array, label: String, candidate_value: flo
 static func _add_summary_value(lines: Array, label: String, value: int, suffix: String) -> void:
 	if value == 0:
 		return
-	lines.append("%s：+%d%s" % [label, value, suffix])
+	var sign := "+" if value > 0 else ""
+	lines.append("%s：%s%d%s" % [label, sign, value, suffix])
 
 static func _get_primary_change(candidate_profile: Dictionary, current_profile: Dictionary) -> String:
 	var projectile_delta := int(candidate_profile["projectile_count"]) - int(current_profile["projectile_count"])
@@ -501,8 +498,9 @@ static func _get_primary_change(candidate_profile: Dictionary, current_profile: 
 	if health_delta > 0:
 		return "最大生命 +%d" % health_delta
 	var move_speed_delta := int(candidate_profile["move_speed"]) - int(current_profile["move_speed"])
-	if move_speed_delta > 0:
-		return "移动速度 +%d" % move_speed_delta
+	if move_speed_delta != 0:
+		var sign := "+" if move_speed_delta > 0 else ""
+		return "移动速度 %s%d" % [sign, move_speed_delta]
 	var multiplier_delta := int(round((float(candidate_profile["damage_multiplier"]) - float(current_profile["damage_multiplier"])) * 100.0))
 	if multiplier_delta != 0:
 		var sign := "+" if multiplier_delta > 0 else ""

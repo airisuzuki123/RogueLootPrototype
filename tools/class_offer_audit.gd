@@ -220,7 +220,9 @@ func _count_unique_routes(rows: Array[Dictionary]) -> int:
 	var route_ids := {}
 	for row in rows:
 		for route_id in row.get("routes", []):
-			route_ids[str(route_id)] = true
+			var normalized_route_id := str(route_id)
+			if SkillCatalog.BUILD_ROUTE_ORDER.has(normalized_route_id):
+				route_ids[normalized_route_id] = true
 	return route_ids.size()
 
 func _apply_skill_momentum_weight(base_weight: int, upgrade_id: String) -> int:

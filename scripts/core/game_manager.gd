@@ -1856,17 +1856,17 @@ func _apply_class_skill_weight(base_weight: float, upgrade_id: String) -> float:
 	var weighted := base_weight
 	var upgrade_bias: Dictionary = selected_class.get("upgrade_bias", {})
 	if upgrade_bias.has(upgrade_id):
-		weighted *= clampf(float(upgrade_bias.get(upgrade_id, 1.0)), 0.65, 1.35)
+		weighted *= clampf(float(upgrade_bias.get(upgrade_id, 1.0)), 0.50, 2.00)
 	var route_bias: Dictionary = selected_class.get("route_bias", {})
 	for route_id in SkillCatalog.get_upgrade_route_tags(upgrade_id):
 		var bias := int(route_bias.get(str(route_id), 0))
 		if bias > 0:
-			weighted *= minf(1.30, 1.0 + float(bias) * 0.10)
+			weighted *= minf(1.60, 1.0 + float(bias) * 0.16)
 	var tag_bias: Array = selected_class.get("tag_bias", [])
 	for tag_key in ["effect_tags", "source_tags", "engine_tags"]:
 		for tag in SkillCatalog.get_upgrade_tag_list(upgrade_id, tag_key):
 			if tag_bias.has(str(tag)):
-				weighted *= 1.10
+				weighted *= 1.18
 	return weighted
 
 func _get_active_skill_tags() -> Dictionary:
@@ -2067,8 +2067,100 @@ func _build_upgrade_utility_pool(primary_route: String = "", branch_route: Strin
 		utility_pool.append_array(_get_upgrade_pool_for_route(branch_route))
 	return utility_pool
 
-func _get_upgrade_purchase_preview(upgrade_id: String, _current_stack: int) -> String:
+func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> String:
+	match upgrade_id:
+		"damage":
+			return "投射物伤害 +%d%%，射击间隔 +10%%" % int(round(_upgrade_float(upgrade_id, "projectile_damage_percent", 0.25) * _get_class_gain_multiplier("projectile_damage_percent") * 100.0))
+		"move_speed":
+			return "移动速度 +%d，玩家体积 +%d%%（最高 +240%%）" % [
+				int(round(_scale_class_float_gain("move_speed", _upgrade_float(upgrade_id, "move_speed_bonus", 70.0)))),
+				int(round(_scale_class_float_gain("player_size_bonus", _upgrade_float(upgrade_id, "player_size_bonus", 0.05)) * 100.0))
+			]
+		"max_health":
+			return "最大生命 +%d，并回复 %d 生命，当前移速 -5%%（最低 80）" % [
+				_scale_class_int_gain("max_health", _upgrade_int(upgrade_id, "max_health_bonus", 30)),
+				_scale_class_int_gain("heal", _upgrade_int(upgrade_id, "heal", 30))
+			]
+		"heal", "strong_heal":
+			return "回复 %d 生命" % _scale_class_int_gain("heal", _upgrade_int(upgrade_id, "heal", 40))
+		"recovery_training":
+			return "最大生命 +%d，并回复 %d 生命，当前移速 -5%%（最低 80）" % [
+				_scale_class_int_gain("max_health", _upgrade_int(upgrade_id, "max_health_bonus", 25)),
+				_scale_class_int_gain("heal", _upgrade_int(upgrade_id, "heal", 60))
+			]
+		"multishot":
+			return "投射物 +%d，玩家体积 +%d%%（最高 +240%%），当前移速 -25%%（最低 80）" % [
+				_scale_class_int_gain("projectile_count", _upgrade_int(upgrade_id, "projectile_count_bonus", 1)),
+				int(round(_scale_class_float_gain("player_size_bonus", _upgrade_float(upgrade_id, "player_size_bonus", 0.30)) * 100.0))
+			]
+		"light_frame":
+			return "玩家体积 -%d%%（最低 -40%%），移动速度 +%d，投射物伤害 -10%%" % [
+				int(round(_scale_class_float_gain("player_size_reduction", _upgrade_float(upgrade_id, "player_size_reduction", 0.12)) * 100.0)),
+				int(round(_scale_class_float_gain("move_speed", _upgrade_float(upgrade_id, "move_speed_bonus", 70.0))))
+			]
+		"piercing_rounds":
+			return "穿透 +%d，投射物伤害 -10%%" % _scale_class_int_gain("pierce", _upgrade_int(upgrade_id, "pierce_bonus", 1))
+		"blast_core":
+			return "爆裂范围 +%d、玩家体积 +%d%%（最高 +240%%）、射击间隔 +15%%" % [
+				int(round(_scale_class_float_gain("explosion_radius", _upgrade_float(upgrade_id, "explosion_radius", 40.0)))),
+				int(round(_scale_class_float_gain("player_size_bonus", _upgrade_float(upgrade_id, "player_size_bonus", 0.20)) * 100.0))
+			]
+		"graze_barrier":
+			return "护盾 +%d，持续 4 秒" % _scale_class_int_gain("shield", _upgrade_int(upgrade_id, "shield", 22))
+		"clear_barrier":
+			return "立即清除敌弹，护盾 +%d，持续 3.5 秒" % _scale_class_int_gain("shield", _upgrade_int(upgrade_id, "shield", 16))
+		"heavy_shot":
+			return "投射物伤害 +%d%%、玩家体积 +%d%%（最高 +240%%）、射击间隔 +10%%；每 3 次攻击发射 1 枚 220%% 重弹，击退 +45%%" % [
+				int(round(_upgrade_float(upgrade_id, "projectile_damage_percent", 0.20) * _get_class_gain_multiplier("projectile_damage_percent") * 100.0)),
+				int(round(_scale_class_float_gain("player_size_bonus", _upgrade_float(upgrade_id, "player_size_bonus", 0.15)) * 100.0))
+			]
+		"shatter_blast":
+			return "爆裂伤害 +55%%，爆裂范围 +%d" % int(round(_scale_class_float_gain("explosion_radius", _upgrade_float(upgrade_id, "explosion_radius", 16.0))))
+		"pierce_amp":
+			return "穿透 +%d，投射物伤害 +55%%" % _scale_class_int_gain("pierce", _upgrade_int(upgrade_id, "pierce_bonus", 1))
+		"guard_blade":
+			var guard_stack := current_stack + 1
+			var guard_shield := _upgrade_int(upgrade_id, "base_shield", 16) + guard_stack * _upgrade_int(upgrade_id, "shield_per_stack", 4)
+			return "近身刀环和脉冲场伤害 +55%%，护盾 +%d" % _scale_class_int_gain("shield", guard_shield)
+		"giant_echo":
+			return "玩家体积每 +10%%，近身伤害 +20%%；护盾 +%d，持续 4 秒" % _scale_class_int_gain("shield", _upgrade_int(upgrade_id, "shield", 18))
+		"form_focused":
+			return "投射物伤害 +%d" % _scale_class_int_gain("damage_flat", 8)
+		"form_scatter":
+			return "每次攻击投射物 +%d" % _scale_class_int_gain("projectile_count", 1)
+		"form_piercing":
+			return "投射物穿透 +%d" % _scale_class_int_gain("pierce", 1)
+		"form_burst":
+			return "爆裂范围 +%d" % int(round(_scale_class_float_gain("explosion_radius", _upgrade_float(upgrade_id, "explosion_radius", 14.0))))
 	return SkillCatalog.get_upgrade_preview(upgrade_id)
+
+func _upgrade_float(upgrade_id: String, key: String, fallback: float) -> float:
+	return float(SkillCatalog.get_upgrade_value(upgrade_id, key, fallback))
+
+func _upgrade_int(upgrade_id: String, key: String, fallback: int) -> int:
+	return int(SkillCatalog.get_upgrade_value(upgrade_id, key, fallback))
+
+func _get_class_gain_multiplier(key: String) -> float:
+	if selected_class.is_empty():
+		return 1.0
+	var gain_multipliers: Dictionary = selected_class.get("gain_multipliers", {})
+	return maxf(0.0, float(gain_multipliers.get(key, 1.0)))
+
+func _scale_class_int_gain(key: String, base_value: int) -> int:
+	if base_value == 0:
+		return 0
+	var multiplier := _get_class_gain_multiplier(key)
+	if multiplier <= 0.0:
+		return 0
+	var scaled := int(round(float(abs(base_value)) * multiplier))
+	if scaled == 0:
+		scaled = 1
+	return (-scaled) if base_value < 0 else scaled
+
+func _scale_class_float_gain(key: String, base_value: float) -> float:
+	if base_value == 0.0:
+		return 0.0
+	return base_value * _get_class_gain_multiplier(key)
 
 func _build_event_choices(event: Dictionary) -> Array[Dictionary]:
 	var choices: Array[Dictionary] = []

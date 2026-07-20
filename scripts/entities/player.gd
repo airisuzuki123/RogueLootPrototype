@@ -80,6 +80,7 @@ var class_explosion_radius_bonus: float = 0.0
 var class_data: Dictionary = {}
 var class_multipliers: Dictionary = {}
 var class_focus_decay: Dictionary = {}
+var class_gain_multipliers: Dictionary = {}
 var equipment_projectile_count_bonus: int = 0
 var equipment_pierce_bonus: int = 0
 var equipment_form_damage_bonus: int = 0
@@ -192,6 +193,7 @@ func apply_character_class(new_class_data: Dictionary) -> void:
 	class_data = new_class_data.duplicate(true)
 	class_multipliers = class_data.get("multipliers", {}).duplicate(true)
 	class_focus_decay = class_data.get("focus_decay", {}).duplicate(true)
+	class_gain_multipliers = class_data.get("gain_multipliers", {}).duplicate(true)
 	var initial_stats: Dictionary = class_data.get("initial_stats", {})
 	var size_bonus := float(initial_stats.get("player_size_bonus", 0.0))
 	if size_bonus != 0.0:
@@ -349,7 +351,8 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 	match upgrade_id:
 		"damage":
 			_apply_fire_interval_multiplier(_skill_float("damage", "fire_interval_multiplier", DAMAGE_TRADEOFF_FIRE_INTERVAL_MULTIPLIER))
-			result["skill_text"] = "投射物伤害 +25%，射击间隔 +10%"
+			var damage_percent := int(round(_skill_float("damage", "projectile_damage_percent", DAMAGE_UPGRADE_PERCENT) * _get_class_gain_multiplier("projectile_damage_percent") * 100.0))
+			result["skill_text"] = "投射物伤害 +%d%%，射击间隔 +10%%" % damage_percent
 		"attack_speed":
 			upgrade_attack_speed_stacks += 1
 			base_fire_interval = max(0.06, base_fire_interval * _skill_float("attack_speed", "fire_interval_multiplier", 0.75))
@@ -357,57 +360,58 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			result["attack_speed_percent"] = 25
 			result["skill_text"] = "投射物伤害 -10%"
 		"move_speed":
-			move_speed += _skill_float("move_speed", "move_speed_bonus", 70.0)
+			var move_speed_bonus := _scale_class_float_gain("move_speed", _skill_float("move_speed", "move_speed_bonus", 70.0))
+			move_speed += move_speed_bonus
 			var move_old_size_bonus := upgrade_player_size_bonus
-			upgrade_player_size_bonus = minf(PLAYER_SIZE_BONUS_CAP, upgrade_player_size_bonus + _skill_float("move_speed", "player_size_bonus", 0.05))
+			upgrade_player_size_bonus = minf(PLAYER_SIZE_BONUS_CAP, upgrade_player_size_bonus + _scale_class_float_gain("player_size_bonus", _skill_float("move_speed", "player_size_bonus", 0.05)))
 			var move_applied_size_percent := int(round((upgrade_player_size_bonus - move_old_size_bonus) * 100.0))
-			result["move_speed_bonus"] = _skill_int("move_speed", "move_speed_bonus", 70)
+			result["move_speed_bonus"] = int(round(move_speed_bonus))
 			result["skill_text"] = "玩家体积 +%d%%（最高 +240%%）" % move_applied_size_percent
 		"max_health":
-			var max_health_bonus := _skill_int("max_health", "max_health_bonus", 30)
+			var max_health_bonus := _scale_class_int_gain("max_health", _skill_int("max_health", "max_health_bonus", 30))
 			max_health += max_health_bonus
 			move_speed = maxf(MIN_TRADEOFF_MOVE_SPEED, move_speed * _skill_float("max_health", "move_speed_multiplier", MAX_HEALTH_SPEED_MULTIPLIER))
-			result["heal"] = _heal_after_upgrade(_skill_int("max_health", "heal", 30))
+			result["heal"] = _heal_after_upgrade(_scale_class_int_gain("heal", _skill_int("max_health", "heal", 30)))
 			GameManager.update_player_health(health, max_health)
 			result["max_health_bonus"] = max_health_bonus
 			result["skill_text"] = "当前移速 -5%（最低 80）"
 		"heal":
-			result["heal"] = _heal_after_upgrade(_skill_int("heal", "heal", 40))
+			result["heal"] = _heal_after_upgrade(_scale_class_int_gain("heal", _skill_int("heal", "heal", 40)))
 			GameManager.update_player_health(health, max_health)
 		"strong_heal":
-			result["heal"] = _heal_after_upgrade(_skill_int("strong_heal", "heal", 70))
+			result["heal"] = _heal_after_upgrade(_scale_class_int_gain("heal", _skill_int("strong_heal", "heal", 70)))
 			GameManager.update_player_health(health, max_health)
 		"recovery_training":
-			var recovery_health_bonus := _skill_int("recovery_training", "max_health_bonus", 25)
+			var recovery_health_bonus := _scale_class_int_gain("max_health", _skill_int("recovery_training", "max_health_bonus", 25))
 			max_health += recovery_health_bonus
 			move_speed = maxf(MIN_TRADEOFF_MOVE_SPEED, move_speed * _skill_float("recovery_training", "move_speed_multiplier", MAX_HEALTH_SPEED_MULTIPLIER))
-			result["heal"] = _heal_after_upgrade(_skill_int("recovery_training", "heal", 60))
+			result["heal"] = _heal_after_upgrade(_scale_class_int_gain("heal", _skill_int("recovery_training", "heal", 60)))
 			GameManager.update_player_health(health, max_health)
 			result["max_health_bonus"] = recovery_health_bonus
 			result["skill_text"] = "当前移速 -5%（最低 80）"
 		"multishot":
-			var multishot_projectile_bonus := _skill_int("multishot", "projectile_count_bonus", 1)
+			var multishot_projectile_bonus := _scale_class_int_gain("projectile_count", _skill_int("multishot", "projectile_count_bonus", 1))
 			upgrade_projectile_count_bonus += multishot_projectile_bonus
 			projectile_count += multishot_projectile_bonus
 			var multishot_old_size_bonus := upgrade_player_size_bonus
 			var multishot_old_move_speed := move_speed
-			upgrade_player_size_bonus = minf(PLAYER_SIZE_BONUS_CAP, upgrade_player_size_bonus + _skill_float("multishot", "player_size_bonus", MULTISHOT_SIZE_BONUS))
+			upgrade_player_size_bonus = minf(PLAYER_SIZE_BONUS_CAP, upgrade_player_size_bonus + _scale_class_float_gain("player_size_bonus", _skill_float("multishot", "player_size_bonus", MULTISHOT_SIZE_BONUS)))
 			move_speed = maxf(MIN_TRADEOFF_MOVE_SPEED, move_speed * _skill_float("multishot", "move_speed_multiplier", MULTISHOT_SPEED_MULTIPLIER))
 			var multishot_applied_size_percent := int(round((upgrade_player_size_bonus - multishot_old_size_bonus) * 100.0))
 			var multishot_applied_slow_percent := 0
 			if multishot_old_move_speed > 0.0:
 				multishot_applied_slow_percent = int(round((multishot_old_move_speed - move_speed) / multishot_old_move_speed * 100.0))
-			result["skill_text"] = "投射物 +1，玩家体积 +%d%%（最高 +240%%），当前移速 -%d%%（最低 80）" % [multishot_applied_size_percent, multishot_applied_slow_percent]
+			result["skill_text"] = "投射物 +%d，玩家体积 +%d%%（最高 +240%%），当前移速 -%d%%（最低 80）" % [multishot_projectile_bonus, multishot_applied_size_percent, multishot_applied_slow_percent]
 		"mass_resonance":
 			mass_resonance_stacks += 1
 			result["skill_text"] = "玩家体积每 +10%%，投射物伤害 +16%%"
 		"light_frame":
 			light_frame_stacks += 1
 			var light_old_size_bonus := upgrade_player_size_bonus
-			upgrade_player_size_bonus = maxf(PLAYER_SIZE_PENALTY_CAP, upgrade_player_size_bonus - _skill_float("light_frame", "player_size_reduction", LIGHT_FRAME_SIZE_REDUCTION))
-			move_speed += _skill_float("light_frame", "move_speed_bonus", LIGHT_FRAME_MOVE_SPEED_BONUS)
+			upgrade_player_size_bonus = maxf(PLAYER_SIZE_PENALTY_CAP, upgrade_player_size_bonus - _scale_class_float_gain("player_size_reduction", _skill_float("light_frame", "player_size_reduction", LIGHT_FRAME_SIZE_REDUCTION)))
+			move_speed += _scale_class_float_gain("move_speed", _skill_float("light_frame", "move_speed_bonus", LIGHT_FRAME_MOVE_SPEED_BONUS))
 			var light_applied_size_percent := int(round((light_old_size_bonus - upgrade_player_size_bonus) * 100.0))
-			result["move_speed_bonus"] = _skill_int("light_frame", "move_speed_bonus", int(round(LIGHT_FRAME_MOVE_SPEED_BONUS)))
+			result["move_speed_bonus"] = int(round(_scale_class_float_gain("move_speed", _skill_float("light_frame", "move_speed_bonus", LIGHT_FRAME_MOVE_SPEED_BONUS))))
 			result["skill_text"] = "玩家体积 -%d%%（最低 -40%%），投射物伤害 -10%%" % light_applied_size_percent
 		"light_resonance":
 			light_resonance_stacks += 1
@@ -446,35 +450,40 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			motion_focus_stacks += 1
 			result["skill_text"] = "移动每 0.6 秒游走伤害 +8%%、暴击率 +5%%，最多 10 层游走"
 		"piercing_rounds":
-			upgrade_pierce_bonus += 1
-			result["skill_text"] = "穿透 +1，投射物伤害 -10%"
+			var piercing_bonus := _scale_class_int_gain("pierce", _skill_int("piercing_rounds", "pierce_bonus", 1))
+			upgrade_pierce_bonus += piercing_bonus
+			result["skill_text"] = "穿透 +%d，投射物伤害 -10%%" % piercing_bonus
 		"blast_core":
-			var blast_radius := _skill_float("blast_core", "explosion_radius", 40.0)
+			var blast_radius := _scale_class_float_gain("explosion_radius", _skill_float("blast_core", "explosion_radius", 40.0))
 			upgrade_explosion_radius_bonus += blast_radius
 			var blast_old_size_bonus := upgrade_player_size_bonus
-			upgrade_player_size_bonus = minf(PLAYER_SIZE_BONUS_CAP, upgrade_player_size_bonus + _skill_float("blast_core", "player_size_bonus", BLAST_CORE_SIZE_BONUS))
+			upgrade_player_size_bonus = minf(PLAYER_SIZE_BONUS_CAP, upgrade_player_size_bonus + _scale_class_float_gain("player_size_bonus", _skill_float("blast_core", "player_size_bonus", BLAST_CORE_SIZE_BONUS)))
 			_apply_fire_interval_multiplier(_skill_float("blast_core", "fire_interval_multiplier", BLAST_CORE_FIRE_INTERVAL_MULTIPLIER))
 			var blast_applied_size_percent := int(round((upgrade_player_size_bonus - blast_old_size_bonus) * 100.0))
 			result["explosion_radius"] = int(round(blast_radius))
 			result["skill_text"] = "玩家体积 +%d%%（最高 +240%%），射击间隔 +15%%" % blast_applied_size_percent
 		"graze_barrier":
-			apply_graze_shield(22, 4.0)
-			result["shield"] = 22
+			var graze_shield_gain := _scale_class_int_gain("shield", _skill_int("graze_barrier", "shield", 22))
+			apply_graze_shield(graze_shield_gain, 4.0)
+			result["shield"] = graze_shield_gain
 			result["shield_duration"] = 4.0
 		"clear_barrier":
 			result["cleared_projectiles"] = GameManager.clear_enemy_projectiles_from_upgrade()
-			apply_graze_shield(16, 3.5)
-			result["shield"] = 16
+			var clear_shield_gain := _scale_class_int_gain("shield", _skill_int("clear_barrier", "shield", 16))
+			apply_graze_shield(clear_shield_gain, 3.5)
+			result["shield"] = clear_shield_gain
 			result["shield_duration"] = 3.5
 			CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(0.38, 0.92, 1.0, 0.82), 1.8)
 		"pulse_nova":
-			upgrade_explosion_radius_bonus += 18.0
-			result["explosion_radius"] = 18
+			var nova_radius := _scale_class_float_gain("explosion_radius", 18.0)
+			upgrade_explosion_radius_bonus += nova_radius
+			result["explosion_radius"] = int(round(nova_radius))
 			result["nova_projectiles"] = _fire_upgrade_nova()
 		"charged_volley":
-			upgrade_damage_bonus += 3
-			projectile_damage += 3
-			result["damage_bonus"] = 3
+			var volley_damage_bonus := _scale_class_int_gain("damage_flat", 3)
+			upgrade_damage_bonus += volley_damage_bonus
+			projectile_damage += volley_damage_bonus
+			result["damage_bonus"] = volley_damage_bonus
 			result["volley_projectiles"] = _fire_charged_volley()
 		"chain_spark":
 			chain_spark_stacks += 1
@@ -510,10 +519,11 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 		"heavy_shot":
 			heavy_shot_stacks += 1
 			var heavy_old_size_bonus := upgrade_player_size_bonus
-			upgrade_player_size_bonus = minf(PLAYER_SIZE_BONUS_CAP, upgrade_player_size_bonus + _skill_float("heavy_shot", "player_size_bonus", HEAVY_SHOT_SIZE_BONUS))
+			upgrade_player_size_bonus = minf(PLAYER_SIZE_BONUS_CAP, upgrade_player_size_bonus + _scale_class_float_gain("player_size_bonus", _skill_float("heavy_shot", "player_size_bonus", HEAVY_SHOT_SIZE_BONUS)))
 			_apply_fire_interval_multiplier(_skill_float("heavy_shot", "fire_interval_multiplier", HEAVY_SHOT_FIRE_INTERVAL_MULTIPLIER))
 			var heavy_applied_size_percent := int(round((upgrade_player_size_bonus - heavy_old_size_bonus) * 100.0))
-			result["skill_text"] = "投射物伤害 +20%，重弹 1 枚/3 次攻击，击退 +45%%，玩家体积 +%d%%（最高 +240%%），射击间隔 +10%%" % heavy_applied_size_percent
+			var heavy_damage_percent := int(round(_skill_float("heavy_shot", "projectile_damage_percent", 0.20) * _get_class_gain_multiplier("projectile_damage_percent") * 100.0))
+			result["skill_text"] = "投射物伤害 +%d%%，重弹 1 枚/3 次攻击，击退 +45%%，玩家体积 +%d%%（最高 +240%%），射击间隔 +10%%" % [heavy_damage_percent, heavy_applied_size_percent]
 		"compressed_core":
 			compressed_core_stacks += 1
 			_apply_fire_interval_multiplier(_skill_float("compressed_core", "fire_interval_multiplier", 1.15))
@@ -545,20 +555,21 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			]
 		"shatter_blast":
 			shatter_blast_stacks += 1
-			var shatter_radius := _skill_float("shatter_blast", "explosion_radius", 16.0)
+			var shatter_radius := _scale_class_float_gain("explosion_radius", _skill_float("shatter_blast", "explosion_radius", 16.0))
 			upgrade_explosion_radius_bonus += shatter_radius
 			result["explosion_radius"] = int(round(shatter_radius))
 			result["skill_text"] = "爆裂伤害 +55%%"
 		"pierce_amp":
 			pierce_amp_stacks += 1
-			upgrade_pierce_bonus += _skill_int("pierce_amp", "pierce_bonus", 1)
-			result["skill_text"] = "穿透 +1，投射物伤害 +55%%"
+			var pierce_amp_bonus := _scale_class_int_gain("pierce", _skill_int("pierce_amp", "pierce_bonus", 1))
+			upgrade_pierce_bonus += pierce_amp_bonus
+			result["skill_text"] = "穿透 +%d，投射物伤害 +55%%" % pierce_amp_bonus
 		"conduit_coil":
 			conduit_coil_stacks += 1
 			result["skill_text"] = "光束伤害 +150%%，连锁/追踪伤害 +75%%，光束间隔 -0.03 秒"
 		"guard_blade":
 			guard_blade_stacks += 1
-			var guard_shield := _skill_int("guard_blade", "base_shield", 16) + guard_blade_stacks * _skill_int("guard_blade", "shield_per_stack", 4)
+			var guard_shield := _scale_class_int_gain("shield", _skill_int("guard_blade", "base_shield", 16) + guard_blade_stacks * _skill_int("guard_blade", "shield_per_stack", 4))
 			var guard_duration := _skill_float("guard_blade", "shield_duration", 4.0)
 			apply_graze_shield(guard_shield, guard_duration)
 			result["shield"] = guard_shield
@@ -566,7 +577,7 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			result["skill_text"] = "近身技能伤害 +55%%，近身命中护盾 +4"
 		"giant_echo":
 			giant_echo_stacks += 1
-			var echo_shield := _skill_int("giant_echo", "shield", 18)
+			var echo_shield := _scale_class_int_gain("shield", _skill_int("giant_echo", "shield", 18))
 			var echo_duration := _skill_float("giant_echo", "shield_duration", 4.0)
 			apply_graze_shield(echo_shield, echo_duration)
 			result["shield"] = echo_shield
@@ -610,19 +621,22 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 				_skill_float("anchor_discharge", "cooldown", 12.0)
 			]
 		"form_focused":
-			upgrade_damage_bonus += 8
-			projectile_damage += 8
-			result["damage_bonus"] = 8
-			result["skill_text"] = "聚能强化：投射物伤害 +8"
+			var focused_damage_bonus := _scale_class_int_gain("damage_flat", 8)
+			upgrade_damage_bonus += focused_damage_bonus
+			projectile_damage += focused_damage_bonus
+			result["damage_bonus"] = focused_damage_bonus
+			result["skill_text"] = "聚能强化：投射物伤害 +%d" % focused_damage_bonus
 		"form_scatter":
-			upgrade_projectile_count_bonus += 1
-			projectile_count += 1
-			result["skill_text"] = "散射强化：投射物 +1"
+			var scatter_projectile_bonus := _scale_class_int_gain("projectile_count", 1)
+			upgrade_projectile_count_bonus += scatter_projectile_bonus
+			projectile_count += scatter_projectile_bonus
+			result["skill_text"] = "散射强化：投射物 +%d" % scatter_projectile_bonus
 		"form_piercing":
-			upgrade_pierce_bonus += 1
-			result["skill_text"] = "穿透强化：投射物穿透 +1"
+			var form_pierce_bonus := _scale_class_int_gain("pierce", 1)
+			upgrade_pierce_bonus += form_pierce_bonus
+			result["skill_text"] = "穿透强化：投射物穿透 +%d" % form_pierce_bonus
 		"form_burst":
-			var form_burst_radius := _skill_float("form_burst", "explosion_radius", 14.0)
+			var form_burst_radius := _scale_class_float_gain("explosion_radius", _skill_float("form_burst", "explosion_radius", 14.0))
 			upgrade_explosion_radius_bonus += form_burst_radius
 			result["explosion_radius"] = int(round(form_burst_radius))
 			result["skill_text"] = "爆裂强化：爆裂范围 +%d" % int(round(form_burst_radius))
@@ -713,60 +727,62 @@ func _apply_equipment_stats(equipment: Dictionary) -> void:
 	if str(equipment.get("slot", "weapon")) == "weapon":
 		_apply_weapon_form(equipment.get("form", {}))
 	for affix in equipment.get("affixes", []):
+		var affix_value := _scale_class_int_gain(str(affix["id"]), int(affix["value"]))
 		match affix["id"]:
 			"damage":
-				equipment_damage_bonus += affix["value"]
+				equipment_damage_bonus += affix_value
 			"attack_speed":
-				equipment_attack_speed_bonus += affix["value"]
+				equipment_attack_speed_bonus += affix_value
 			"max_health":
-				equipment_health_bonus += affix["value"]
-				max_health += affix["value"]
-				health += affix["value"]
+				equipment_health_bonus += affix_value
+				max_health += affix_value
+				health += affix_value
 			"move_speed":
-				equipment_move_speed_bonus += affix["value"]
-				move_speed += affix["value"]
+				equipment_move_speed_bonus += affix_value
+				move_speed += affix_value
 			"critical_chance":
-				equipment_critical_chance_bonus += affix["value"]
+				equipment_critical_chance_bonus += affix_value
 			"life_steal":
-				equipment_life_steal_bonus += affix["value"]
+				equipment_life_steal_bonus += affix_value
 			"gold_bonus":
-				equipment_gold_bonus += affix["value"]
+				equipment_gold_bonus += affix_value
 			"projectile_count":
-				affix_projectile_count_bonus += affix["value"]
+				affix_projectile_count_bonus += affix_value
 			"pierce":
-				affix_pierce_bonus += affix["value"]
+				affix_pierce_bonus += affix_value
 			"explosion_radius":
-				affix_explosion_radius_bonus += affix["value"]
+				affix_explosion_radius_bonus += affix_value
 	fire_interval = _calculate_fire_interval()
 
 func _remove_equipment_stats(equipment: Dictionary) -> void:
 	if str(equipment.get("slot", "weapon")) == "weapon":
 		_reset_weapon_form()
 	for affix in equipment.get("affixes", []):
+		var affix_value := _scale_class_int_gain(str(affix["id"]), int(affix["value"]))
 		match affix["id"]:
 			"damage":
-				equipment_damage_bonus -= affix["value"]
+				equipment_damage_bonus -= affix_value
 			"attack_speed":
-				equipment_attack_speed_bonus -= affix["value"]
+				equipment_attack_speed_bonus -= affix_value
 			"max_health":
-				equipment_health_bonus -= affix["value"]
-				max_health -= affix["value"]
+				equipment_health_bonus -= affix_value
+				max_health -= affix_value
 				health = min(health, max_health)
 			"move_speed":
-				equipment_move_speed_bonus -= affix["value"]
-				move_speed -= affix["value"]
+				equipment_move_speed_bonus -= affix_value
+				move_speed -= affix_value
 			"critical_chance":
-				equipment_critical_chance_bonus -= affix["value"]
+				equipment_critical_chance_bonus -= affix_value
 			"life_steal":
-				equipment_life_steal_bonus -= affix["value"]
+				equipment_life_steal_bonus -= affix_value
 			"gold_bonus":
-				equipment_gold_bonus -= affix["value"]
+				equipment_gold_bonus -= affix_value
 			"projectile_count":
-				affix_projectile_count_bonus -= affix["value"]
+				affix_projectile_count_bonus -= affix_value
 			"pierce":
-				affix_pierce_bonus -= affix["value"]
+				affix_pierce_bonus -= affix_value
 			"explosion_radius":
-				affix_explosion_radius_bonus -= affix["value"]
+				affix_explosion_radius_bonus -= affix_value
 	fire_interval = _calculate_fire_interval()
 
 func _calculate_fire_interval() -> float:
@@ -795,12 +811,12 @@ func _get_projectile_damage_upgrade_multiplier() -> float:
 	var damage_stacks := int(upgrade_stacks.get("damage", 0))
 	var piercing_rounds_stacks := int(upgrade_stacks.get("piercing_rounds", 0))
 	var bonus := 0.0
-	bonus += _stacked_percent_bonus(_skill_float("damage", "projectile_damage_percent", DAMAGE_UPGRADE_PERCENT), damage_stacks)
+	bonus += _stacked_percent_bonus(_skill_float("damage", "projectile_damage_percent", DAMAGE_UPGRADE_PERCENT) * _get_class_gain_multiplier("projectile_damage_percent"), damage_stacks)
 	bonus -= _stacked_percent_bonus(_skill_float("attack_speed", "projectile_damage_penalty", ATTACK_SPEED_DAMAGE_PENALTY), upgrade_attack_speed_stacks)
 	bonus -= _stacked_percent_bonus(_skill_float("light_frame", "projectile_damage_penalty", LIGHT_FRAME_DAMAGE_PENALTY), light_frame_stacks)
 	bonus -= _stacked_percent_bonus(_skill_float("piercing_rounds", "projectile_damage_penalty", PIERCING_DAMAGE_PENALTY), piercing_rounds_stacks)
 	bonus -= _stacked_percent_bonus(_skill_float("chain_spark", "projectile_damage_penalty", CHAIN_DAMAGE_PENALTY), chain_spark_stacks)
-	bonus += _stacked_percent_bonus(_skill_float("heavy_shot", "projectile_damage_percent", 0.20), heavy_shot_stacks)
+	bonus += _stacked_percent_bonus(_skill_float("heavy_shot", "projectile_damage_percent", 0.20) * _get_class_gain_multiplier("projectile_damage_percent"), heavy_shot_stacks)
 	bonus += _stacked_percent_bonus(_skill_float("compressed_core", "damage_multiplier", 2.50) - 1.0, compressed_core_stacks)
 	return maxf(0.20, 1.0 + bonus)
 
@@ -937,6 +953,26 @@ func _get_giant_echo_close_damage_bonus() -> float:
 func _get_class_multiplier(key: String) -> float:
 	return float(class_multipliers.get(key, 1.0))
 
+func _get_class_gain_multiplier(key: String) -> float:
+	return maxf(0.0, float(class_gain_multipliers.get(key, 1.0)))
+
+func _scale_class_int_gain(key: String, base_value: int) -> int:
+	if base_value == 0:
+		return 0
+	var multiplier := _get_class_gain_multiplier(key)
+	if multiplier <= 0.0:
+		return 0
+	var sign := 1 if base_value > 0 else -1
+	var scaled := int(round(abs(base_value) * multiplier))
+	if scaled == 0:
+		scaled = 1
+	return sign * scaled
+
+func _scale_class_float_gain(key: String, base_value: float) -> float:
+	if base_value == 0.0:
+		return 0.0
+	return base_value * _get_class_gain_multiplier(key)
+
 func _get_light_edge_critical_damage_multiplier() -> float:
 	if light_edge_stacks <= 0:
 		return 1.0
@@ -1021,12 +1057,12 @@ func _apply_weapon_form(form: Dictionary) -> void:
 	if form.is_empty():
 		_reset_weapon_form()
 		return
-	equipment_projectile_count_bonus = int(form.get("projectile_bonus", 0))
-	equipment_pierce_bonus = int(form.get("pierce", 0))
-	equipment_form_damage_bonus = int(form.get("damage_bonus", 0))
+	equipment_projectile_count_bonus = _scale_class_int_gain("projectile_count", int(form.get("projectile_bonus", 0)))
+	equipment_pierce_bonus = _scale_class_int_gain("pierce", int(form.get("pierce", 0)))
+	equipment_form_damage_bonus = _scale_class_int_gain("damage_flat", int(form.get("damage_bonus", 0)))
 	equipment_damage_multiplier = float(form.get("damage_multiplier", 1.0))
 	equipment_spread_degrees = float(form.get("spread_degrees", 8.0))
-	equipment_explosion_radius = float(form.get("explosion_radius", 0.0))
+	equipment_explosion_radius = _scale_class_float_gain("explosion_radius", float(form.get("explosion_radius", 0.0)))
 	equipment_explosion_damage_ratio = float(form.get("explosion_damage_ratio", 0.0))
 
 func _reset_weapon_form() -> void:

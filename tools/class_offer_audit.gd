@@ -184,17 +184,17 @@ func _apply_class_skill_weight(base_weight: float, upgrade_id: String) -> float:
 	var weighted := base_weight
 	var upgrade_bias: Dictionary = class_data.get("upgrade_bias", {})
 	if upgrade_bias.has(upgrade_id):
-		weighted *= clampf(float(upgrade_bias.get(upgrade_id, 1.0)), 0.65, 1.35)
+		weighted *= clampf(float(upgrade_bias.get(upgrade_id, 1.0)), 0.50, 2.00)
 	var route_bias: Dictionary = class_data.get("route_bias", {})
 	for route_id in SkillCatalog.get_upgrade_route_tags(upgrade_id):
 		var bias := int(route_bias.get(str(route_id), 0))
 		if bias > 0:
-			weighted *= minf(1.30, 1.0 + float(bias) * 0.10)
+			weighted *= minf(1.60, 1.0 + float(bias) * 0.16)
 	var tag_bias: Array = class_data.get("tag_bias", [])
 	for tag_key in ["effect_tags", "source_tags", "engine_tags"]:
 		for tag in SkillCatalog.get_upgrade_tag_list(upgrade_id, tag_key):
 			if tag_bias.has(str(tag)):
-				weighted *= 1.10
+				weighted *= 1.18
 	return weighted
 
 func _get_active_skill_tags() -> Dictionary:

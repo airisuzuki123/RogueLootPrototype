@@ -24,6 +24,21 @@ const SUPPORTED_MULTIPLIERS := [
 const SUPPORTED_FOCUS_DECAY := [
 	"stationary_move_decay_multiplier"
 ]
+const SUPPORTED_GAIN_MULTIPLIERS := [
+	"damage",
+	"damage_flat",
+	"projectile_damage_percent",
+	"move_speed",
+	"max_health",
+	"critical_chance",
+	"projectile_count",
+	"pierce",
+	"explosion_radius",
+	"shield",
+	"heal",
+	"player_size_bonus",
+	"player_size_reduction"
+]
 
 var failures: Array[String] = []
 
@@ -58,7 +73,7 @@ func _build_report() -> String:
 	lines.append("")
 	lines.append("- 按 `Player.apply_character_class()` 当前支持的开局规则计算职业进入第一关时的玩家摘要。")
 	lines.append("- 检查玩家可见的开局属性：职业名、体积、移速、暴击率、爆裂范围、射击间隔和护盾。")
-	lines.append("- 检查职业是否只使用 Player 当前支持的初始属性、乘区和专注衰减键；不把内部权重、标签或路线显示给玩家。")
+	lines.append("- 检查职业是否只使用 Player 当前支持的初始属性、乘区、属性获取倍率和专注衰减键；不把内部权重、标签或路线显示给玩家。")
 	lines.append("")
 	lines.append("## 结论摘要")
 	lines.append("")
@@ -66,10 +81,11 @@ func _build_report() -> String:
 	for class_data in CharacterClassCatalog.get_class_list():
 		var row := _audit_class(class_data)
 		rows.append(row)
-		lines.append("- %s：%s；开局摘要 %s。" % [
+		lines.append("- %s：%s；开局摘要 %s；样例收益 %s。" % [
 			str(row.get("name", "")),
 			"通过" if bool(row.get("passed", false)) else "失败",
-			str(row.get("summary_text", ""))
+			str(row.get("summary_text", "")),
+			str(row.get("gain_example_text", ""))
 		])
 	lines.append("")
 	lines.append("## 职业明细")
@@ -92,6 +108,10 @@ func _build_report() -> String:
 		var multipliers: Dictionary = row.get("multipliers", {})
 		if not multipliers.is_empty():
 			lines.append("乘区配置：%s" % _format_dictionary(multipliers))
+		var gain_multipliers: Dictionary = row.get("gain_multipliers", {})
+		if not gain_multipliers.is_empty():
+			lines.append("属性获取倍率：%s" % _format_dictionary(gain_multipliers))
+			lines.append("样例收益：%s" % str(row.get("gain_example_text", "")))
 		var focus_decay: Dictionary = row.get("focus_decay", {})
 		if not focus_decay.is_empty():
 			lines.append("专注衰减配置：%s" % _format_dictionary(focus_decay))
@@ -111,6 +131,10 @@ func _audit_class(class_data: Dictionary) -> Dictionary:
 	checks.append(_check_supported_keys(class_data, "乘区键", multipliers, SUPPORTED_MULTIPLIERS))
 	for key in multipliers.keys():
 		checks.append(_check_float(class_data, "乘区 " + str(key), multipliers.get(key, 1.0), multipliers.get(key, 1.0)))
+	var gain_multipliers: Dictionary = class_data.get("gain_multipliers", {})
+	checks.append(_check_supported_keys(class_data, "属性获取倍率键", gain_multipliers, SUPPORTED_GAIN_MULTIPLIERS))
+	for key in gain_multipliers.keys():
+		checks.append(_check_float(class_data, "属性获取 " + str(key), gain_multipliers.get(key, 1.0), gain_multipliers.get(key, 1.0)))
 	var focus_decay: Dictionary = class_data.get("focus_decay", {})
 	checks.append(_check_supported_keys(class_data, "专注衰减键", focus_decay, SUPPORTED_FOCUS_DECAY))
 	for key in focus_decay.keys():
@@ -126,8 +150,10 @@ func _audit_class(class_data: Dictionary) -> Dictionary:
 		"effects": "；".join(class_data.get("effects", [])),
 		"passed": _checks_passed(checks),
 		"summary_text": _format_summary(summary),
+		"gain_example_text": _format_gain_examples(class_data),
 		"checks": checks,
 		"multipliers": multipliers,
+		"gain_multipliers": gain_multipliers,
 		"focus_decay": focus_decay
 	}
 
@@ -212,3 +238,35 @@ func _format_dictionary(data: Dictionary) -> String:
 		else:
 			parts.append("%s %s" % [str(key), str(value)])
 	return " / ".join(parts)
+
+func _format_gain_examples(class_data: Dictionary) -> String:
+	var gains: Dictionary = class_data.get("gain_multipliers", {})
+	var examples: Array[String] = []
+	if gains.has("projectile_count"):
+		examples.append("投射物 +1 => +%d" % _scale_example_int(gains, "projectile_count", 1))
+	if gains.has("pierce"):
+		examples.append("穿透 +1 => +%d" % _scale_example_int(gains, "pierce", 1))
+	if gains.has("explosion_radius"):
+		examples.append("爆裂范围 +40 => +%d" % int(round(_scale_example_float(gains, "explosion_radius", 40.0))))
+	if gains.has("move_speed"):
+		examples.append("移速 +70 => +%d" % int(round(_scale_example_float(gains, "move_speed", 70.0))))
+	if gains.has("critical_chance"):
+		examples.append("暴击率 +5%% => +%d%%" % _scale_example_int(gains, "critical_chance", 5))
+	if gains.has("max_health"):
+		examples.append("最大生命 +30 => +%d" % _scale_example_int(gains, "max_health", 30))
+	if gains.has("shield"):
+		examples.append("护盾 +20 => +%d" % _scale_example_int(gains, "shield", 20))
+	if gains.has("projectile_damage_percent"):
+		examples.append("投射物伤害 +25%% => +%d%%" % int(round(_scale_example_float(gains, "projectile_damage_percent", 25.0))))
+	return " / ".join(examples) if not examples.is_empty() else "无额外属性倍率"
+
+func _scale_example_int(gains: Dictionary, key: String, base_value: int) -> int:
+	if base_value == 0:
+		return 0
+	var multiplier := maxf(0.0, float(gains.get(key, 1.0)))
+	if multiplier <= 0.0:
+		return 0
+	return maxi(1, int(round(float(base_value) * multiplier)))
+
+func _scale_example_float(gains: Dictionary, key: String, base_value: float) -> float:
+	return base_value * maxf(0.0, float(gains.get(key, 1.0)))

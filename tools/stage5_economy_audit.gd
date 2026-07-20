@@ -2,6 +2,7 @@ extends SceneTree
 
 const GameManagerScript := preload("res://scripts/core/game_manager.gd")
 const SkillCatalog := preload("res://scripts/items/skill_catalog.gd")
+const CharacterClassCatalog := preload("res://scripts/items/character_class_catalog.gd")
 
 const REPORT_PATH := "res://docs/stage5-economy-audit.md"
 
@@ -35,6 +36,8 @@ func _build_report() -> String:
 	_append_stage_table(lines)
 	lines.append("")
 	_append_shop_table(lines)
+	lines.append("")
+	_append_early_build_pacing(lines)
 	while not lines.is_empty() and str(lines[-1]).is_empty():
 		lines.pop_back()
 	return "\n".join(lines) + "\n"
@@ -58,6 +61,21 @@ func _append_summary(lines: Array[String]) -> void:
 	lines.append("")
 	lines.append("- 仅靠确定性金币，首次可购买最低价技能的商店：第 %d 关后。" % first_skill_stage)
 	lines.append("- 仅靠确定性金币，首次可购买最低价装备/工具的商店：第 %d 关后。" % first_equipment_stage)
+	var first_shop_budget := int(GameManagerScript.RUN_PHASES[0].get("reward_gold", 0))
+	var affordable_class_count := _count_classes_with_affordable_preferred_skill(1, first_shop_budget)
+	lines.append("- 第 1 关后，%d/%d 个职业至少有 1 个职业偏向技能可用确定性金币购买。" % [affordable_class_count, CharacterClassCatalog.get_class_list().size()])
+	var minimum_level_choices := _estimate_minimum_level_choices(3)
+	var first_shop_preferred_cost := _get_maximum_class_preferred_minimum_cost(1)
+	var stage_three_budget := first_shop_budget - first_shop_preferred_cost
+	for index in range(1, 3):
+		stage_three_budget += int(GameManagerScript.RUN_PHASES[index].get("reward_gold", 0))
+	var stage_three_median := int(_get_shop_price_summary(3).get("skill_median", 0))
+	var guaranteed_shop_choices := 2 if stage_three_budget >= stage_three_median else 1
+	lines.append("- 按最低敌人经验估算，前 3 关至少获得 %d 次升级选择；加上开局三选一和 %d 次确定性技能购买，前 3 关至少形成 %d 次有效构筑选择。" % [
+		minimum_level_choices,
+		guaranteed_shop_choices,
+		1 + minimum_level_choices + guaranteed_shop_choices
+	])
 	if first_skill_stage <= 1:
 		lines.append("- 第 1 关后确定性金币已经覆盖最低价技能，首个商店可以稳定产生一次技能购买决策。")
 	else:
@@ -110,6 +128,34 @@ func _append_shop_table(lines: Array[String]) -> void:
 			_format_refresh_costs(completed_stage)
 		])
 
+func _append_early_build_pacing(lines: Array[String]) -> void:
+	lines.append("## 前 3 关构筑节奏")
+	lines.append("")
+	lines.append("| 职业 | 第一商店最低偏向技能 | 第一关确定性金币 | 可购买 |")
+	lines.append("|---|---:|---:|---|")
+	var first_shop_budget := int(GameManagerScript.RUN_PHASES[0].get("reward_gold", 0))
+	for class_data in CharacterClassCatalog.get_class_list():
+		var minimum_cost := _get_class_preferred_minimum_cost(class_data, 1)
+		lines.append("| %s | %d | %d | %s |" % [
+			str(class_data.get("name", "未知职业")),
+			minimum_cost,
+			first_shop_budget,
+			"是" if minimum_cost <= first_shop_budget else "否"
+		])
+	lines.append("")
+	var first_purchase_cost := _get_maximum_class_preferred_minimum_cost(1)
+	var budget_after_first_purchase := first_shop_budget - first_purchase_cost
+	var stage_two_reward := int(GameManagerScript.RUN_PHASES[1].get("reward_gold", 0))
+	var stage_three_reward := int(GameManagerScript.RUN_PHASES[2].get("reward_gold", 0))
+	var stage_three_budget := budget_after_first_purchase + stage_two_reward + stage_three_reward
+	var stage_three_median := int(_get_shop_price_summary(3).get("skill_median", 0))
+	lines.append("- 按职业中最高的首店最低偏向技能价格 %d 计算，购买后剩余 %d 金。" % [first_purchase_cost, budget_after_first_purchase])
+	lines.append("- 第二、三关固定奖励合计 %d 金，第三商店预算达到 %d，技能中位价为 %d，可稳定完成第二次技能购买。" % [stage_two_reward + stage_three_reward, stage_three_budget, stage_three_median])
+	lines.append("- 最低经验口径下，前 3 关升级选择为 %d 次；加上开局三选一和两次商店购买，共 %d 次有效构筑选择。" % [
+		_estimate_minimum_level_choices(3),
+		1 + _estimate_minimum_level_choices(3) + 2
+	])
+
 func _get_shop_price_summary(completed_stage: int) -> Dictionary:
 	var skill_costs: Array[int] = []
 	for offer in SkillCatalog.get_shop_skill_offers(completed_stage):
@@ -129,6 +175,43 @@ func _get_shop_price_summary(completed_stage: int) -> Dictionary:
 		"survival_min": _min_int(survival_costs),
 		"gear_min": _min_int(gear_costs)
 	}
+
+func _count_classes_with_affordable_preferred_skill(completed_stage: int, budget: int) -> int:
+	var count := 0
+	for class_data in CharacterClassCatalog.get_class_list():
+		var minimum_cost := _get_class_preferred_minimum_cost(class_data, completed_stage)
+		if minimum_cost <= budget:
+			count += 1
+	return count
+
+func _get_class_preferred_minimum_cost(class_data: Dictionary, completed_stage: int) -> int:
+	var preferred_ids: Dictionary = class_data.get("upgrade_bias", {})
+	var minimum_cost := 999999
+	for offer in SkillCatalog.get_shop_skill_offers(completed_stage):
+		var upgrade_id := str(offer.get("reward_upgrade_id", ""))
+		if preferred_ids.has(upgrade_id):
+			minimum_cost = mini(minimum_cost, int(offer.get("cost", 0)))
+	return minimum_cost
+
+func _get_maximum_class_preferred_minimum_cost(completed_stage: int) -> int:
+	var maximum_cost := 0
+	for class_data in CharacterClassCatalog.get_class_list():
+		maximum_cost = maxi(maximum_cost, _get_class_preferred_minimum_cost(class_data, completed_stage))
+	return maximum_cost
+
+func _estimate_minimum_level_choices(stage_count: int) -> int:
+	var experience := 0
+	var required := 5
+	var choices := 0
+	for index in range(mini(stage_count, GameManagerScript.RUN_PHASES.size())):
+		var phase: Dictionary = GameManagerScript.RUN_PHASES[index]
+		experience += int(phase.get("kill_target", 0))
+		experience += int(phase.get("reward_experience", 0))
+		while experience >= required:
+			experience -= required
+			choices += 1
+			required = int(ceil(float(required) * 1.35 + 2.0))
+	return choices
 
 func _estimate_spawn_capacity(phase: Dictionary) -> int:
 	var duration := float(phase.get("duration", 30.0))

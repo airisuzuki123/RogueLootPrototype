@@ -18,7 +18,7 @@ const CLASS_DEFINITIONS := {
 		"initial_stats": {"player_size_bonus": 0.15, "move_speed_multiplier": 0.90},
 		"multipliers": {"mass_resonance_damage": 1.20},
 		"gain_multipliers": {"projectile_count": 2.0, "pierce": 2.0, "explosion_radius": 1.5, "move_speed": 0.5, "player_size_bonus": 1.35},
-		"upgrade_bias": {"multishot": 1.80, "piercing_rounds": 1.55, "mass_resonance": 1.55, "slow_resonance": 1.45, "blast_core": 1.35, "shatter_blast": 1.25, "giant_echo": 1.20},
+		"upgrade_bias": {"multishot": 2.00, "piercing_rounds": 1.80, "mass_resonance": 1.35, "slow_resonance": 1.30, "blast_core": 1.50, "shatter_blast": 1.25, "giant_echo": 1.20},
 		"route_bias": {"bulk": 3, "pierce": 2, "blast": 2, "close": 1},
 		"tag_bias": ["large_body", "slow_move"]
 	},

@@ -78,7 +78,7 @@ func _build_report() -> String:
 		lines.append("- %s：%s；开局 %s；风险分支 %d/%d；最高集中度 %d%%。" % [
 			str(result.get("name", "")),
 			"通过" if int(result.get("warning_count", 0)) == 0 else "需关注",
-			_format_health(result.get("initial_health", {})),
+			"%s；开局清群概率至少 %d%%" % [_format_health(result.get("initial_health", {})), int(round(float(result.get("opening_clear_probability", 0.0)) * 100.0))],
 			int(result.get("warning_count", 0)),
 			int(result.get("branches", []).size()),
 			int(round(float(result.get("max_top_share", 0.0)) * 100.0))
@@ -94,11 +94,12 @@ func _build_report() -> String:
 			continue
 		var proposed_data := _apply_proposed_override(class_data)
 		var proposed_result := _audit_class(proposed_data)
-		lines.append("- %s：风险分支 %d/%d，最高集中度 %d%%；开局候选 %s。" % [
+		lines.append("- %s：风险分支 %d/%d，最高集中度 %d%%，开局清群概率至少 %d%%；开局候选 %s。" % [
 			str(proposed_result.get("name", "")),
 			int(proposed_result.get("warning_count", 0)),
 			int(proposed_result.get("branches", []).size()),
 			int(round(float(proposed_result.get("max_top_share", 0.0)) * 100.0)),
+			int(round(float(proposed_result.get("opening_clear_probability", 0.0)) * 100.0)),
 			_format_top_titles(proposed_result.get("initial_rows", []), 5)
 		])
 	lines.append("")
@@ -109,6 +110,10 @@ func _build_report() -> String:
 		lines.append("")
 		lines.append("- 开局候选：%s" % _format_top_titles(result.get("initial_rows", []), 5))
 		lines.append("- 开局健康度：%s" % _format_health(result.get("initial_health", {})))
+		lines.append("- 开局路线槽位：%s；前两个槽位至少出现一张清群技能的估算概率为 %d%%" % [
+			str(result.get("opening_route_text", "")),
+			int(round(float(result.get("opening_clear_probability", 0.0)) * 100.0))
+		])
 		lines.append("")
 		lines.append("| 首选分支 | 第二次首选 | 第二次选择前候选 | 两次选择后健康度 | 判断 |")
 		lines.append("|---|---|---|---|---|")
@@ -149,8 +154,10 @@ func _apply_proposed_override(class_data: Dictionary) -> Dictionary:
 func _audit_class(class_data: Dictionary) -> Dictionary:
 	var base_scenario := _build_scenario(class_data)
 	current_scenario = base_scenario
-	var initial_rows := _top_weight_rows(_build_upgrade_weights(), TOP_COUNT)
+	var all_initial_rows := _build_upgrade_weights()
+	var initial_rows := _top_weight_rows(all_initial_rows, TOP_COUNT)
 	var initial_health := _evaluate_rows(initial_rows)
+	var opening_audit := _evaluate_opening_route_slots(all_initial_rows)
 	var first_pick_rows := initial_rows.slice(0, mini(FIRST_PICK_BRANCHES, initial_rows.size()))
 	var branches: Array[Dictionary] = []
 	var warnings: Array[String] = []
@@ -188,8 +195,68 @@ func _audit_class(class_data: Dictionary) -> Dictionary:
 		"branches": branches,
 		"warnings": warnings,
 		"warning_count": warnings.size(),
-		"max_top_share": max_top_share
+		"max_top_share": max_top_share,
+		"opening_clear_probability": float(opening_audit.get("clear_probability", 0.0)),
+		"opening_route_text": str(opening_audit.get("route_text", ""))
 	}
+
+func _evaluate_opening_route_slots(rows: Array[Dictionary]) -> Dictionary:
+	var primary_route := _get_primary_route()
+	var branch_routes := _get_possible_branch_routes(primary_route)
+	var primary_clear_share := _get_route_clear_weight_share(rows, primary_route)
+	var minimum_probability := 1.0
+	if branch_routes.is_empty():
+		minimum_probability = primary_clear_share
+	for branch_route in branch_routes:
+		var branch_clear_share := _get_route_clear_weight_share(rows, branch_route)
+		var probability := 1.0 - (1.0 - primary_clear_share) * (1.0 - branch_clear_share)
+		minimum_probability = minf(minimum_probability, probability)
+	return {
+		"clear_probability": clampf(minimum_probability, 0.0, 1.0),
+		"route_text": "%s + %s" % [primary_route, "/".join(branch_routes)]
+	}
+
+func _get_primary_route() -> String:
+	var scores := _get_active_build_route_scores()
+	var best_route := ""
+	var best_score := 0
+	for route_id in SkillCatalog.BUILD_ROUTE_ORDER:
+		var score := int(scores.get(route_id, 0))
+		if score > best_score:
+			best_score = score
+			best_route = route_id
+	return best_route
+
+func _get_possible_branch_routes(primary_route: String) -> Array[String]:
+	var scores := _get_active_build_route_scores()
+	var candidates: Array[String] = []
+	var best_score := -1
+	for route_value in SkillCatalog.get_route_synergy_ids(primary_route):
+		var route_id := str(route_value)
+		if route_id == primary_route or not SkillCatalog.BUILD_ROUTE_DEFINITIONS.has(route_id):
+			continue
+		var score := int(scores.get(route_id, 0))
+		if score > best_score:
+			best_score = score
+			candidates.clear()
+		if score == best_score:
+			candidates.append(route_id)
+	return candidates
+
+func _get_route_clear_weight_share(rows: Array[Dictionary], route_id: String) -> float:
+	if route_id.is_empty():
+		return 0.0
+	var route_upgrade_ids: Array = SkillCatalog.BUILD_ROUTE_DEFINITIONS.get(route_id, {}).get("upgrades", [])
+	var total_weight := 0
+	var clear_weight := 0
+	for row in rows:
+		if not route_upgrade_ids.has(str(row.get("id", ""))):
+			continue
+		var weight := int(row.get("weight", 0))
+		total_weight += weight
+		if bool(row.get("group_clear", false)):
+			clear_weight += weight
+	return float(clear_weight) / float(total_weight) if total_weight > 0 else 0.0
 
 func _build_scenario(class_data: Dictionary) -> Dictionary:
 	var initial_stats: Dictionary = class_data.get("initial_stats", {})
@@ -233,7 +300,7 @@ func _apply_choice(scenario: Dictionary, upgrade_id: String) -> void:
 		"multishot":
 			summary["projectiles"] = int(summary.get("projectiles", 1)) + maxi(1, int(round(_scale_gain(scenario, "projectile_count", 1.0))))
 			summary["player_size_bonus"] = float(summary.get("player_size_bonus", 0.0)) + _scale_gain(scenario, "player_size_bonus", 0.30)
-			summary["move_speed"] = maxf(80.0, float(summary.get("move_speed", 260.0)) * 0.75)
+			summary["move_speed"] = maxf(80.0, float(summary.get("move_speed", 260.0)) * 0.80)
 		"light_frame":
 			summary["player_size_bonus"] = maxf(-0.40, float(summary.get("player_size_bonus", 0.0)) - _scale_gain(scenario, "player_size_reduction", 0.12))
 			summary["move_speed"] = float(summary.get("move_speed", 260.0)) + _scale_gain(scenario, "move_speed", 70.0)

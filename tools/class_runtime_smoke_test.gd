@@ -1,6 +1,7 @@
 extends Node
 
 const PLAYER_SCENE := preload("res://scenes/player.tscn")
+const MAIN_SCENE := preload("res://scenes/main.tscn")
 
 var failures: Array[String] = []
 
@@ -13,6 +14,7 @@ func _run() -> void:
 	await _test_close_blade_guard()
 	await _test_roaming_arc()
 	await _test_heavy_bomber()
+	await _test_main_ui_flow()
 	if failures.is_empty():
 		print("职业运行时冒烟测试通过：5/5")
 		get_tree().quit()
@@ -25,7 +27,7 @@ func _test_bulwark_gunner() -> void:
 	var player := await _create_player("bulwark_gunner")
 	_check_summary("巨躯炮台", {"class_name": "巨躯炮台", "player_size_bonus": 15, "move_speed": 234})
 	player.apply_upgrade("multishot")
-	_check_summary("巨躯炮台分裂射击", {"projectiles": 3})
+	_check_summary("巨躯炮台分裂射击", {"projectiles": 3, "move_speed": 187})
 	player.queue_free()
 	await get_tree().process_frame
 
@@ -61,6 +63,29 @@ func _test_heavy_bomber() -> void:
 	player.queue_free()
 	await get_tree().process_frame
 
+func _test_main_ui_flow() -> void:
+	var main := MAIN_SCENE.instantiate()
+	get_tree().root.add_child(main)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var hud := main.get_node_or_null("HUD")
+	if hud == null:
+		failures.append("主场景：HUD 未生成")
+	else:
+		var class_panel = hud.get("class_selection_panel")
+		if class_panel == null or not bool(class_panel.visible):
+			failures.append("主场景：职业选择面板未显示")
+		if not GameManager.choose_character_class("bulwark_gunner"):
+			failures.append("主场景：职业选择失败")
+		await get_tree().process_frame
+		var upgrade_panel = hud.get("upgrade_panel")
+		if class_panel == null or bool(class_panel.visible):
+			failures.append("主场景：选择职业后职业面板未关闭")
+		if upgrade_panel == null or not bool(upgrade_panel.visible):
+			failures.append("主场景：选择职业后开局三选一面板未显示")
+	main.queue_free()
+	await get_tree().process_frame
+
 func _create_player(class_id: String) -> Node:
 	GameManager.reset_run()
 	var player := PLAYER_SCENE.instantiate()
@@ -69,6 +94,8 @@ func _create_player(class_id: String) -> Node:
 	GameManager.register_player(player)
 	if not GameManager.choose_character_class(class_id):
 		failures.append("%s：职业选择失败" % class_id)
+	elif not GameManager.is_upgrade_pending or GameManager.pending_upgrade_choices.size() != 3:
+		failures.append("%s：选择职业后未生成开局三选一" % class_id)
 	return player
 
 func _check_summary(label: String, expected: Dictionary) -> void:

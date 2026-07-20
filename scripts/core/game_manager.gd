@@ -67,7 +67,7 @@ const RUN_PHASES: Array[Dictionary] = [
 		"arena_pattern_interval": 0.0,
 		"goal": "在 30 秒内熟悉直线弹道，尽量多拿金币",
 		"kill_target": 8,
-		"reward_gold": 18,
+		"reward_gold": 25,
 		"reward_experience": 2,
 		"reward_heal": 0
 	},
@@ -587,6 +587,7 @@ func choose_character_class(class_id: String) -> bool:
 	_set_loot_message(message)
 	_set_milestone_message(message)
 	class_selected.emit(selected_class)
+	_request_upgrade_choices()
 	return true
 
 func get_character_classes() -> Array[Dictionary]:
@@ -2089,7 +2090,7 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 				_scale_class_int_gain("heal", _upgrade_int(upgrade_id, "heal", 60))
 			]
 		"multishot":
-			return "投射物 +%d，玩家体积 +%d%%（最高 +240%%），当前移速 -25%%（最低 80）" % [
+			return "投射物 +%d，玩家体积 +%d%%（最高 +240%%），当前移速 -20%%（最低 80）" % [
 				_scale_class_int_gain("projectile_count", _upgrade_int(upgrade_id, "projectile_count_bonus", 1)),
 				int(round(_scale_class_float_gain("player_size_bonus", _upgrade_float(upgrade_id, "player_size_bonus", 0.30)) * 100.0))
 			]

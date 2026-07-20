@@ -178,8 +178,8 @@ const UPGRADE_DEFINITIONS := {
 	},
 	"multishot": {
 		"title": "分裂射击",
-		"description": "投射物 +1，玩家体积 +30%（最高 +240%），当前移速 -25%（最低 80）",
-		"preview": "投射物 +1，玩家体积 +30%（最高 +240%），当前移速 -25%（最低 80）",
+		"description": "投射物 +1，玩家体积 +30%（最高 +240%），当前移速 -20%（最低 80）",
+		"preview": "投射物 +1，玩家体积 +30%（最高 +240%），当前移速 -20%（最低 80）",
 		"rarity": "purple"
 	},
 	"mass_resonance": {
@@ -468,7 +468,7 @@ const UPGRADE_VALUES := {
 	"heal": {"heal": 40},
 	"strong_heal": {"heal": 70},
 	"recovery_training": {"max_health_bonus": 25, "heal": 60, "move_speed_multiplier": 0.95},
-	"multishot": {"projectile_count_bonus": 1, "player_size_bonus": 0.30, "move_speed_multiplier": 0.75},
+	"multishot": {"projectile_count_bonus": 1, "player_size_bonus": 0.30, "move_speed_multiplier": 0.80},
 	"mass_resonance": {"damage_per_10_percent": 0.16},
 	"light_frame": {"player_size_reduction": 0.12, "move_speed_bonus": 70.0, "projectile_damage_penalty": 0.10},
 	"light_resonance": {"damage_per_10_percent": 0.08, "crit_per_10_percent": 10},
@@ -614,7 +614,8 @@ static func get_shop_skill_offer(offer_id: String, completed_stage: int) -> Dict
 	template["id"] = offer_id
 	template["title"] = str(template.get("title", upgrade.get("title", "技能")))
 	template["description"] = str(upgrade.get("description", ""))
-	template["cost"] = int(template.get("base_cost", 0)) + completed_stage * int(template.get("stage_cost", 0))
+	var priced_stage := maxi(0, completed_stage - 1)
+	template["cost"] = int(template.get("base_cost", 0)) + priced_stage * int(template.get("stage_cost", 0))
 	template["reward_upgrade_title"] = str(template.get("title", upgrade.get("title", "技能")))
 	template.erase("base_cost")
 	template.erase("stage_cost")

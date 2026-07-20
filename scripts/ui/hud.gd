@@ -327,7 +327,7 @@ func _build_class_selection_panel(root: Control) -> void:
 	panel_root.add_child(title)
 
 	var description := Label.new()
-	description.text = "职业只影响本局开局方向；后续仍通过升级、商店和装备完成构筑。"
+	description.text = "职业影响本局开局属性和后续属性收益；升级、商店和装备仍决定最终构筑。"
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	description.custom_minimum_size = Vector2(900, 0)
 	panel_root.add_child(description)
@@ -690,6 +690,9 @@ func _on_build_summary_changed(summary: Dictionary) -> void:
 	var selected_class_name := str(summary.get("class_name", ""))
 	if not selected_class_name.is_empty():
 		lines.append("职业：%s" % selected_class_name)
+	var class_gain_summary := str(summary.get("class_gain_summary", ""))
+	if not class_gain_summary.is_empty():
+		lines.append("职业收益：%s" % class_gain_summary)
 	lines.append("构筑：单发 %d（基础 %d） | 加成 %s | 弹体 %d | 穿透 %d | 爆裂 %d | %s" % [
 		final_damage,
 		base_damage,
@@ -725,7 +728,7 @@ func _on_class_selection_requested(classes: Array) -> void:
 		var class_data: Dictionary = class_options[index]
 		var button := Button.new()
 		button.text = _format_class_option_text(class_data)
-		button.custom_minimum_size = Vector2(438, 168)
+		button.custom_minimum_size = Vector2(438, 204)
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		button.pressed.connect(_on_class_option_pressed.bind(index))
@@ -742,7 +745,11 @@ func _format_class_option_text(class_data: Dictionary) -> String:
 		lines.append(summary)
 	var effects: Array = class_data.get("effects", [])
 	if not effects.is_empty():
-		lines.append("效果：" + "；".join(effects))
+		var starting_effects := effects.slice(0, mini(3, effects.size()))
+		lines.append("开局：" + "；".join(starting_effects))
+	var gain_summary := str(class_data.get("gain_summary", ""))
+	if not gain_summary.is_empty():
+		lines.append("成长：" + gain_summary)
 	return "\n".join(lines)
 
 func _on_class_option_pressed(index: int) -> void:

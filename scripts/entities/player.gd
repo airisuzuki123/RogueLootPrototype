@@ -1370,6 +1370,7 @@ func _emit_build_summary() -> void:
 		"movement_critical_bonus": _get_movement_focus_crit_bonus(),
 		"giant_echo_close_damage_bonus_percent": int(round(_get_giant_echo_close_damage_bonus() * 100.0)),
 		"class_name": str(class_data.get("name", "")),
+		"class_gain_summary": str(class_data.get("gain_summary", "")),
 		"critical_damage_multiplier": _get_critical_damage_multiplier(),
 		"attack_interval": fire_interval,
 		"move_speed": int(round(move_speed)),

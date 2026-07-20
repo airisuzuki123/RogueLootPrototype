@@ -115,7 +115,7 @@ static func _roll_equipment_for_slot(slot_id: String, enemy_level: int = 1) -> D
 	equipment["salvage_value"] = get_salvage_value(equipment)
 	return equipment
 
-static func describe(equipment: Dictionary) -> String:
+static func describe(equipment: Dictionary, class_data: Dictionary = {}) -> String:
 	if equipment.is_empty():
 		return "装备：无"
 	var lines := ["%s (%s)" % [equipment["name"], equipment["rarity"]]]
@@ -123,9 +123,9 @@ static func describe(equipment: Dictionary) -> String:
 	lines.append("等级：%d" % int(equipment.get("level", 1)))
 	var form: Dictionary = equipment.get("form", {})
 	if not form.is_empty():
-		lines.append(str(form["description"]))
+		lines.append(_describe_weapon_form(form, class_data))
 	for affix in equipment["affixes"]:
-		var value := int(affix["value"])
+		var value := _scale_class_int_gain(class_data, str(affix["id"]), int(affix["value"]))
 		var prefix := "+" if value >= 0 else ""
 		if affix["id"] in ["attack_speed", "critical_chance", "life_steal", "gold_bonus"]:
 			lines.append("%s%d%% %s" % [prefix, value, affix["label"]])
@@ -135,10 +135,10 @@ static func describe(equipment: Dictionary) -> String:
 			lines.append("%s%d %s" % [prefix, value, affix["label"]])
 	return "\n".join(lines)
 
-static func describe_with_score(equipment: Dictionary) -> String:
+static func describe_with_score(equipment: Dictionary, class_data: Dictionary = {}) -> String:
 	if equipment.is_empty():
 		return "装备：无\n评分：0"
-	return "%s\n评分：%d" % [describe(equipment), get_score(equipment)]
+	return "%s\n评分：%d" % [describe(equipment, class_data), get_score(equipment)]
 
 static func describe_loadout(equipped_items: Dictionary) -> String:
 	var lines := []
@@ -151,7 +151,7 @@ static func describe_loadout(equipped_items: Dictionary) -> String:
 			lines.append("%s：%s 评分 %d" % [slot["label"], equipment["name"], get_score(equipment)])
 	return "\n".join(lines)
 
-static func describe_loadout_summary(equipped_items: Dictionary) -> String:
+static func describe_loadout_summary(equipped_items: Dictionary, class_data: Dictionary = {}) -> String:
 	var total_score := 0
 	var profile := {
 		"damage": 0,
@@ -173,7 +173,7 @@ static func describe_loadout_summary(equipped_items: Dictionary) -> String:
 		if equipment.is_empty():
 			continue
 		total_score += get_score(equipment)
-		var item_profile := _build_combat_profile(equipment)
+		var item_profile := _build_combat_profile(equipment, class_data)
 		if slot_id == "weapon":
 			weapon_form = str(item_profile["form_name"])
 			weapon_multiplier = float(item_profile["damage_multiplier"])
@@ -268,12 +268,12 @@ static func get_form_name(equipment: Dictionary) -> String:
 		return "无形态"
 	return str(form.get("name", "未知形态"))
 
-static func get_recommendation_text(candidate: Dictionary, current: Dictionary) -> String:
+static func get_recommendation_text(candidate: Dictionary, current: Dictionary, class_data: Dictionary = {}) -> String:
 	if candidate.is_empty():
 		return "未选择装备"
 	var score_delta: int = get_score_delta_value(candidate, current)
-	var candidate_profile: Dictionary = _build_combat_profile(candidate)
-	var current_profile: Dictionary = _build_combat_profile(current)
+	var candidate_profile: Dictionary = _build_combat_profile(candidate, class_data)
+	var current_profile: Dictionary = _build_combat_profile(current, class_data)
 	var primary_change: String = _get_primary_change(candidate_profile, current_profile)
 	var change_suffix := ""
 	if not primary_change.is_empty():
@@ -288,10 +288,10 @@ static func get_recommendation_text(candidate: Dictionary, current: Dictionary) 
 		return "构筑取向：评分 %s，但%s" % [get_score_delta_label(candidate, current), primary_change]
 	return "整体较弱：评分 %s" % get_score_delta_label(candidate, current)
 
-static func get_comparison_summary(candidate: Dictionary, current: Dictionary) -> String:
+static func get_comparison_summary(candidate: Dictionary, current: Dictionary, class_data: Dictionary = {}) -> String:
 	var lines := [get_score_delta_text(candidate, current)]
-	var candidate_profile := _build_combat_profile(candidate)
-	var current_profile := _build_combat_profile(current)
+	var candidate_profile := _build_combat_profile(candidate, class_data)
+	var current_profile := _build_combat_profile(current, class_data)
 	_add_form_delta(lines, candidate_profile, current_profile)
 	_add_number_delta(lines, "伤害词缀", int(candidate_profile["damage"]), int(current_profile["damage"]), "")
 	_add_percent_delta(lines, "伤害倍率", float(candidate_profile["damage_multiplier"]), float(current_profile["damage_multiplier"]))
@@ -388,7 +388,7 @@ static func _score_affix(affix_id: String, value: int) -> int:
 			return value * 2
 	return value
 
-static func _build_combat_profile(equipment: Dictionary) -> Dictionary:
+static func _build_combat_profile(equipment: Dictionary, class_data: Dictionary = {}) -> Dictionary:
 	var profile := {
 		"form_name": "无",
 		"damage": 0,
@@ -408,14 +408,14 @@ static func _build_combat_profile(equipment: Dictionary) -> Dictionary:
 	var form: Dictionary = equipment.get("form", {})
 	if not form.is_empty():
 		profile["form_name"] = str(form.get("name", "未知形态"))
-		profile["damage"] = int(profile["damage"]) + int(form.get("damage_bonus", 0))
-		profile["projectile_count"] = int(form.get("projectile_bonus", 0))
-		profile["pierce"] = int(form.get("pierce", 0))
-		profile["explosion_radius"] = int(round(float(form.get("explosion_radius", 0.0))))
+		profile["damage"] = int(profile["damage"]) + _scale_class_int_gain(class_data, "damage_flat", int(form.get("damage_bonus", 0)))
+		profile["projectile_count"] = _scale_class_int_gain(class_data, "projectile_count", int(form.get("projectile_bonus", 0)))
+		profile["pierce"] = _scale_class_int_gain(class_data, "pierce", int(form.get("pierce", 0)))
+		profile["explosion_radius"] = int(round(_scale_class_float_gain(class_data, "explosion_radius", float(form.get("explosion_radius", 0.0)))))
 		profile["damage_multiplier"] = float(form.get("damage_multiplier", 1.0))
 	for affix in equipment.get("affixes", []):
 		var affix_id := str(affix["id"])
-		var value := int(affix["value"])
+		var value := _scale_class_int_gain(class_data, affix_id, int(affix["value"]))
 		match affix_id:
 			"damage":
 				profile["damage"] = int(profile["damage"]) + value
@@ -465,6 +465,51 @@ static func _add_summary_value(lines: Array, label: String, value: int, suffix: 
 		return
 	var sign := "+" if value > 0 else ""
 	lines.append("%s：%s%d%s" % [label, sign, value, suffix])
+
+static func _describe_weapon_form(form: Dictionary, class_data: Dictionary = {}) -> String:
+	var parts: Array[String] = []
+	var damage_bonus := _scale_class_int_gain(class_data, "damage_flat", int(form.get("damage_bonus", 0)))
+	if damage_bonus != 0:
+		parts.append("基础伤害 +%d" % damage_bonus)
+	var projectile_bonus := _scale_class_int_gain(class_data, "projectile_count", int(form.get("projectile_bonus", 0)))
+	if projectile_bonus != 0:
+		parts.append("额外发射 %d 枚投射物" % projectile_bonus)
+	var pierce := _scale_class_int_gain(class_data, "pierce", int(form.get("pierce", 0)))
+	if pierce != 0:
+		parts.append("投射物可额外穿透 %d 名敌人" % pierce)
+	var explosion_radius := int(round(_scale_class_float_gain(class_data, "explosion_radius", float(form.get("explosion_radius", 0.0)))))
+	if explosion_radius != 0:
+		parts.append("爆裂范围 +%d" % explosion_radius)
+	var damage_multiplier := float(form.get("damage_multiplier", 1.0))
+	if damage_multiplier != 1.0:
+		var multiplier_delta := int(round((damage_multiplier - 1.0) * 100.0))
+		var sign := "+" if multiplier_delta > 0 else ""
+		parts.append("伤害倍率 %s%d%%" % [sign, multiplier_delta])
+	if parts.is_empty():
+		return str(form.get("description", "基础形态"))
+	return "；".join(parts)
+
+static func _get_class_gain_multiplier(class_data: Dictionary, key: String) -> float:
+	if class_data.is_empty():
+		return 1.0
+	var gain_multipliers: Dictionary = class_data.get("gain_multipliers", {})
+	return maxf(0.0, float(gain_multipliers.get(key, 1.0)))
+
+static func _scale_class_int_gain(class_data: Dictionary, key: String, base_value: int) -> int:
+	if base_value == 0:
+		return 0
+	var multiplier := _get_class_gain_multiplier(class_data, key)
+	if multiplier <= 0.0:
+		return 0
+	var scaled := int(round(float(abs(base_value)) * multiplier))
+	if scaled == 0:
+		scaled = 1
+	return (-scaled) if base_value < 0 else scaled
+
+static func _scale_class_float_gain(class_data: Dictionary, key: String, base_value: float) -> float:
+	if base_value == 0.0:
+		return 0.0
+	return base_value * _get_class_gain_multiplier(class_data, key)
 
 static func _get_primary_change(candidate_profile: Dictionary, current_profile: Dictionary) -> String:
 	var projectile_delta := int(candidate_profile["projectile_count"]) - int(current_profile["projectile_count"])

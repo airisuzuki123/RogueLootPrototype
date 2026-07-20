@@ -772,9 +772,10 @@ func _on_inventory_open_changed(is_open: bool) -> void:
 	_refresh_inventory_panel()
 
 func _on_equipment_choice_requested(candidate: Dictionary, current: Dictionary, salvage_value: int) -> void:
-	current_weapon_label.text = "当前\n%s" % EquipmentFactory.describe_with_score(current)
-	candidate_weapon_label.text = "新装备\n%s" % EquipmentFactory.describe_with_score(candidate)
-	equipment_delta_label.text = EquipmentFactory.get_comparison_summary(candidate, current)
+	var class_data := GameManager.get_selected_class()
+	current_weapon_label.text = "当前\n%s" % EquipmentFactory.describe_with_score(current, class_data)
+	candidate_weapon_label.text = "新装备\n%s" % EquipmentFactory.describe_with_score(candidate, class_data)
+	equipment_delta_label.text = EquipmentFactory.get_comparison_summary(candidate, current, class_data)
 	salvage_button.text = "保留当前，分解 +%d 金币" % salvage_value
 	equipment_choice_panel.visible = true
 
@@ -1170,7 +1171,7 @@ func _refresh_equipped_slot_buttons() -> void:
 			button.text = _get_equipment_icon_text(equipment, is_selected)
 			_apply_equipment_button_style(button, equipment, is_selected)
 	if loadout_summary_label != null:
-		loadout_summary_label.text = EquipmentFactory.describe_loadout_summary(equipped_items)
+		loadout_summary_label.text = EquipmentFactory.describe_loadout_summary(equipped_items, GameManager.get_selected_class())
 
 func _on_equipped_slot_pressed(slot_id: String) -> void:
 	selected_equipment_source = "equipped"
@@ -1259,11 +1260,12 @@ func _show_inventory_detail_modal() -> void:
 	var slot_label := EquipmentFactory.get_slot_label(str(equipment.get("slot", "weapon")))
 	detail_title_label.text = str(equipment.get("name", "未知装备"))
 	detail_current_label.visible = true
-	detail_current_label.text = "当前%s\n%s" % [slot_label, EquipmentFactory.describe_with_score(current_equipment)]
-	detail_candidate_label.text = "选中装备\n%s" % EquipmentFactory.describe_with_score(equipment)
+	var class_data := GameManager.get_selected_class()
+	detail_current_label.text = "当前%s\n%s" % [slot_label, EquipmentFactory.describe_with_score(current_equipment, class_data)]
+	detail_candidate_label.text = "选中装备\n%s" % EquipmentFactory.describe_with_score(equipment, class_data)
 	detail_comparison_label.text = "%s\n\n变化\n%s" % [
-		EquipmentFactory.get_recommendation_text(equipment, current_equipment),
-		EquipmentFactory.get_comparison_summary(equipment, current_equipment)
+		EquipmentFactory.get_recommendation_text(equipment, current_equipment, class_data),
+		EquipmentFactory.get_comparison_summary(equipment, current_equipment, class_data)
 	]
 	detail_equip_button.visible = true
 	detail_equip_button.text = "装备"
@@ -1279,7 +1281,7 @@ func _show_equipped_detail_modal(slot_id: String) -> void:
 	if equipment.is_empty():
 		detail_candidate_label.text = "%s槽位为空" % slot_label
 	else:
-		detail_candidate_label.text = EquipmentFactory.describe_with_score(equipment)
+		detail_candidate_label.text = EquipmentFactory.describe_with_score(equipment, GameManager.get_selected_class())
 	detail_comparison_label.text = ""
 	detail_equip_button.text = "卸下"
 	detail_equip_button.visible = not equipment.is_empty()

@@ -96,6 +96,7 @@ func _build_report() -> String:
 		lines.append("- 结果：%s" % ("通过" if bool(row.get("passed", false)) else "失败"))
 		lines.append("- 玩家可见效果：%s" % str(row.get("effects", "")))
 		lines.append("- 玩家可见成长收益：%s" % str(row.get("gain_summary", "")))
+		lines.append("- 玩家可见清群入口：%s" % str(row.get("clear_summary", "")))
 		lines.append("")
 		lines.append("| 项目 | 实际 | 预期 |")
 		lines.append("|---|---:|---:|")
@@ -128,6 +129,7 @@ func _audit_class(class_data: Dictionary) -> Dictionary:
 	checks.append(_check_bool(class_data, "职业说明", not str(class_data.get("summary", "")).is_empty(), "已填写", "已填写"))
 	checks.append(_check_bool(class_data, "玩家可见效果", not class_data.get("effects", []).is_empty(), "已填写", "已填写"))
 	checks.append(_check_bool(class_data, "玩家可见成长收益", not str(class_data.get("gain_summary", "")).is_empty(), "已填写", "已填写"))
+	checks.append(_check_bool(class_data, "玩家可见清群入口", not str(class_data.get("clear_summary", "")).is_empty(), "已填写", "已填写"))
 	checks.append(_check_supported_keys(class_data, "初始属性键", class_data.get("initial_stats", {}), SUPPORTED_INITIAL_STATS))
 	var multipliers: Dictionary = class_data.get("multipliers", {})
 	checks.append(_check_supported_keys(class_data, "乘区键", multipliers, SUPPORTED_MULTIPLIERS))
@@ -151,6 +153,7 @@ func _audit_class(class_data: Dictionary) -> Dictionary:
 		"name": str(class_data.get("name", "")),
 		"effects": "；".join(class_data.get("effects", [])),
 		"gain_summary": str(class_data.get("gain_summary", "")),
+		"clear_summary": str(class_data.get("clear_summary", "")),
 		"passed": _checks_passed(checks),
 		"summary_text": _format_summary(summary),
 		"gain_example_text": _format_gain_examples(class_data),

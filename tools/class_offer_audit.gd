@@ -5,8 +5,29 @@ const CharacterClassCatalog := preload("res://scripts/items/character_class_cata
 
 const REPORT_PATH := "res://docs/class-offer-audit.md"
 const TOP_COUNT := 8
+const DIVERSITY_TOP_COUNT := 8
+const MIN_ROUTE_VARIETY := 3
+const MIN_GROUP_CLEAR_TOP_COUNT := 2
+const GROUP_CLEAR_UPGRADE_IDS := {
+	"multishot": true,
+	"piercing_rounds": true,
+	"blast_core": true,
+	"chain_spark": true,
+	"orbit_blade": true,
+	"homing_shards": true,
+	"close_slash": true,
+	"pulse_field": true,
+	"channel_beam": true,
+	"shatter_blast": true,
+	"pierce_amp": true,
+	"conduit_coil": true,
+	"guard_blade": true,
+	"overload_burst": true,
+	"reflow_shards": true
+}
 
 var current_scenario: Dictionary = {}
+var failures: Array[String] = []
 
 func _initialize() -> void:
 	var report := _build_report()
@@ -17,10 +38,16 @@ func _initialize() -> void:
 		return
 	file.store_string(report)
 	file.close()
-	print("已生成职业出货审计报告：%s" % REPORT_PATH)
-	quit()
+	if failures.is_empty():
+		print("已生成职业出货审计报告：%s" % REPORT_PATH)
+		quit()
+	else:
+		for failure in failures:
+			push_error(failure)
+		quit(1)
 
 func _build_report() -> String:
+	failures.clear()
 	var lines: Array[String] = []
 	lines.append("# 阶段 5.5 职业出货审计报告")
 	lines.append("")
@@ -30,17 +57,19 @@ func _build_report() -> String:
 	lines.append("")
 	lines.append("- 每个职业只模拟选择职业后的开局状态，不模拟后续升级、商店购买或装备。")
 	lines.append("- 职业路线偏向会提高相关路线分数，职业标签偏向会参与标签命中和技能权重。")
+	lines.append("- 检查高权重候选中是否保留至少 %d 个清群入口，并至少覆盖 %d 类路线，避免职业开局只剩单一路线。" % [MIN_GROUP_CLEAR_TOP_COUNT, MIN_ROUTE_VARIETY])
 	lines.append("- 报告只展示内部审计数据；游戏内 UI 不显示路线名、标签名或权重规则。")
 	lines.append("")
 	lines.append("## 结论摘要")
 	lines.append("")
-	for scenario in _build_class_scenarios():
+	var scenarios := _build_class_scenarios()
+	for scenario in scenarios:
 		current_scenario = scenario
 		lines.append(_summarize_scenario(scenario))
 	lines.append("")
 	lines.append("## 职业明细")
 	lines.append("")
-	for scenario in _build_class_scenarios():
+	for scenario in scenarios:
 		current_scenario = scenario
 		_append_scenario_detail(lines, scenario)
 	while not lines.is_empty() and str(lines[-1]).is_empty():
@@ -78,34 +107,60 @@ func _build_class_scenarios() -> Array[Dictionary]:
 func _summarize_scenario(scenario: Dictionary) -> String:
 	var upgrade_rows := _build_upgrade_weights(false)
 	var shop_rows := _build_upgrade_weights(true)
-	return "- %s：升级前五为 %s；商店前五为 %s；路线分数 %s；主动标签 `%s`。" % [
+	var audit := _evaluate_offer_health(upgrade_rows, shop_rows)
+	var passed := bool(audit.get("passed", false))
+	if not passed:
+		failures.append("%s：职业出货清群或路线覆盖不足，升级清群 %d / 商店清群 %d / 升级路线 %d / 商店路线 %d" % [
+			str(scenario.get("title", "")),
+			int(audit.get("upgrade_group_clear_count", 0)),
+			int(audit.get("shop_group_clear_count", 0)),
+			int(audit.get("upgrade_route_count", 0)),
+			int(audit.get("shop_route_count", 0))
+		])
+	return "- %s：%s；升级前五为 %s；商店前五为 %s；清群候选 升级 %d / 商店 %d；路线覆盖 升级 %d / 商店 %d；路线分数 %s；主动标签 `%s`。" % [
 		str(scenario.get("title", "")),
+		"通过" if passed else "失败",
 		_format_top_titles(_top_weight_rows(upgrade_rows, 5)),
 		_format_top_titles(_top_weight_rows(shop_rows, 5)),
+		int(audit.get("upgrade_group_clear_count", 0)),
+		int(audit.get("shop_group_clear_count", 0)),
+		int(audit.get("upgrade_route_count", 0)),
+		int(audit.get("shop_route_count", 0)),
 		_format_route_scores(_get_active_build_route_scores()),
 		"`, `".join(_get_active_skill_tags().keys())
 	]
 
 func _append_scenario_detail(lines: Array[String], scenario: Dictionary) -> void:
 	var class_data: Dictionary = scenario.get("class_data", {})
+	var upgrade_rows := _build_upgrade_weights(false)
+	var shop_rows := _build_upgrade_weights(true)
+	var audit := _evaluate_offer_health(upgrade_rows, shop_rows)
 	lines.append("### %s" % str(scenario.get("title", "")))
 	lines.append("")
 	lines.append("- 玩家可见效果：%s" % "；".join(class_data.get("effects", [])))
+	lines.append("- 玩家可见清群入口：%s" % str(class_data.get("clear_summary", "")))
+	lines.append("- 审计结果：%s，清群候选 升级 %d / 商店 %d，路线覆盖 升级 %d / 商店 %d" % [
+		"通过" if bool(audit.get("passed", false)) else "失败",
+		int(audit.get("upgrade_group_clear_count", 0)),
+		int(audit.get("shop_group_clear_count", 0)),
+		int(audit.get("upgrade_route_count", 0)),
+		int(audit.get("shop_route_count", 0))
+	])
 	lines.append("- 路线分数：%s" % _format_route_scores(_get_active_build_route_scores()))
 	lines.append("- 主动标签：`%s`" % "`, `".join(_get_active_skill_tags().keys()))
 	lines.append("")
 	lines.append("升级权重前 %d：" % TOP_COUNT)
 	lines.append("")
-	lines.append("| 技能 | 权重 | 稀有度 | 路线 | 标签命中 | 冲突命中 |")
-	lines.append("|---|---:|---|---|---|---|")
-	for row in _top_weight_rows(_build_upgrade_weights(false), TOP_COUNT):
+	lines.append("| 技能 | 权重 | 稀有度 | 路线 | 标签命中 | 冲突命中 | 清群 |")
+	lines.append("|---|---:|---|---|---|---|---|")
+	for row in _top_weight_rows(upgrade_rows, TOP_COUNT):
 		lines.append(_format_weight_row(row))
 	lines.append("")
 	lines.append("商店权重前 %d：" % TOP_COUNT)
 	lines.append("")
-	lines.append("| 技能 | 权重 | 稀有度 | 路线 | 标签命中 | 冲突命中 |")
-	lines.append("|---|---:|---|---|---|---|")
-	for row in _top_weight_rows(_build_upgrade_weights(true), TOP_COUNT):
+	lines.append("| 技能 | 权重 | 稀有度 | 路线 | 标签命中 | 冲突命中 | 清群 |")
+	lines.append("|---|---:|---|---|---|---|---|")
+	for row in _top_weight_rows(shop_rows, TOP_COUNT):
 		lines.append(_format_weight_row(row))
 	lines.append("")
 
@@ -125,9 +180,48 @@ func _build_upgrade_weights(use_shop_weight: bool) -> Array[Dictionary]:
 			"weight": weight,
 			"routes": SkillCatalog.get_upgrade_route_tags(upgrade_id),
 			"source_matches": _get_source_tag_matches(upgrade_id),
-			"conflict_matches": _get_conflict_tag_matches(upgrade_id)
+			"conflict_matches": _get_conflict_tag_matches(upgrade_id),
+			"group_clear": GROUP_CLEAR_UPGRADE_IDS.has(upgrade_id)
 		})
 	return rows
+
+func _evaluate_offer_health(upgrade_rows: Array[Dictionary], shop_rows: Array[Dictionary]) -> Dictionary:
+	var upgrade_top := _top_weight_rows(upgrade_rows, DIVERSITY_TOP_COUNT)
+	var shop_top := _top_weight_rows(shop_rows, DIVERSITY_TOP_COUNT)
+	var upgrade_group_clear_count := _count_group_clear_rows(upgrade_top)
+	var shop_group_clear_count := _count_group_clear_rows(shop_top)
+	var upgrade_route_count := _count_unique_routes(upgrade_top)
+	var shop_route_count := _count_unique_routes(shop_top)
+	var class_data: Dictionary = current_scenario.get("class_data", {})
+	var clear_summary := str(class_data.get("clear_summary", ""))
+	var passed := (
+		not clear_summary.is_empty()
+		and upgrade_group_clear_count >= MIN_GROUP_CLEAR_TOP_COUNT
+		and shop_group_clear_count >= MIN_GROUP_CLEAR_TOP_COUNT
+		and upgrade_route_count >= MIN_ROUTE_VARIETY
+		and shop_route_count >= MIN_ROUTE_VARIETY
+	)
+	return {
+		"passed": passed,
+		"upgrade_group_clear_count": upgrade_group_clear_count,
+		"shop_group_clear_count": shop_group_clear_count,
+		"upgrade_route_count": upgrade_route_count,
+		"shop_route_count": shop_route_count
+	}
+
+func _count_group_clear_rows(rows: Array[Dictionary]) -> int:
+	var count := 0
+	for row in rows:
+		if bool(row.get("group_clear", false)):
+			count += 1
+	return count
+
+func _count_unique_routes(rows: Array[Dictionary]) -> int:
+	var route_ids := {}
+	for row in rows:
+		for route_id in row.get("routes", []):
+			route_ids[str(route_id)] = true
+	return route_ids.size()
 
 func _apply_skill_momentum_weight(base_weight: int, upgrade_id: String) -> int:
 	var weighted_base := base_weight
@@ -291,13 +385,14 @@ func _top_weight_rows(rows: Array[Dictionary], count: int) -> Array[Dictionary]:
 	return sorted.slice(0, mini(count, sorted.size()))
 
 func _format_weight_row(row: Dictionary) -> String:
-	return "| %s | %d | %s | %s | %s | %s |" % [
+	return "| %s | %d | %s | %s | %s | %s | %s |" % [
 		str(row.get("title", "")),
 		int(row.get("weight", 0)),
 		str(row.get("rarity", "")),
 		", ".join(row.get("routes", [])),
 		", ".join(row.get("source_matches", [])),
-		", ".join(row.get("conflict_matches", []))
+		", ".join(row.get("conflict_matches", [])),
+		"是" if bool(row.get("group_clear", false)) else "否"
 	]
 
 func _format_top_titles(rows: Array[Dictionary]) -> String:

@@ -728,7 +728,7 @@ func _on_class_selection_requested(classes: Array) -> void:
 		var class_data: Dictionary = class_options[index]
 		var button := Button.new()
 		button.text = _format_class_option_text(class_data)
-		button.custom_minimum_size = Vector2(438, 204)
+		button.custom_minimum_size = Vector2(438, 228)
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		button.pressed.connect(_on_class_option_pressed.bind(index))
@@ -750,6 +750,9 @@ func _format_class_option_text(class_data: Dictionary) -> String:
 	var gain_summary := str(class_data.get("gain_summary", ""))
 	if not gain_summary.is_empty():
 		lines.append("成长：" + gain_summary)
+	var clear_summary := str(class_data.get("clear_summary", ""))
+	if not clear_summary.is_empty():
+		lines.append("清群：" + clear_summary)
 	return "\n".join(lines)
 
 func _on_class_option_pressed(index: int) -> void:

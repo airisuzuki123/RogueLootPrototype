@@ -2,6 +2,13 @@
 
 This file records successful GitHub pushes for the project.
 
+## 2026-07-21 - Push completed stage 5.5 and stage 6 handoff
+
+- Commit message: `整理阶段六实施计划`
+- Main changes: completed stage 5.5 class effect, offer, progression, clear-route, and early-economy audits; strengthened class-specific attribute gains and updated upgrade, shop, equipment, comparison, and HUD displays to show actual class-scaled values; calibrated opening choices and early build formation for all five classes; improved close-range slash and pulse attack readability with arcs, expanding rings, range boundaries, and hit feedback; archived stage 5.5 as complete; added the stage 6 implementation plan and next-session handoff covering meta currency, save boundaries, first permanent upgrades, module ownership, implementation order, and acceptance tests.
+- Validation performed: ran `git diff --check`; regenerated the class effect, class offer, class progression, and stage 5 economy audit reports; ran the five-class runtime smoke test with 5/5 passing; ran Godot 4.6.1 headless main-scene validation outside the sandbox with no script errors.
+- Push result: first attempt failed with `Recv failure: Connection was reset`; retrying with HTTP/1.1 pushed `main` to `origin/main` successfully.
+
 ## 2026-07-19 - Push stage 4, stage 5, and initial class selection
 
 - Commit message: `记录阶段五点五版本推送`

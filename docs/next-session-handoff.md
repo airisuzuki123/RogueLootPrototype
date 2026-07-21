@@ -52,6 +52,19 @@
 - 永久强化不能替代局内职业、装备和技能选择，应控制为可解释的小幅基础成长。
 - 玩家可见文本继续使用简体中文；内部路线、标签和权重规则不得显示在 HUD、商店或升级按钮中。
 
+详细方案：`docs/stage6-implementation-plan.md`。
+
+## 阶段 6 已确定方案
+
+- 局外资源名称为“试炼印记”，内部字段为 `meta_currency`，与每局清零的金币完全分离。
+- 第一版结算为“完成关卡数 + 通关奖励 5”；完整十关获得 15 枚，未完成任何关卡获得 0 枚。
+- 第一批强化只有四项：最大生命、基础伤害、移速和暴击率，每项 5 级。
+- 每级价格统一为 3 / 5 / 8 / 12 / 17，永久强化不受职业属性获取倍率二次放大。
+- 存档使用 `user://meta_progression.cfg` 和 Godot `ConfigFile`，只保存局外资源、统计和强化等级。
+- 局内金币、装备、背包、技能、职业和当前关卡均不跨局保存。
+- 新增独立 `MetaProgression` Autoload；`GameManager.reset_run()` 不能清除局外状态。
+- 新增独立备战面板，不把永久强化购买控件继续堆进战斗 HUD。
+
 ## 关键文件
 
 - `scripts/items/character_class_catalog.gd`：职业数据、初始属性、获取倍率、乘区和出货偏向。
@@ -59,6 +72,7 @@
 - `scripts/core/game_manager.gd`：单局流程、职业选择、升级和商店。
 - `scripts/entities/player.gd`：职业实际生效、属性和战斗技能。
 - `scripts/ui/hud.gd`：职业选择、构筑摘要、升级、商店和结算界面。
+- `docs/stage6-implementation-plan.md`：阶段 6 的资源公式、首批强化、代码边界、开发顺序和验收标准。
 - `docs/stage-plan.md`：标准阶段计划和阶段边界。
 
 ## 验证命令
@@ -79,4 +93,4 @@
 
 ## 建议第一步
 
-开始阶段 6 时，先梳理单局结算当前已有数据、`GameManager` 的重开边界和 Godot `ConfigFile` 存档接入点，确定最小资源闭环后再实现局外界面。
+严格从 `docs/stage6-implementation-plan.md` 的第一步开始：新增 `scripts/progression/meta_upgrade_catalog.gd` 和 `scripts/progression/meta_progression.gd`，先完成默认档、读取、校验、保存、消费和独立测试存档；这一步不要制作 UI，也不要修改职业和技能数值。

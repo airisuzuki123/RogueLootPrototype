@@ -9,39 +9,7 @@ const FIRST_PICK_BRANCHES := 3
 const MIN_ROUTE_VARIETY := 3
 const MIN_GROUP_CLEAR_COUNT := 2
 const MAX_TOP_WEIGHT_SHARE := 0.30
-const PROPOSED_CLASS_OVERRIDES := {
-	"close_blade_guard": {
-		"tag_bias": ["shielded"],
-		"upgrade_bias": {
-			"close_slash": 2.00,
-			"pulse_field": 2.00,
-			"guard_blade": 1.10,
-			"giant_echo": 0.60,
-			"elite_reactor": 0.75
-		}
-	},
-	"heavy_bomber": {
-		"upgrade_bias": {"shatter_blast": 1.40}
-	}
-}
-const GROUP_CLEAR_UPGRADE_IDS := {
-	"multishot": true,
-	"piercing_rounds": true,
-	"blast_core": true,
-	"chain_spark": true,
-	"orbit_blade": true,
-	"homing_shards": true,
-	"close_slash": true,
-	"pulse_field": true,
-	"channel_beam": true,
-	"shatter_blast": true,
-	"pierce_amp": true,
-	"conduit_coil": true,
-	"guard_blade": true,
-	"overload_burst": true,
-	"reflow_shards": true
-}
-
+const MIN_OPENING_CLEAR_PROBABILITY := 0.55
 var current_scenario: Dictionary = {}
 
 func _initialize() -> void:
@@ -68,6 +36,7 @@ func _build_report() -> String:
 	lines.append("- 对开局权重最高的 %d 个首选分别建立分支，再选择该分支下权重最高的第二张技能。" % FIRST_PICK_BRANCHES)
 	lines.append("- 只把 `%s` 计为正式构筑路线；辅助标签不计入路线覆盖。" % "`, `".join(SkillCatalog.BUILD_ROUTE_ORDER))
 	lines.append("- 前 %d 名中至少保留 %d 个清群入口、覆盖 %d 条正式路线；第一名权重占前 %d 名总权重超过 %d%% 时记为集中度警告。" % [TOP_COUNT, MIN_GROUP_CLEAR_COUNT, MIN_ROUTE_VARIETY, TOP_COUNT, int(MAX_TOP_WEIGHT_SHARE * 100.0)])
+	lines.append("- 开局三选一的前两个路线槽至少出现一张清群技能的估算概率不得低于 %d%%。" % int(MIN_OPENING_CLEAR_PROBABILITY * 100.0))
 	lines.append("")
 	lines.append("## 结论摘要")
 	lines.append("")
@@ -77,30 +46,11 @@ func _build_report() -> String:
 		class_results.append(result)
 		lines.append("- %s：%s；开局 %s；风险分支 %d/%d；最高集中度 %d%%。" % [
 			str(result.get("name", "")),
-			"通过" if int(result.get("warning_count", 0)) == 0 else "需关注",
+			"通过" if bool(result.get("passed", false)) else "需关注",
 			"%s；开局清群概率至少 %d%%" % [_format_health(result.get("initial_health", {})), int(round(float(result.get("opening_clear_probability", 0.0)) * 100.0))],
 			int(result.get("warning_count", 0)),
 			int(result.get("branches", []).size()),
 			int(round(float(result.get("max_top_share", 0.0)) * 100.0))
-		])
-	lines.append("")
-	lines.append("## 候选调平方案预测")
-	lines.append("")
-	lines.append("该预测只覆盖权重与标签调整，不修改项目实际职业数据。")
-	lines.append("")
-	for class_data in CharacterClassCatalog.get_class_list():
-		var class_id := str(class_data.get("id", ""))
-		if not PROPOSED_CLASS_OVERRIDES.has(class_id):
-			continue
-		var proposed_data := _apply_proposed_override(class_data)
-		var proposed_result := _audit_class(proposed_data)
-		lines.append("- %s：风险分支 %d/%d，最高集中度 %d%%，开局清群概率至少 %d%%；开局候选 %s。" % [
-			str(proposed_result.get("name", "")),
-			int(proposed_result.get("warning_count", 0)),
-			int(proposed_result.get("branches", []).size()),
-			int(round(float(proposed_result.get("max_top_share", 0.0)) * 100.0)),
-			int(round(float(proposed_result.get("opening_clear_probability", 0.0)) * 100.0)),
-			_format_top_titles(proposed_result.get("initial_rows", []), 5)
 		])
 	lines.append("")
 	lines.append("## 职业明细")
@@ -127,29 +77,19 @@ func _build_report() -> String:
 			])
 		lines.append("")
 		var warnings: Array = result.get("warnings", [])
-		if warnings.is_empty():
+		var opening_probability := float(result.get("opening_clear_probability", 0.0))
+		if warnings.is_empty() and opening_probability >= MIN_OPENING_CLEAR_PROBABILITY:
 			lines.append("结论：前三个首选分支在两次选择后仍保留足够清群入口与路线宽度。")
 		else:
-			lines.append("风险：%s。" % "；".join(warnings))
+			var risk_parts: Array[String] = []
+			if opening_probability < MIN_OPENING_CLEAR_PROBABILITY:
+				risk_parts.append("开局清群概率 %d%% 低于下限" % int(round(opening_probability * 100.0)))
+			risk_parts.append_array(warnings)
+			lines.append("风险：%s。" % "；".join(risk_parts))
 		lines.append("")
 	while not lines.is_empty() and str(lines[-1]).is_empty():
 		lines.pop_back()
 	return "\n".join(lines) + "\n"
-
-func _apply_proposed_override(class_data: Dictionary) -> Dictionary:
-	var result := class_data.duplicate(true)
-	var class_id := str(result.get("id", ""))
-	var overrides: Dictionary = PROPOSED_CLASS_OVERRIDES.get(class_id, {})
-	for key in overrides.keys():
-		if key == "upgrade_bias":
-			var merged_bias: Dictionary = result.get("upgrade_bias", {}).duplicate(true)
-			var bias_overrides: Dictionary = overrides.get(key, {})
-			for upgrade_id in bias_overrides.keys():
-				merged_bias[upgrade_id] = bias_overrides.get(upgrade_id)
-			result["upgrade_bias"] = merged_bias
-		else:
-			result[key] = overrides.get(key)
-	return result
 
 func _audit_class(class_data: Dictionary) -> Dictionary:
 	var base_scenario := _build_scenario(class_data)
@@ -158,6 +98,7 @@ func _audit_class(class_data: Dictionary) -> Dictionary:
 	var initial_rows := _top_weight_rows(all_initial_rows, TOP_COUNT)
 	var initial_health := _evaluate_rows(initial_rows)
 	var opening_audit := _evaluate_opening_route_slots(all_initial_rows)
+	var opening_clear_probability := float(opening_audit.get("clear_probability", 0.0))
 	var first_pick_rows := initial_rows.slice(0, mini(FIRST_PICK_BRANCHES, initial_rows.size()))
 	var branches: Array[Dictionary] = []
 	var warnings: Array[String] = []
@@ -190,13 +131,14 @@ func _audit_class(class_data: Dictionary) -> Dictionary:
 		})
 	return {
 		"name": str(class_data.get("name", "")),
+		"passed": warnings.is_empty() and opening_clear_probability >= MIN_OPENING_CLEAR_PROBABILITY,
 		"initial_rows": initial_rows,
 		"initial_health": initial_health,
 		"branches": branches,
 		"warnings": warnings,
 		"warning_count": warnings.size(),
 		"max_top_share": max_top_share,
-		"opening_clear_probability": float(opening_audit.get("clear_probability", 0.0)),
+		"opening_clear_probability": opening_clear_probability,
 		"opening_route_text": str(opening_audit.get("route_text", ""))
 	}
 
@@ -253,6 +195,8 @@ func _get_route_clear_weight_share(rows: Array[Dictionary], route_id: String) ->
 		if not route_upgrade_ids.has(str(row.get("id", ""))):
 			continue
 		var weight := int(row.get("weight", 0))
+		if bool(row.get("group_clear", false)):
+			weight = maxi(1, int(round(float(weight) * SkillCatalog.OPENING_GROUP_CLEAR_WEIGHT)))
 		total_weight += weight
 		if bool(row.get("group_clear", false)):
 			clear_weight += weight
@@ -355,7 +299,7 @@ func _build_upgrade_weights() -> Array[Dictionary]:
 			"title": SkillCatalog.get_upgrade_title(upgrade_id, upgrade_id),
 			"weight": _apply_skill_momentum_weight(base_weight, upgrade_id),
 			"routes": SkillCatalog.get_upgrade_route_tags(upgrade_id),
-			"group_clear": GROUP_CLEAR_UPGRADE_IDS.has(upgrade_id)
+			"group_clear": SkillCatalog.is_group_clear_upgrade(upgrade_id)
 		})
 	return rows
 

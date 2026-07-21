@@ -8,24 +8,6 @@ const TOP_COUNT := 8
 const DIVERSITY_TOP_COUNT := 8
 const MIN_ROUTE_VARIETY := 3
 const MIN_GROUP_CLEAR_TOP_COUNT := 2
-const GROUP_CLEAR_UPGRADE_IDS := {
-	"multishot": true,
-	"piercing_rounds": true,
-	"blast_core": true,
-	"chain_spark": true,
-	"orbit_blade": true,
-	"homing_shards": true,
-	"close_slash": true,
-	"pulse_field": true,
-	"channel_beam": true,
-	"shatter_blast": true,
-	"pierce_amp": true,
-	"conduit_coil": true,
-	"guard_blade": true,
-	"overload_burst": true,
-	"reflow_shards": true
-}
-
 var current_scenario: Dictionary = {}
 var failures: Array[String] = []
 
@@ -181,7 +163,7 @@ func _build_upgrade_weights(use_shop_weight: bool) -> Array[Dictionary]:
 			"routes": SkillCatalog.get_upgrade_route_tags(upgrade_id),
 			"source_matches": _get_source_tag_matches(upgrade_id),
 			"conflict_matches": _get_conflict_tag_matches(upgrade_id),
-			"group_clear": GROUP_CLEAR_UPGRADE_IDS.has(upgrade_id)
+			"group_clear": SkillCatalog.is_group_clear_upgrade(upgrade_id)
 		})
 	return rows
 

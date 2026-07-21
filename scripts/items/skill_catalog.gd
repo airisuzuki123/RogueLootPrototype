@@ -19,6 +19,24 @@ const SKILL_TAG_ROUTE_WEIGHT_CAP: float = 1.40
 const SKILL_TAG_CONFLICT_WEIGHT: float = 0.70
 const SKILL_ENGINE_FIRST_PICK_WEIGHT: float = 1.18
 const SKILL_ENGINE_REPEAT_BASE_WEIGHT: int = 8
+const EXPLOSION_RADIUS_CAP: float = 112.0
+const OPENING_GROUP_CLEAR_WEIGHT: float = 3.0
+const GROUP_CLEAR_UPGRADE_IDS := {
+	"multishot": true,
+	"piercing_rounds": true,
+	"blast_core": true,
+	"chain_spark": true,
+	"orbit_blade": true,
+	"homing_shards": true,
+	"close_slash": true,
+	"pulse_field": true,
+	"channel_beam": true,
+	"shatter_blast": true,
+	"pierce_amp": true,
+	"conduit_coil": true,
+	"overload_burst": true,
+	"reflow_shards": true
+}
 
 const BUILD_ROUTE_ORDER := ["bulk", "agile", "pierce", "blast", "chain", "close"]
 const BUILD_ROUTE_DEFINITIONS := {
@@ -591,6 +609,9 @@ static func get_route_synergy_ids(route_id: String) -> Array:
 
 static func get_upgrade_synergy_sources(upgrade_id: String) -> Array:
 	return UPGRADE_SYNERGY_SOURCES.get(upgrade_id, [])
+
+static func is_group_clear_upgrade(upgrade_id: String) -> bool:
+	return GROUP_CLEAR_UPGRADE_IDS.has(upgrade_id)
 
 static func get_shop_skill_offers(completed_stage: int, offer_ids: Array = []) -> Array[Dictionary]:
 	var ids := offer_ids

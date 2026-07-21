@@ -47,7 +47,7 @@ const CONDUIT_CHAIN_DAMAGE_PER_STACK := 0.75
 const CONDUIT_BEAM_INTERVAL_REDUCTION := 0.03
 const LIFE_STEAL_BASE_CAP_RATIO := 0.06
 const LIFE_STEAL_CAP_PER_PERCENT := 1.0
-const EXPLOSION_RADIUS_CAP := 72.0
+const EXPLOSION_RADIUS_CAP := SkillCatalog.EXPLOSION_RADIUS_CAP
 
 @export var move_speed: float = 260.0
 @export var max_health: int = 100
@@ -454,13 +454,14 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			upgrade_pierce_bonus += piercing_bonus
 			result["skill_text"] = "穿透 +%d，投射物伤害 -10%%" % piercing_bonus
 		"blast_core":
+			var blast_old_total_radius := _get_total_explosion_radius()
 			var blast_radius := _scale_class_float_gain("explosion_radius", _skill_float("blast_core", "explosion_radius", 40.0))
 			upgrade_explosion_radius_bonus += blast_radius
 			var blast_old_size_bonus := upgrade_player_size_bonus
 			upgrade_player_size_bonus = minf(PLAYER_SIZE_BONUS_CAP, upgrade_player_size_bonus + _scale_class_float_gain("player_size_bonus", _skill_float("blast_core", "player_size_bonus", BLAST_CORE_SIZE_BONUS)))
 			_apply_fire_interval_multiplier(_skill_float("blast_core", "fire_interval_multiplier", BLAST_CORE_FIRE_INTERVAL_MULTIPLIER))
 			var blast_applied_size_percent := int(round((upgrade_player_size_bonus - blast_old_size_bonus) * 100.0))
-			result["explosion_radius"] = int(round(blast_radius))
+			result["explosion_radius"] = int(round(_get_total_explosion_radius() - blast_old_total_radius))
 			result["skill_text"] = "玩家体积 +%d%%（最高 +240%%），射击间隔 +15%%" % blast_applied_size_percent
 		"graze_barrier":
 			var graze_shield_gain := _scale_class_int_gain("shield", _skill_int("graze_barrier", "shield", 22))
@@ -475,9 +476,10 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			result["shield_duration"] = 3.5
 			CombatFeedback.show_burst(get_tree().current_scene, global_position, Color(0.38, 0.92, 1.0, 0.82), 1.8)
 		"pulse_nova":
+			var nova_old_total_radius := _get_total_explosion_radius()
 			var nova_radius := _scale_class_float_gain("explosion_radius", 18.0)
 			upgrade_explosion_radius_bonus += nova_radius
-			result["explosion_radius"] = int(round(nova_radius))
+			result["explosion_radius"] = int(round(_get_total_explosion_radius() - nova_old_total_radius))
 			result["nova_projectiles"] = _fire_upgrade_nova()
 		"charged_volley":
 			var volley_damage_bonus := _scale_class_int_gain("damage_flat", 3)
@@ -555,9 +557,10 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			]
 		"shatter_blast":
 			shatter_blast_stacks += 1
+			var shatter_old_total_radius := _get_total_explosion_radius()
 			var shatter_radius := _scale_class_float_gain("explosion_radius", _skill_float("shatter_blast", "explosion_radius", 16.0))
 			upgrade_explosion_radius_bonus += shatter_radius
-			result["explosion_radius"] = int(round(shatter_radius))
+			result["explosion_radius"] = int(round(_get_total_explosion_radius() - shatter_old_total_radius))
 			result["skill_text"] = "爆裂伤害 +55%%"
 		"pierce_amp":
 			pierce_amp_stacks += 1
@@ -636,10 +639,12 @@ func apply_upgrade(upgrade_id: String) -> Dictionary:
 			upgrade_pierce_bonus += form_pierce_bonus
 			result["skill_text"] = "穿透强化：投射物穿透 +%d" % form_pierce_bonus
 		"form_burst":
+			var form_burst_old_total_radius := _get_total_explosion_radius()
 			var form_burst_radius := _scale_class_float_gain("explosion_radius", _skill_float("form_burst", "explosion_radius", 14.0))
 			upgrade_explosion_radius_bonus += form_burst_radius
-			result["explosion_radius"] = int(round(form_burst_radius))
-			result["skill_text"] = "爆裂强化：爆裂范围 +%d" % int(round(form_burst_radius))
+			var form_burst_applied_radius := int(round(_get_total_explosion_radius() - form_burst_old_total_radius))
+			result["explosion_radius"] = form_burst_applied_radius
+			result["skill_text"] = "爆裂强化：爆裂范围 +%d" % form_burst_applied_radius
 	_emit_build_summary()
 	return result
 
@@ -1374,7 +1379,7 @@ func _emit_build_summary() -> void:
 		"critical_damage_multiplier": _get_critical_damage_multiplier(),
 		"attack_interval": fire_interval,
 		"move_speed": int(round(move_speed)),
-		"critical_chance": _get_total_crit_bonus(),
+		"critical_chance": mini(95, _get_total_crit_bonus()),
 		"shield": graze_shield,
 		"upgrade_damage_bonus": upgrade_damage_bonus,
 		"upgrade_projectile_damage_percent_bonus": int(round((_get_projectile_damage_upgrade_multiplier() - 1.0) * 100.0)),

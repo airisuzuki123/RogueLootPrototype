@@ -491,6 +491,7 @@ var phase_bullet_pattern_counters := {}
 var graze_charge: int = 0
 var graze_reward_cooldown_remaining: float = 0.0
 var is_class_selection_open: bool = false
+var is_opening_upgrade_choice: bool = false
 var selected_class_id: String = ""
 var selected_class: Dictionary = {}
 
@@ -551,6 +552,7 @@ func reset_run() -> void:
 	graze_charge = 0
 	graze_reward_cooldown_remaining = 0.0
 	is_class_selection_open = true
+	is_opening_upgrade_choice = false
 	selected_class_id = ""
 	selected_class.clear()
 	gold_changed.emit(gold)
@@ -587,7 +589,7 @@ func choose_character_class(class_id: String) -> bool:
 	_set_loot_message(message)
 	_set_milestone_message(message)
 	class_selected.emit(selected_class)
-	_request_upgrade_choices()
+	_request_upgrade_choices(true)
 	return true
 
 func get_character_classes() -> Array[Dictionary]:
@@ -1239,6 +1241,7 @@ func apply_upgrade(choice_index: int) -> void:
 	var upgrade: Dictionary = pending_upgrade_choices[choice_index]
 	pending_upgrade_choices.clear()
 	is_upgrade_pending = false
+	is_opening_upgrade_choice = false
 	if player != null and player.has_method("apply_upgrade"):
 		var result = player.apply_upgrade(upgrade["id"])
 		var result_dictionary: Dictionary = {}
@@ -1795,7 +1798,10 @@ func _get_upgrade_choice_weight(upgrade: Dictionary) -> int:
 	var upgrade_id := str(upgrade.get("id", ""))
 	var rarity := str(upgrade.get("rarity", _get_upgrade_rarity(upgrade_id)))
 	var base_weight := _get_skill_rarity_weight(rarity)
-	return _apply_skill_momentum_weight(base_weight, upgrade_id)
+	var weight := _apply_skill_momentum_weight(base_weight, upgrade_id)
+	if is_opening_upgrade_choice and SkillCatalog.is_group_clear_upgrade(upgrade_id):
+		weight = maxi(1, int(round(float(weight) * SkillCatalog.OPENING_GROUP_CLEAR_WEIGHT)))
+	return weight
 
 func _apply_skill_momentum_weight(base_weight: int, upgrade_id: String) -> int:
 	var weighted_base := base_weight
@@ -2103,7 +2109,7 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 			return "穿透 +%d，投射物伤害 -10%%" % _scale_class_int_gain("pierce", _upgrade_int(upgrade_id, "pierce_bonus", 1))
 		"blast_core":
 			return "爆裂范围 +%d、玩家体积 +%d%%（最高 +240%%）、射击间隔 +15%%" % [
-				int(round(_scale_class_float_gain("explosion_radius", _upgrade_float(upgrade_id, "explosion_radius", 40.0)))),
+				int(round(_get_actual_explosion_radius_gain(_upgrade_float(upgrade_id, "explosion_radius", 40.0)))),
 				int(round(_scale_class_float_gain("player_size_bonus", _upgrade_float(upgrade_id, "player_size_bonus", 0.20)) * 100.0))
 			]
 		"graze_barrier":
@@ -2116,7 +2122,7 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 				int(round(_scale_class_float_gain("player_size_bonus", _upgrade_float(upgrade_id, "player_size_bonus", 0.15)) * 100.0))
 			]
 		"shatter_blast":
-			return "爆裂伤害 +55%%，爆裂范围 +%d" % int(round(_scale_class_float_gain("explosion_radius", _upgrade_float(upgrade_id, "explosion_radius", 16.0))))
+			return "爆裂伤害 +55%%，爆裂范围 +%d" % int(round(_get_actual_explosion_radius_gain(_upgrade_float(upgrade_id, "explosion_radius", 16.0))))
 		"pierce_amp":
 			return "穿透 +%d，投射物伤害 +55%%" % _scale_class_int_gain("pierce", _upgrade_int(upgrade_id, "pierce_bonus", 1))
 		"guard_blade":
@@ -2132,7 +2138,7 @@ func _get_upgrade_purchase_preview(upgrade_id: String, current_stack: int) -> St
 		"form_piercing":
 			return "投射物穿透 +%d" % _scale_class_int_gain("pierce", 1)
 		"form_burst":
-			return "爆裂范围 +%d" % int(round(_scale_class_float_gain("explosion_radius", _upgrade_float(upgrade_id, "explosion_radius", 14.0))))
+			return "爆裂范围 +%d" % int(round(_get_actual_explosion_radius_gain(_upgrade_float(upgrade_id, "explosion_radius", 14.0))))
 	return SkillCatalog.get_upgrade_preview(upgrade_id)
 
 func _upgrade_float(upgrade_id: String, key: String, fallback: float) -> float:
@@ -2162,6 +2168,11 @@ func _scale_class_float_gain(key: String, base_value: float) -> float:
 	if base_value == 0.0:
 		return 0.0
 	return base_value * _get_class_gain_multiplier(key)
+
+func _get_actual_explosion_radius_gain(base_value: float) -> float:
+	var scaled_gain := _scale_class_float_gain("explosion_radius", base_value)
+	var current_radius := float(player_build_summary.get("explosion_radius", 0.0))
+	return minf(scaled_gain, maxf(0.0, SkillCatalog.EXPLOSION_RADIUS_CAP - current_radius))
 
 func _build_event_choices(event: Dictionary) -> Array[Dictionary]:
 	var choices: Array[Dictionary] = []
@@ -2365,8 +2376,9 @@ func _emit_phase_objective_changed() -> void:
 		current_phase_objective_completed
 	)
 
-func _request_upgrade_choices() -> void:
+func _request_upgrade_choices(opening_choice: bool = false) -> void:
 	is_upgrade_pending = true
+	is_opening_upgrade_choice = opening_choice
 	pending_upgrade_choices.clear()
 	var used_ids := {}
 	var primary_route := _get_primary_build_route()

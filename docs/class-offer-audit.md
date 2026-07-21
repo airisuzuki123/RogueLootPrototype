@@ -12,10 +12,10 @@
 ## 结论摘要
 
 - 巨躯炮台：通过；升级前五为 分裂射击(129)、穿透弹芯(128)、体积共鸣(112)、迟缓共鸣(107)、巨体回响(88)；商店前五为 分裂射击(144)、体积共鸣(115)、穿透弹芯(114)、迟缓共鸣(111)、爆裂核心(91)；清群候选 升级 4 / 商店 4；路线覆盖 升级 4 / 商店 4；路线分数 bulk 3 / agile 0 / pierce 2 / blast 2 / chain 0 / close 1；主动标签 `large_body`, `slow_move`。
-- 沉稳射手：通过；升级前五为 静立聚焦(107)、穿透弹芯(103)、锚定释放(70)、贯穿增幅(68)、强击弹体(55)；商店前五为 静立聚焦(110)、穿透弹芯(92)、锚定释放(72)、贯穿增幅(70)、巨体回响(52)；清群候选 升级 2 / 商店 2；路线覆盖 升级 4 / 商店 4；路线分数 bulk 2 / agile 0 / pierce 2 / blast 0 / chain 1 / close 0；主动标签 `stationary`。
-- 贴身刃卫：通过；升级前五为 巨体回响(220)、护身锋刃(124)、破阵反应(112)、近身刀环(79)、脉冲场(79)；商店前五为 巨体回响(226)、护身锋刃(128)、破阵反应(116)、近身刀环(87)、脉冲场(87)；清群候选 升级 3 / 商店 3；路线覆盖 升级 3 / 商店 3；路线分数 bulk 1 / agile 1 / pierce 0 / blast 0 / chain 0 / close 2；主动标签 `shielded`, `close_skill`。
+- 沉稳射手：通过；升级前五为 穿透弹芯(117)、静立聚焦(101)、贯穿增幅(75)、锚定释放(62)、强击弹体(55)；商店前五为 穿透弹芯(105)、静立聚焦(104)、贯穿增幅(78)、锚定释放(64)、引导光束(55)；清群候选 升级 2 / 商店 3；路线覆盖 升级 4 / 商店 5；路线分数 bulk 2 / agile 0 / pierce 2 / blast 0 / chain 1 / close 0；主动标签 `stationary`。
+- 贴身刃卫：通过；升级前五为 近身刀环(74)、脉冲场(74)、巨体回响(72)、清弹屏障(71)、折光护盾(71)；商店前五为 近身刀环(82)、脉冲场(82)、巨体回响(74)、护身锋刃(67)、破阵反应(64)；清群候选 升级 2 / 商店 2；路线覆盖 升级 3 / 商店 3；路线分数 bulk 1 / agile 1 / pierce 0 / blast 0 / chain 0 / close 2；主动标签 `shielded`。
 - 游走电弧：通过；升级前五为 轻锋协议(171)、轻装骨架(153)、游走聚焦(122)、疾行缓存(103)、回旋刃(98)；商店前五为 轻锋协议(176)、轻装骨架(137)、游走聚焦(125)、回旋刃(109)、疾行缓存(106)；清群候选 升级 2 / 商店 2；路线覆盖 升级 3 / 商店 3；路线分数 bulk 0 / agile 4 / pierce 1 / blast 0 / chain 3 / close 0；主动标签 `small_body`, `fast_move`, `chain_skill`。
-- 重弹爆破：通过；升级前五为 裂片爆破(149)、爆裂核心(90)、重压弹芯(88)、穿透弹芯(62)、锚定释放(50)；商店前五为 裂片爆破(153)、爆裂核心(101)、重压弹芯(97)、穿透弹芯(56)、锚定释放(52)；清群候选 升级 3 / 商店 3；路线覆盖 升级 5 / 商店 5；路线分数 bulk 2 / agile 0 / pierce 2 / blast 3 / chain 0 / close 0；主动标签 `blast`, `heavy_hit`。
+- 重弹爆破：通过；升级前五为 裂片爆破(116)、爆裂核心(90)、重压弹芯(88)、穿透弹芯(62)、锚定释放(50)；商店前五为 裂片爆破(119)、爆裂核心(101)、重压弹芯(97)、穿透弹芯(56)、锚定释放(52)；清群候选 升级 3 / 商店 3；路线覆盖 升级 5 / 商店 5；路线分数 bulk 2 / agile 0 / pierce 2 / blast 3 / chain 0 / close 0；主动标签 `blast`, `heavy_hit`。
 
 ## 职业明细
 
@@ -57,7 +57,7 @@
 
 - 玩家可见效果：暴击率 +5%；静立聚焦暴击率最终值 x1.25；移动时专注衰减速度 -20%；获得暴击率 +100%、穿透 +100%；获得移速 -25%
 - 玩家可见清群入口：穿透弹芯、贯穿增幅和光束
-- 审计结果：通过，清群候选 升级 2 / 商店 2，路线覆盖 升级 4 / 商店 4
+- 审计结果：通过，清群候选 升级 2 / 商店 3，路线覆盖 升级 4 / 商店 5
 - 路线分数：bulk 2 / agile 0 / pierce 2 / blast 0 / chain 1 / close 0
 - 主动标签：`stationary`
 
@@ -65,10 +65,10 @@
 
 | 技能 | 权重 | 稀有度 | 路线 | 标签命中 | 冲突命中 | 清群 |
 |---|---:|---|---|---|---|---|
-| 静立聚焦 | 107 | blue | bulk |  |  | 否 |
-| 穿透弹芯 | 103 | green | pierce |  |  | 是 |
-| 锚定释放 | 70 | blue | bulk | stationary |  | 否 |
-| 贯穿增幅 | 68 | blue | pierce |  |  | 是 |
+| 穿透弹芯 | 117 | green | pierce |  |  | 是 |
+| 静立聚焦 | 101 | blue | bulk |  |  | 否 |
+| 贯穿增幅 | 75 | blue | pierce |  |  | 是 |
+| 锚定释放 | 62 | blue | bulk | stationary |  | 否 |
 | 强击弹体 | 55 | green | projectile |  |  | 否 |
 | 巨体回响 | 50 | blue | bulk, close |  |  | 否 |
 | 轻锋协议 | 50 | blue | agile, pierce |  |  | 否 |
@@ -78,45 +78,45 @@
 
 | 技能 | 权重 | 稀有度 | 路线 | 标签命中 | 冲突命中 | 清群 |
 |---|---:|---|---|---|---|---|
-| 静立聚焦 | 110 | blue | bulk |  |  | 否 |
-| 穿透弹芯 | 92 | green | pierce |  |  | 是 |
-| 锚定释放 | 72 | blue | bulk | stationary |  | 否 |
-| 贯穿增幅 | 70 | blue | pierce |  |  | 是 |
+| 穿透弹芯 | 105 | green | pierce |  |  | 是 |
+| 静立聚焦 | 104 | blue | bulk |  |  | 否 |
+| 贯穿增幅 | 78 | blue | pierce |  |  | 是 |
+| 锚定释放 | 64 | blue | bulk | stationary |  | 否 |
+| 引导光束 | 55 | purple | chain | stationary |  | 是 |
 | 巨体回响 | 52 | blue | bulk, close |  |  | 否 |
 | 轻锋协议 | 52 | blue | agile, pierce |  |  | 否 |
 | 体积共鸣 | 52 | blue | bulk |  |  | 否 |
-| 迟缓共鸣 | 52 | blue | bulk |  |  | 否 |
 
 ### 贴身刃卫
 
 - 玩家可见效果：开局护盾 +20，持续 999 秒；近身刀环和脉冲场伤害 x1.20；近身技能半径 +15%；获得护盾 +100%、最大生命 +50%；获得投射物伤害 -25%
-- 玩家可见清群入口：近身刀环、脉冲场和护身锋刃
-- 审计结果：通过，清群候选 升级 3 / 商店 3，路线覆盖 升级 3 / 商店 3
+- 玩家可见清群入口：近身刀环和脉冲场
+- 审计结果：通过，清群候选 升级 2 / 商店 2，路线覆盖 升级 3 / 商店 3
 - 路线分数：bulk 1 / agile 1 / pierce 0 / blast 0 / chain 0 / close 2
-- 主动标签：`shielded`, `close_skill`
+- 主动标签：`shielded`
 
 升级权重前 8：
 
 | 技能 | 权重 | 稀有度 | 路线 | 标签命中 | 冲突命中 | 清群 |
 |---|---:|---|---|---|---|---|
-| 巨体回响 | 220 | blue | bulk, close | shielded, close_skill |  | 否 |
-| 护身锋刃 | 124 | blue | close | close_skill |  | 是 |
-| 破阵反应 | 112 | blue | close | shielded, close_skill |  | 否 |
-| 近身刀环 | 79 | purple | close | shielded |  | 是 |
-| 脉冲场 | 79 | purple | close | shielded |  | 是 |
+| 近身刀环 | 74 | purple | close | shielded |  | 是 |
+| 脉冲场 | 74 | purple | close | shielded |  | 是 |
+| 巨体回响 | 72 | blue | bulk, close | shielded |  | 否 |
 | 清弹屏障 | 71 | green | survival |  |  | 否 |
 | 折光护盾 | 71 | green | survival |  |  | 否 |
+| 护身锋刃 | 65 | blue | close |  |  | 否 |
+| 破阵反应 | 62 | blue | close | shielded |  | 否 |
 | 轻装骨架 | 59 | green | agile |  |  | 否 |
 
 商店权重前 8：
 
 | 技能 | 权重 | 稀有度 | 路线 | 标签命中 | 冲突命中 | 清群 |
 |---|---:|---|---|---|---|---|
-| 巨体回响 | 226 | blue | bulk, close | shielded, close_skill |  | 否 |
-| 护身锋刃 | 128 | blue | close | close_skill |  | 是 |
-| 破阵反应 | 116 | blue | close | shielded, close_skill |  | 否 |
-| 近身刀环 | 87 | purple | close | shielded |  | 是 |
-| 脉冲场 | 87 | purple | close | shielded |  | 是 |
+| 近身刀环 | 82 | purple | close | shielded |  | 是 |
+| 脉冲场 | 82 | purple | close | shielded |  | 是 |
+| 巨体回响 | 74 | blue | bulk, close | shielded |  | 否 |
+| 护身锋刃 | 67 | blue | close |  |  | 否 |
+| 破阵反应 | 64 | blue | close | shielded |  | 否 |
 | 清弹屏障 | 63 | green | survival |  |  | 否 |
 | 折光护盾 | 63 | green | survival |  |  | 否 |
 | 轻装骨架 | 53 | green | agile |  |  | 否 |
@@ -167,7 +167,7 @@
 
 | 技能 | 权重 | 稀有度 | 路线 | 标签命中 | 冲突命中 | 清群 |
 |---|---:|---|---|---|---|---|
-| 裂片爆破 | 149 | blue | blast | blast |  | 是 |
+| 裂片爆破 | 116 | blue | blast | blast |  | 是 |
 | 爆裂核心 | 90 | purple | bulk, blast |  |  | 是 |
 | 重压弹芯 | 88 | purple | bulk, blast |  |  | 否 |
 | 穿透弹芯 | 62 | green | pierce |  | heavy_hit | 是 |
@@ -180,7 +180,7 @@
 
 | 技能 | 权重 | 稀有度 | 路线 | 标签命中 | 冲突命中 | 清群 |
 |---|---:|---|---|---|---|---|
-| 裂片爆破 | 153 | blue | blast | blast |  | 是 |
+| 裂片爆破 | 119 | blue | blast | blast |  | 是 |
 | 爆裂核心 | 101 | purple | bulk, blast |  |  | 是 |
 | 重压弹芯 | 97 | purple | bulk, blast |  |  | 否 |
 | 穿透弹芯 | 56 | green | pierce |  | heavy_hit | 是 |

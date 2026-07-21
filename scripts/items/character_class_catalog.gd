@@ -32,7 +32,7 @@ const CLASS_DEFINITIONS := {
 		"multipliers": {"stationary_crit": 1.25},
 		"focus_decay": {"stationary_move_decay_multiplier": 0.80},
 		"gain_multipliers": {"critical_chance": 2.0, "pierce": 2.0, "move_speed": 0.75},
-		"upgrade_bias": {"still_focus": 1.80, "piercing_rounds": 1.45, "pierce_amp": 1.35, "anchor_discharge": 0.85, "channel_beam": 1.25, "damage": 1.15},
+		"upgrade_bias": {"still_focus": 1.70, "piercing_rounds": 1.65, "pierce_amp": 1.50, "anchor_discharge": 0.75, "channel_beam": 1.35, "damage": 1.15},
 		"route_bias": {"bulk": 2, "pierce": 2, "chain": 1},
 		"tag_bias": ["stationary"]
 	},
@@ -41,13 +41,13 @@ const CLASS_DEFINITIONS := {
 		"summary": "用开局护盾撑住近身距离，强化刀环和脉冲场。",
 		"effects": ["开局护盾 +20，持续 999 秒", "近身刀环和脉冲场伤害 x1.20", "近身技能半径 +15%", "获得护盾 +100%、最大生命 +50%", "获得投射物伤害 -25%"],
 		"gain_summary": "护盾 x2，最大生命 x1.5，投射物伤害收益 x0.75",
-		"clear_summary": "近身刀环、脉冲场和护身锋刃",
+		"clear_summary": "近身刀环和脉冲场",
 		"initial_stats": {"shield": 20, "shield_duration": 999.0},
 		"multipliers": {"close_damage": 1.20, "close_radius": 1.15},
 		"gain_multipliers": {"shield": 2.0, "max_health": 1.5, "projectile_damage_percent": 0.75, "damage": 0.75, "damage_flat": 0.75},
-		"upgrade_bias": {"close_slash": 1.80, "pulse_field": 1.80, "guard_blade": 1.50, "giant_echo": 1.35, "clear_barrier": 1.25, "graze_barrier": 1.25},
+		"upgrade_bias": {"close_slash": 2.00, "pulse_field": 2.00, "guard_blade": 1.10, "giant_echo": 0.60, "elite_reactor": 0.75, "clear_barrier": 1.25, "graze_barrier": 1.25},
 		"route_bias": {"close": 2, "bulk": 1, "agile": 1},
-		"tag_bias": ["shielded", "close_skill"]
+		"tag_bias": ["shielded"]
 	},
 	"roaming_arc": {
 		"name": "游走电弧",
@@ -71,7 +71,7 @@ const CLASS_DEFINITIONS := {
 		"initial_stats": {"explosion_radius": 20.0, "fire_interval_multiplier": 1.08},
 		"multipliers": {"heavy_overload_damage": 1.15},
 		"gain_multipliers": {"explosion_radius": 2.0, "pierce": 2.0, "move_speed": 0.5, "projectile_damage_percent": 1.35},
-		"upgrade_bias": {"blast_core": 1.65, "shatter_blast": 1.80, "heavy_shot": 1.60, "overload_burst": 1.40, "compressed_core": 1.25, "piercing_rounds": 1.25},
+		"upgrade_bias": {"blast_core": 1.65, "shatter_blast": 1.40, "heavy_shot": 1.60, "overload_burst": 1.40, "compressed_core": 1.25, "piercing_rounds": 1.25},
 		"route_bias": {"blast": 3, "bulk": 2, "pierce": 2},
 		"tag_bias": ["blast", "heavy_hit"]
 	}

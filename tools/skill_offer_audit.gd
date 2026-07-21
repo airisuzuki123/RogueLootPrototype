@@ -81,7 +81,7 @@ func _build_scenarios() -> Array[Dictionary]:
 			"title": "爆裂重弹",
 			"health": 110,
 			"max_health": 130,
-			"summary": {"move_speed": 215, "player_size_bonus": 55, "attack_interval": 0.62, "projectiles": 1, "pierce": 0, "explosion_radius": 120, "shield": 0, "upgrade_stacks": {"blast_core": 1, "shatter_blast": 1, "heavy_shot": 2, "compressed_core": 1, "overload_burst": 1}}
+			"summary": {"move_speed": 215, "player_size_bonus": 55, "attack_interval": 0.62, "projectiles": 1, "pierce": 0, "explosion_radius": 112, "shield": 0, "upgrade_stacks": {"blast_core": 1, "shatter_blast": 1, "heavy_shot": 2, "compressed_core": 1, "overload_burst": 1}}
 		},
 		{
 			"id": "chain_mobile",

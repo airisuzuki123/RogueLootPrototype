@@ -51,6 +51,15 @@ func _test_close_blade_guard() -> void:
 	player.apply_upgrade("close_slash")
 	player.apply_upgrade("pulse_field")
 	player.apply_upgrade("guard_blade")
+	var line_count_before := _count_feedback_lines()
+	player.call("_fire_close_slash")
+	var slash_line_count := _count_feedback_lines() - line_count_before
+	if slash_line_count < 4:
+		failures.append("close_blade_guard: close slash feedback layers were not generated")
+	player.call("_fire_pulse_field")
+	var pulse_line_count := _count_feedback_lines() - line_count_before - slash_line_count
+	if pulse_line_count < 7:
+		failures.append("close_blade_guard: pulse field feedback layers were not generated")
 	_check_summary("贴身刃卫三技能", {"shield": 60, "close_slash_stacks": 1, "pulse_field_stacks": 1})
 	player.queue_free()
 	await get_tree().process_frame
@@ -112,6 +121,13 @@ func _create_player(class_id: String) -> Node:
 	elif not GameManager.is_upgrade_pending or not GameManager.is_opening_upgrade_choice or GameManager.pending_upgrade_choices.size() != 3:
 		failures.append("%s：选择职业后未生成开局三选一" % class_id)
 	return player
+
+func _count_feedback_lines() -> int:
+	var count := 0
+	for child in get_children():
+		if child is Line2D:
+			count += 1
+	return count
 
 func _check_summary(label: String, expected: Dictionary) -> void:
 	var summary: Dictionary = GameManager.player_build_summary
